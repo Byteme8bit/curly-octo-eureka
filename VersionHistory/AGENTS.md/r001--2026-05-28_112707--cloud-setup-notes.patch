@@ -1,0 +1,26 @@
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -41,7 +41,19 @@
+ 
+ ## Verification convention
+ 
+-The Cursor agent's shell is sandbox-locked on this machine, so it cannot run
+-`pytest` or `python main.py`. Whenever a request needs verification, leave
+-the feature-log status as `awaiting verification - pytest pending` and list
+-the exact commands the user should run.
++Historical Windows Cursor sessions may be sandbox-locked; Cursor Cloud on
++Linux can run verification directly. Prefer the commands documented in
++`README.md`, adapted to `python3` when no `python` shim exists.
++
++## Cursor Cloud specific instructions
++
++- Use `python3` in Cloud shells; this image does not provide a `python` shim.
++- Standard dependency, test, and run commands are documented in `README.md`.
++  The startup dependency refresh is `python3 -m pip install -r requirements-dev.txt`.
++- The runtime is one local Python service: `python3 main.py` starts TradeBot,
++  WatchDog, and Auditor in the same process. Kraken public API access and a
++  writable workspace are required; Discord, Gemini, and alert providers are
++  optional unless their `.env` flags are enabled.
++- No dedicated lint configuration is currently present. Use
++  `python3 -m compileall -q bot watchdog scripts tests config.py main.py check_discord.py`
++  as the available static syntax check until a linter config is added.

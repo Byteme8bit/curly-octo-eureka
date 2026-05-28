@@ -175,3 +175,11 @@ See `bot/version_history.py` for the writer.
 
 > _2026-05-27 03:55:05 PDT_ — no-op snapshot requested for `tests/test_version_history.py` (reason: 'Sleep-window auto-apply + multi-path snapshot') - no change since r001
 
+## AGENTS.md — r001
+
+- **When:** 2026-05-28 11:27:07 PDT
+- **Reason:** cloud setup notes
+- **Request:** 022
+- **Diff:** +16 / -4
+- **Patch:** `r001--2026-05-28_112707--cloud-setup-notes.patch`
+

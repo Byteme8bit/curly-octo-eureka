@@ -23,6 +23,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "AGENTS.md": [
+    {
+      "added": 16,
+      "number": 1,
+      "patch": "r001--2026-05-28_112707--cloud-setup-notes.patch",
+      "path": "AGENTS.md",
+      "reason": "cloud setup notes",
+      "removed": 4,
+      "request_id": "022",
+      "timestamp": "2026-05-28 11:27:07 PDT"
+    }
+  ],
   "bot/auditor/config.py": [
     {
       "added": 0,
