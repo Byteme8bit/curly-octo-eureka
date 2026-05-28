@@ -1,0 +1,479 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -1,13 +1,18 @@
+ import logging
+-
++import os
++import sys
+ import time
+ 
+ from datetime import datetime
++from pathlib import Path
+ 
+ from bot.alerts import AlertConfig, AlertManager
++from bot.auditor.config import AuditorConfig
++from bot.auditor_service import AuditorService
+ from bot.circuit_breaker import CircuitBreaker
+ from bot.data import KrakenData
+ from bot.discord_bot import (
++    AuditorHelpText,
+     DiscordBot,
+     DiscordConfig,
+     HelpText,
+@@ -19,6 +24,7 @@
+ from bot.local_time import format_pacific
+ from bot.markets import MarketRegistry
+ from bot.paper_broker import PaperBroker
++from bot.paper_portfolio import PaperPortfolioLog
+ from bot.portfolio_constraints import PortfolioConstraints
+ from bot.preflight import PreFlightValidator
+ from bot.strategy_governor import StrategyGovernor
+@@ -66,6 +72,8 @@
+ 
+         self.receipts = ReceiptWriter(settings.receipts_dir)
+ 
++        self.portfolio_log = PaperPortfolioLog(settings.paper_portfolio_file)
++
+         self.broker = PaperBroker(
+ 
+             initial_balances=settings.initial_balances,
+@@ -253,6 +261,10 @@
+         self._last_pinned_pnl_band: int = 0
+ 
+         self._shutdown_done = False
++
++        self._restart_requested: bool = False
++
++        self._restart_reason: str = ""
+ 
+         self.watchdog = WatchdogService(
+             settings,
+@@ -262,6 +274,98 @@
+             pause_trading=lambda: self.runtime.set_trading_active(False),
+         )
+ 
++        self.auditor = AuditorService(
++            settings,
++            AuditorConfig(
++                enabled=settings.auditor_enabled,
++                daily_run_hour_pacific=settings.auditor_daily_run_hour_pacific,
++                trade_count_trigger=settings.auditor_trade_count_trigger,
++                pnl_pct_trigger=settings.auditor_pnl_pct_trigger,
++                news_enabled=settings.auditor_news_enabled,
++                news_provider=settings.auditor_news_provider,
++                cryptopanic_api_key=settings.auditor_cryptopanic_api_key,
++                rss_feeds=settings.auditor_rss_feeds,
++                news_max_items=settings.auditor_news_max_items,
++                proposals_ttl_minutes=settings.auditor_proposals_ttl_minutes,
++                reports_dir=settings.auditor_reports_dir,
++                state_file=settings.auditor_state_file,
++                autoapply_enabled=settings.auditor_autoapply_enabled,
++                autoapply_window_start_hour=settings.auditor_autoapply_window_start_hour,
++                autoapply_window_end_hour=settings.auditor_autoapply_window_end_hour,
++                autoapply_min_severity=settings.auditor_autoapply_min_severity,
++                autoapply_max_per_night=settings.auditor_autoapply_max_per_night,
++                autoapply_restart_enabled=settings.auditor_autoapply_restart_enabled,
++            ),
++            broker=self.broker,
++            governor=self.governor,
++            discord=self.discord,
++            portfolio_log=self.portfolio_log,
++            watchdog_state_provider=lambda: None,
++            request_restart=self.request_restart,
++        )
++
++
++
++    def _handle_auditor_command(self, command: str) -> str:
++
++        token, _, args = command.partition(" ")
++
++        args = args.strip()
++
++        if token == "auditor-review":
++
++            report = self.auditor.run_audit(trigger="manual")
++
++            path = report.markdown_path
++
++            tail = f"\n\nFull report: `{path}`" if path else ""
++
++            return report.summary + tail
++
++        if token == "auditor-forecast":
++
++            report = self.auditor.run_audit(trigger="manual-forecast")
++
++            path = report.markdown_path
++
++            tail = f"\n\nFull report: `{path}`" if path else ""
++
++            return report.summary + tail
++
++        if token == "auditor-strategy":
++
++            report = self.auditor.run_audit(trigger=f"manual-strategy:{args or 'all'}")
++
++            path = report.markdown_path
++
++            tail = f"\n\nFull report: `{path}`" if path else ""
++
++            return report.summary + tail
++
++        if token == "auditor-summary":
++
++            report = self.auditor.run_audit(trigger="manual-summary")
++
++            return report.summary
++
++        if token == "auditor-confirm":
++
++            return self.auditor.confirm_proposal(args)
++
++        if token == "auditor-pending":
++
++            return self.auditor.list_pending()
++
++        if token == "auditor-revert":
++
++            return self.auditor.revert(args)
++
++        if token == "auditor-status":
++
++            return self.auditor.status()
++
++        return f"Unknown auditor command `{token}` — send `Auditor -help` for options."
++
+ 
+ 
+     def _watchdog_alert(self, message: str, pin: bool) -> None:
+@@ -279,6 +383,71 @@
+     def _holdings(self) -> dict[str, float]:
+ 
+         return dict(self.broker.state.balances)
++
++    def _write_portfolio_file(
++        self,
++        *,
++        holdings: dict[str, float],
++        usd_prices: dict[str, float],
++        portfolio: float,
++        baseline_pnl: float,
++        drawdown: float,
++    ) -> None:
++        try:
++            self.portfolio_log.write(
++                holdings=holdings,
++                usd_prices=usd_prices,
++                portfolio_usd=portfolio,
++                baseline_pnl=baseline_pnl,
++                drawdown_pct=drawdown,
++            )
++        except OSError as exc:
++            logger.warning("Could not write portfolio file: %s", exc)
++
++    def _seed_portfolio_snapshot(self) -> None:
++        """Ensure ``paper_portfolio.json`` exists before the first tick."""
++        try:
++            snapshot = self._refresh_market_view()
++            self._write_portfolio_file(
++                holdings=snapshot.holdings,
++                usd_prices=snapshot.usd_prices,
++                portfolio=snapshot.portfolio,
++                baseline_pnl=snapshot.baseline_pnl,
++                drawdown=snapshot.drawdown,
++            )
++            return
++        except Exception as exc:
++            logger.warning("Startup portfolio refresh failed: %s", exc)
++        if not self.portfolio_log.load():
++            self.portfolio_log.bootstrap_from_state(self.settings.state_file)
++
++    def _startup_portfolio_view(self) -> tuple[dict[str, float], str | None]:
++        """Load display balances from portfolio file when available."""
++        snap = self.portfolio_log.load()
++        live = {k: v for k, v in self._holdings().items() if v > 0}
++        if snap and snap.balances():
++            return snap.balances(), snap.summary_line()
++        return live, None
++
++    def _active_overrides_line(self) -> str:
++        """Render active `runtime_overrides.json` knobs for the startup pin.
++
++        Returns empty string when no overrides are active. This is the user's
++        primary visual confirmation that an `Auditor -confirm` was picked up
++        by a full process restart (vs. just `stop`/`start`).
++        """
++        from bot.auditor.runtime_overrides import list_overrides
++
++        overrides_file = Path(__file__).resolve().parent.parent / "runtime_overrides.json"
++        try:
++            overrides = list_overrides(overrides_file)
++        except Exception as exc:  # noqa: BLE001 — never block startup
++            logger.warning("Could not read runtime_overrides.json: %s", exc)
++            return ""
++        if not overrides:
++            return ""
++        rendered = ", ".join(f"`{k}`={v}" for k, v in sorted(overrides.items()))
++        return f":gear: Auditor overrides active: {rendered}"
+ 
+ 
+ 
+@@ -587,6 +756,18 @@
+ 
+ 
+ 
++        if command == "auditor-help":
++
++            return AuditorHelpText
++
++
++
++        if command.startswith("auditor-"):
++
++            return self._handle_auditor_command(command)
++
++
++
+         if command == "clearchat":
+ 
+             deleted, skipped = self.discord.clear_recent_messages()
+@@ -633,7 +814,12 @@
+ 
+             self.runtime.set_trading_active(True)
+ 
+-            return "Trading **started** — bot will resume market ticks."
++            return (
++                "Trading **started** — bot will resume market ticks.\n"
++                "_(Note: `start`/`stop` only toggle ticks; they do not restart the process "
++                "or reload `runtime_overrides.json`. For auditor overrides to take effect, "
++                "fully quit and re-run `main.py`.)_"
++            )
+ 
+ 
+ 
+@@ -641,7 +827,12 @@
+ 
+             self.runtime.set_trading_active(False)
+ 
+-            return "Trading **stopped** — no new ticks until you send `start`."
++            return (
++                "Trading **stopped** — no new ticks until you send `start`.\n"
++                "_(Note: this does NOT restart the Python process. If you just confirmed "
++                "an `Auditor -confirm`, you still need to fully quit and re-run `main.py` "
++                "for the override to load.)_"
++            )
+ 
+ 
+ 
+@@ -685,15 +876,23 @@
+ 
+             self._instance_started_at = format_pacific()
+ 
+-            # Clear first (skips pinned, so the existing startup pin survives),
+-
+-            # then post the new pin so the channel resets to a single pin.
+-
+-            cleared, kept_pinned = self.discord.clear_recent_messages()
++            if self.watchdog.enabled:
++
++                self.watchdog.reset(silent=True)
++
++            channel_stats = self.discord.reset_discord_channel()
+ 
+             self.discord.chat_log.log_event(
+ 
+-                f"Reset chat clear: deleted={cleared}, skipped={kept_pinned}"
++                "TradeBot reset: "
++
++                f"pins_cleared={channel_stats['pins_cleared']}, "
++
++                f"deleted={channel_stats['deleted']}, "
++
++                f"skipped={channel_stats['skipped']}, "
++
++                "error_counters=TradeBot+WatchDog cleared"
+ 
+             )
+ 
+@@ -707,15 +906,25 @@
+ 
+             self._post_strategy_status()
+ 
+-            if self.watchdog.enabled:
+-
+-                self.watchdog.reset()
+-
+             snapshot = self._refresh_market_view()
+ 
++            self._write_portfolio_file(
++                holdings=snapshot.holdings,
++                usd_prices=snapshot.usd_prices,
++                portfolio=snapshot.portfolio,
++                baseline_pnl=snapshot.baseline_pnl,
++                drawdown=snapshot.drawdown,
++            )
++
+             return (
+ 
+-                "Paper state **reset** to initial balances.\n```\n"
++                "Paper state **reset** to initial balances.\n"
++
++                f"Discord: cleared **{channel_stats['pins_cleared']}** pin(s), "
++
++                f"deleted **{channel_stats['deleted']}** message(s).\n"
++
++                "TradeBot + WatchDog error counters cleared.\n```\n"
+ 
+                 + format_portfolio_summary(
+ 
+@@ -1095,6 +1304,8 @@
+ 
+                     self.risk.record_trade()
+ 
++                    self.auditor.note_trade(trade)
++
+                     break
+ 
+ 
+@@ -1193,6 +1404,14 @@
+ 
+         )
+ 
++        self._write_portfolio_file(
++            holdings=holdings,
++            usd_prices=usd_prices,
++            portfolio=portfolio,
++            baseline_pnl=baseline_pnl,
++            drawdown=drawdown,
++        )
++
+ 
+ 
+         elapsed = time.monotonic() - started
+@@ -1295,13 +1514,17 @@
+ 
+             logger.warning("Startup market refresh failed: %s", exc)
+ 
+-        self.discord.post_startup_pin(
+-
++        overrides_line = self._active_overrides_line()
++
++        startup_text = (
+             f"**Trading bot started and active**\n"
+-
+             f"Started {self._instance_started_at}"
+-
+-        )
++        )
++
++        if overrides_line:
++            startup_text = f"{startup_text}\n{overrides_line}"
++
++        self.discord.post_startup_pin(startup_text)
+ 
+         self._post_strategy_status()
+ 
+@@ -1357,12 +1580,51 @@
+ 
+         self.runtime.request_shutdown()
+ 
++        self.auditor.stop()
++
+         self.watchdog.stop()
+ 
+         self.discord.stop()
+ 
+ 
+ 
++    def request_restart(self, reason: str) -> None:
++        """Mark the engine for a full process self-restart at next tick.
++
++        Used by the auditor's sleep-window auto-apply to pick up a freshly
++        written `runtime_overrides.json` without manual intervention. The
++        actual ``os.execv`` happens after ``shutdown()`` so all services
++        get a clean cooperative stop and state is persisted.
++        """
++        logger.warning("Engine self-restart requested: %s", reason)
++        self._restart_reason = reason or "restart_requested"
++        self._restart_requested = True
++        self.runtime.request_shutdown()
++
++
++
++    def _perform_self_restart(self) -> None:
++        """Replace the current process with a fresh ``main.py`` run.
++
++        Safe to call only after ``shutdown()`` has completed because
++        ``os.execv`` immediately replaces the process image — anything not
++        yet flushed to disk will be lost.
++        """
++        python = sys.executable
++        argv = [python, *sys.argv]
++        logger.warning(
++            "Self-restart: exec %s argv=%s reason=%s",
++            python, argv, self._restart_reason,
++        )
++        time.sleep(2.0)  # let Discord, watchdog flush their final messages
++        try:
++            os.execv(python, argv)
++        except OSError as exc:
++            logger.exception("os.execv failed (%s) — exiting with code 75 so a supervisor can restart us", exc)
++            os._exit(75)
++
++
++
+     def run(self) -> None:
+ 
+         cross_count = sum(1 for p in self.markets.pairs.values() if p.quote != "USD")
+@@ -1379,6 +1641,10 @@
+ 
+         )
+ 
++        self._seed_portfolio_snapshot()
++
++        startup_balances, portfolio_summary = self._startup_portfolio_view()
++
+         self.display.startup(
+ 
+             strategy=strategy_label,
+@@ -1387,7 +1653,7 @@
+ 
+             interval=self.settings.poll_interval,
+ 
+-            balances=self.settings.initial_balances,
++            balances=startup_balances,
+ 
+             risk_note=self.risk.fee_summary(),
+ 
+@@ -1403,6 +1669,10 @@
+ 
+             receipts_dir=self.settings.receipts_dir,
+ 
++            portfolio_summary=portfolio_summary,
++
++            portfolio_file=self.settings.paper_portfolio_file,
++
+         )
+ 
+         self.discord.start()
+@@ -1411,6 +1681,8 @@
+ 
+         self.watchdog.start()
+ 
++        self.auditor.start()
++
+ 
+ 
+         try:
+@@ -1443,6 +1715,10 @@
+ 
+             self.shutdown()
+ 
++            if self._restart_requested:
++
++                self._perform_self_restart()
++
+ 
+ 
+     def run_discord_test(self) -> None:

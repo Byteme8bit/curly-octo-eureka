@@ -1,0 +1,3 @@
+--- a/scripts/version_history.py
++++ b/scripts/version_history.py
+# initial baseline - no previous state available

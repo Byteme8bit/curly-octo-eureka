@@ -1,0 +1,3 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+# initial baseline - no previous state available

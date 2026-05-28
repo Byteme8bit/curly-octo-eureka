@@ -1,0 +1,3 @@
+--- a/bot/auditor/config.py
++++ b/bot/auditor/config.py
+# initial baseline - no previous state available

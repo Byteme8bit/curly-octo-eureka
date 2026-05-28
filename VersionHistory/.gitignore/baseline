@@ -1,0 +1,22 @@
+.env
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+logs/
+receipts/
+*.log
+.paper_state.json
+.discord_pins.json
+.watchdog_state.json
+diagnostics/
+git_setup_result.txt
+logs/discord_chat*.log
+logs/discord_chat.log.*
+Error Logs/
+
+# Version history is tracked in git (see feature 013) - keep it out of any
+# wildcard exclusions added later. Baselines, patches, and CHANGELOG.md all
+# stay in version control so revisions are portable across machines.
+!VersionHistory/
+!VersionHistory/**

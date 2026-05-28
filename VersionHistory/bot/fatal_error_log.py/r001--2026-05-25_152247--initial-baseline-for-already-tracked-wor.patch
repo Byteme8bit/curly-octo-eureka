@@ -1,0 +1,3 @@
+--- a/bot/fatal_error_log.py
++++ b/bot/fatal_error_log.py
+# initial baseline - no previous state available

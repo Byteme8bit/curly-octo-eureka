@@ -1,0 +1,3 @@
+--- a/bot/discord_bot.py
++++ b/bot/discord_bot.py
+# initial baseline - no previous state available

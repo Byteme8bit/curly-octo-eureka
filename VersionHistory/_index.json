@@ -1,0 +1,204 @@
+{
+  ".env.example": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035158--sleep-window-auto-apply-self-restart.patch",
+      "path": ".env.example",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:58 PDT"
+    }
+  ],
+  ".gitignore": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-25_152247--initial-baseline-for-already-tracked-wor.patch",
+      "path": ".gitignore",
+      "reason": "initial baseline for already-tracked work",
+      "removed": 0,
+      "request_id": "013",
+      "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "bot/auditor/config.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035157--sleep-window-auto-apply-self-restart.patch",
+      "path": "bot/auditor/config.py",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:57 PDT"
+    }
+  ],
+  "bot/auditor/state.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035157--sleep-window-auto-apply-self-restart.patch",
+      "path": "bot/auditor/state.py",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:57 PDT"
+    }
+  ],
+  "bot/auditor_service.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035158--sleep-window-auto-apply-self-restart.patch",
+      "path": "bot/auditor_service.py",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:58 PDT"
+    }
+  ],
+  "bot/discord_bot.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-25_152247--initial-baseline-for-already-tracked-wor.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "initial baseline for already-tracked work",
+      "removed": 0,
+      "request_id": "013",
+      "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "bot/engine.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-25_152247--initial-baseline-for-already-tracked-wor.patch",
+      "path": "bot/engine.py",
+      "reason": "initial baseline for already-tracked work",
+      "removed": 0,
+      "request_id": "013",
+      "timestamp": "2026-05-25 15:22:47 PDT"
+    },
+    {
+      "added": 296,
+      "number": 2,
+      "patch": "r002--2026-05-27_035158--sleep-window-auto-apply-self-restart.patch",
+      "path": "bot/engine.py",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 20,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:58 PDT"
+    }
+  ],
+  "bot/fatal_error_log.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-25_152247--initial-baseline-for-already-tracked-wor.patch",
+      "path": "bot/fatal_error_log.py",
+      "reason": "initial baseline for already-tracked work",
+      "removed": 0,
+      "request_id": "013",
+      "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "config.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035158--sleep-window-auto-apply-self-restart.patch",
+      "path": "config.py",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:58 PDT"
+    }
+  ],
+  "docs/architecture/modules.md": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-25_152248--initial-baseline-for-already-tracked-wor.patch",
+      "path": "docs/architecture/modules.md",
+      "reason": "initial baseline for already-tracked work",
+      "removed": 0,
+      "request_id": "013",
+      "timestamp": "2026-05-25 15:22:48 PDT"
+    }
+  ],
+  "docs/design/discord-style-guide.md": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-25_152247--initial-baseline-for-already-tracked-wor.patch",
+      "path": "docs/design/discord-style-guide.md",
+      "reason": "initial baseline for already-tracked work",
+      "removed": 0,
+      "request_id": "013",
+      "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "feature_logs/020_auditor-autoapply.md": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035158--sleep-window-auto-apply-self-restart.patch",
+      "path": "feature_logs/020_auditor-autoapply.md",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:58 PDT"
+    }
+  ],
+  "main.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-25_152247--initial-baseline-for-already-tracked-wor.patch",
+      "path": "main.py",
+      "reason": "initial baseline for already-tracked work",
+      "removed": 0,
+      "request_id": "013",
+      "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "scripts/version_history.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035159--sleep-window-auto-apply-self-restart.patch",
+      "path": "scripts/version_history.py",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ],
+  "tests/test_auditor.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035158--sleep-window-auto-apply-self-restart.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:58 PDT"
+    }
+  ],
+  "tests/test_version_history.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-27_035159--sleep-window-auto-apply-self-restart.patch",
+      "path": "tests/test_version_history.py",
+      "reason": "Sleep-window auto-apply + self-restart",
+      "removed": 0,
+      "request_id": "020",
+      "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ]
+}

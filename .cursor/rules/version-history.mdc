@@ -1,0 +1,55 @@
+---
+description: Per-file version-history protocol for tracked source edits
+alwaysApply: true
+---
+
+# Version-history protocol
+
+After every request that **modifies existing files**, record one snapshot per
+modified file via `scripts/version_history.py`. Use the request's feature-log
+id as `--request-id` so the changelog cross-references.
+
+## When to snapshot
+
+- **Existing files modified during this request**: snapshot at the END of the
+  request, after all edits are settled (one snapshot per file per request,
+  not one per individual `StrReplace`).
+- **New files created during this request**: skip — there is no baseline yet,
+  and the first edit to that file in a future request will create r001.
+- **User requested a revert**: use `revert` instead of `snapshot`.
+
+## CLI
+
+```powershell
+.\.venv\Scripts\python.exe scripts\version_history.py snapshot <path> --reason "<short summary>" --request-id <NNN>
+.\.venv\Scripts\python.exe scripts\version_history.py list <path>
+.\.venv\Scripts\python.exe scripts\version_history.py diff <path> --rev N
+.\.venv\Scripts\python.exe scripts\version_history.py revert <path> --rev N --reason "<why>"
+.\.venv\Scripts\python.exe scripts\version_history.py prune-local --keep 10
+.\.venv\Scripts\python.exe scripts\version_history.py verify
+```
+
+Reason should fit in ~6 words; the slug is truncated to 40 chars anyway.
+
+## Examples
+
+```powershell
+# Good: one snapshot per modified file, request id matches feature log
+.\.venv\Scripts\python.exe scripts\version_history.py snapshot bot\discord_bot.py --reason "rename commands, add clearchat" --request-id 012
+.\.venv\Scripts\python.exe scripts\version_history.py snapshot bot\engine.py --reason "route clearchat action token" --request-id 012
+
+# Bad: snapshotting newly-created files (skip them - no baseline yet)
+.\.venv\Scripts\python.exe scripts\version_history.py snapshot bot\brand_new_file.py --reason "new file" --request-id 013
+
+# Revert
+.\.venv\Scripts\python.exe scripts\version_history.py revert bot\engine.py --rev 3 --reason "regression in 014"
+```
+
+## Notes
+
+- `VersionHistory/` is **tracked in git** so revisions are portable across
+  machines; `prune-local` only deletes from your working tree (recoverable
+  via `git show`).
+- Never hand-edit files under `VersionHistory/` — use the CLI.
+- Reverts are safe: the CLI snapshots the current state first as a
+  `pre-revert backup` revision before overwriting.

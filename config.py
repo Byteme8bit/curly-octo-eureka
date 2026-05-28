@@ -1,0 +1,363 @@
+import json
+import logging
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+ROOT = Path(__file__).parent
+RUNTIME_OVERRIDES_FILE = ROOT / "runtime_overrides.json"
+
+logger = logging.getLogger(__name__)
+
+# Knobs the Auditor is allowed to override at runtime.
+# Map env-var name -> Settings attribute name.
+RUNTIME_OVERRIDE_KNOBS: dict[str, str] = {
+    "MIN_TRADE_EDGE": "min_trade_edge",
+    "TRADE_SIZE_PCT": "trade_size_pct",
+    "MIN_NET_PROFIT_PCT": "min_net_profit_pct",
+    "IDLE_REEVAL_HOURS": "idle_reeval_hours",
+    "STRATEGY_EXPLORATION_RATIO": "strategy_exploration_ratio",
+}
+
+WATCH_ASSETS: tuple[str, ...] = (
+    "BTC", "ETH", "SOL", "ADA", "XRP", "DOT", "LINK", "AVAX",
+    "ATOM", "LTC", "DOGE", "BNB", "UNI", "AAVE", "ARB", "OP", "POL",
+)
+
+# USD pairs used for momentum scoring and display
+SYMBOL_ASSETS: dict[str, str] = {f"{asset}/USD": asset for asset in WATCH_ASSETS}
+ASSET_USD_SYMBOLS: dict[str, str] = {asset: f"{asset}/USD" for asset in WATCH_ASSETS}
+# Legacy alias
+ASSET_SYMBOLS = ASSET_USD_SYMBOLS
+
+DEFAULT_SYMBOLS = ",".join(SYMBOL_ASSETS.keys())
+DEFAULT_CORE_ASSETS = "ETH,ADA,BTC"
+DEFAULT_STRATEGIES = "cross_momentum,triangular_arbitrage,stat_arb"
+DEFAULT_SAFE_ASSETS = "USD,ETH,BTC"
+DEFAULT_STAT_ARB_PAIRS = "ETH/BTC,SOL/ETH,LINK/ETH,AVAX/ETH"
+DEFAULT_MOMENTUM_TIMEFRAMES = "15m,1h"
+
+
+@dataclass(frozen=True)
+class Settings:
+    watch_assets: tuple[str, ...]
+    usd_symbols: tuple[str, ...]
+    core_assets: tuple[str, ...]
+    initial_balances: dict[str, float]
+    poll_interval: int
+    fee_rate: float
+    candle_timeframe: str
+    candle_limit: int
+    ema_fast: int
+    ema_slow: int
+    momentum_sell: float
+    trade_size_pct: float
+    expansion_size_pct: float
+    min_usd_trade: float
+    diversify_bonus: float
+    dust_usd: float
+    drawdown_hibernate_pct: float
+    hibernate_hours: float
+    trade_cooldown_seconds: int
+    max_trades_per_hour: int
+    min_trade_edge: float
+    leader_stable_seconds: int
+    fee_safety_multiplier: float
+    reset_paper_state: bool
+    alerts_enabled: bool
+    alert_discord_webhook: str
+    discord_enabled: bool
+    discord_webhook: str
+    discord_bot_token: str
+    discord_channel_id: str
+    discord_allowed_user_ids: tuple[str, ...]
+    discord_heartbeat_minutes: int
+    discord_error_cooldown_minutes: int
+    discord_error_pin_count: int
+    discord_error_pin_window_minutes: int
+    discord_pin_enabled: bool
+    discord_pin_pnl_pct: float
+    discord_pin_trade_usd: float
+    discord_max_pins_retain: int
+    discord_chat_log_enabled: bool
+    discord_chat_log_file: str
+    alert_telegram_bot_token: str
+    alert_telegram_chat_id: str
+    alert_smtp_host: str
+    alert_smtp_port: int
+    alert_smtp_user: str
+    alert_smtp_password: str
+    alert_email_from: str
+    alert_email_to: str
+    alert_twilio_sid: str
+    alert_twilio_token: str
+    alert_twilio_from: str
+    alert_sms_to: str
+    api_key: str
+    api_secret: str
+    state_file: Path
+    paper_portfolio_file: Path
+    log_dir: Path
+    receipts_dir: Path
+    log_rotate_hours: int
+    strategies: tuple[str, ...]
+    slippage_buffer_pct: float
+    min_net_profit_pct: float
+    safe_assets: tuple[str, ...]
+    stat_arb_zscore_threshold: float
+    stat_arb_lookback: int
+    stat_arb_pairs: tuple[tuple[str, str], ...]
+    momentum_timeframes: tuple[str, ...]
+    circuit_breaker_enabled: bool
+    diagnostic_dir: Path
+    idle_reeval_hours: float
+    idle_reeval_max_attempts: int
+    min_eth_reserve: float
+    max_alt_allocation_pct: float
+    strategy_growth_window_hours: float
+    strategy_min_growth_pct: float
+    strategy_strong_growth_pct: float
+    strategy_switch_edge_margin: float
+    strategy_exploration_ratio: float
+    kraken_request_timeout_ms: int
+    kraken_max_retries: int
+    kraken_retry_backoff_sec: float
+    auditor_enabled: bool
+    auditor_daily_run_hour_pacific: int
+    auditor_trade_count_trigger: int
+    auditor_pnl_pct_trigger: float
+    auditor_news_enabled: bool
+    auditor_news_provider: str
+    auditor_cryptopanic_api_key: str
+    auditor_rss_feeds: str
+    auditor_news_max_items: int
+    auditor_proposals_ttl_minutes: int
+    auditor_reports_dir: Path
+    auditor_state_file: Path
+    auditor_autoapply_enabled: bool
+    auditor_autoapply_window_start_hour: int
+    auditor_autoapply_window_end_hour: int
+    auditor_autoapply_min_severity: str
+    auditor_autoapply_max_per_night: int
+    auditor_autoapply_restart_enabled: bool
+    auditor_chat_enabled: bool
+    auditor_chat_backend: str
+    auditor_chat_model: str
+    auditor_chat_api_key: str
+    auditor_chat_max_turns: int
+    auditor_chat_max_tokens: int
+    auditor_chat_temperature: float
+    auditor_chat_tool_iterations: int
+
+
+def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
+    symbols = tuple(s.strip() for s in raw.split(",") if s.strip())
+    for symbol in symbols:
+        if symbol not in SYMBOL_ASSETS:
+            raise ValueError(f"Unsupported symbol: {symbol}")
+    return symbols
+
+
+def _parse_core_assets(raw: str) -> tuple[str, ...]:
+    return tuple(a.strip() for a in raw.split(",") if a.strip())
+
+
+def _parse_initial_balances(raw: str) -> dict[str, float]:
+    balances = {k: float(v) for k, v in json.loads(raw).items()}
+    if "USD" not in balances:
+        balances["USD"] = 0.0
+    return balances
+
+
+def _parse_user_ids(raw: str) -> tuple[str, ...]:
+    return tuple(uid.strip() for uid in raw.split(",") if uid.strip())
+
+
+def _parse_strategies(raw: str) -> tuple[str, ...]:
+    return tuple(s.strip() for s in raw.split(",") if s.strip())
+
+
+def _parse_stat_arb_pairs(raw: str) -> tuple[tuple[str, str], ...]:
+    pairs: list[tuple[str, str]] = []
+    for item in raw.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        if "/" not in item:
+            raise ValueError(f"Invalid stat arb pair (use BASE/QUOTE): {item}")
+        base, quote = item.split("/", 1)
+        pairs.append((base.strip(), quote.strip()))
+    return tuple(pairs)
+
+
+def _apply_runtime_overrides(
+    settings_dict: dict,
+    overrides_file: Path | None = None,
+) -> list[str]:
+    """Overlay ``runtime_overrides.json`` onto an in-flight settings dict.
+
+    Auditor-applied tier-2 changes live in the JSON file (NOT `.env`) so the
+    user can revert by removing the key. We log a WARNING listing every
+    knob that's currently overridden so the active configuration is never a
+    surprise.
+
+    Returns the list of ``"KNOB=value"`` strings that were applied — primarily
+    for tests to assert the right keys won.
+    """
+    path = overrides_file if overrides_file is not None else RUNTIME_OVERRIDES_FILE
+    if not path.exists():
+        return []
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("runtime_overrides.json unreadable (%s) — ignored", exc)
+        return []
+    if not isinstance(raw, dict):
+        return []
+    active: list[str] = []
+    for knob, field_name in RUNTIME_OVERRIDE_KNOBS.items():
+        if knob not in raw:
+            continue
+        try:
+            value = float(raw[knob])
+        except (TypeError, ValueError):
+            continue
+        settings_dict[field_name] = value
+        active.append(f"{knob}={value}")
+    if active:
+        logger.warning(
+            "Auditor runtime overrides active (from runtime_overrides.json): %s",
+            ", ".join(active),
+        )
+    return active
+
+
+def load_settings() -> Settings:
+    usd_symbols = _parse_usd_symbols(os.getenv("SYMBOLS", DEFAULT_SYMBOLS))
+    watch_assets = tuple(SYMBOL_ASSETS[s] for s in usd_symbols)
+    fields: dict = dict(
+        watch_assets=watch_assets,
+        usd_symbols=usd_symbols,
+        core_assets=_parse_core_assets(os.getenv("CORE_ASSETS", DEFAULT_CORE_ASSETS)),
+        initial_balances=_parse_initial_balances(
+            os.getenv("INITIAL_BALANCES", '{"ETH": 1.0, "ADA": 83.0, "USD": 0.0}')
+        ),
+        poll_interval=int(os.getenv("POLL_INTERVAL", "15")),
+        fee_rate=float(os.getenv("FEE_RATE", "0.0026")),
+        candle_timeframe=os.getenv("CANDLE_TIMEFRAME", "5m"),
+        candle_limit=int(os.getenv("CANDLE_LIMIT", "60")),
+        ema_fast=int(os.getenv("EMA_FAST", "9")),
+        ema_slow=int(os.getenv("EMA_SLOW", "21")),
+        momentum_sell=float(os.getenv("MOMENTUM_SELL", "-0.002")),
+        trade_size_pct=float(os.getenv("TRADE_SIZE_PCT", "0.10")),
+        expansion_size_pct=float(os.getenv("EXPANSION_SIZE_PCT", "0.15")),
+        min_usd_trade=float(os.getenv("MIN_USD_TRADE", "10.0")),
+        diversify_bonus=float(os.getenv("DIVERSIFY_BONUS", "0.0015")),
+        dust_usd=float(os.getenv("DUST_USD", "25.0")),
+        drawdown_hibernate_pct=float(
+            os.getenv("DRAWDOWN_HIBERNATE_PCT") or os.getenv("DRAWDOWN_PAUSE_PCT", "0.15")
+        ),
+        hibernate_hours=float(os.getenv("HIBERNATE_HOURS") or os.getenv("PAUSE_HOURS", "12")),
+        trade_cooldown_seconds=int(os.getenv("TRADE_COOLDOWN_SECONDS", "180")),
+        max_trades_per_hour=int(os.getenv("MAX_TRADES_PER_HOUR", "12")),
+        min_trade_edge=float(os.getenv("MIN_TRADE_EDGE", "0.006")),
+        leader_stable_seconds=int(os.getenv("LEADER_STABLE_SECONDS", "600")),
+        fee_safety_multiplier=float(os.getenv("FEE_SAFETY_MULTIPLIER", "2.0")),
+        reset_paper_state=os.getenv("RESET_PAPER_STATE", "0") == "1",
+        alerts_enabled=os.getenv("ALERTS_ENABLED", "0") == "1",
+        alert_discord_webhook=os.getenv("ALERT_DISCORD_WEBHOOK", ""),
+        discord_enabled=os.getenv("DISCORD_ENABLED", "0") == "1",
+        discord_webhook=(os.getenv("DISCORD_WEBHOOK", "") or os.getenv("ALERT_DISCORD_WEBHOOK", "")).strip(),
+        discord_bot_token=os.getenv("DISCORD_BOT_TOKEN", "").strip(),
+        discord_channel_id=os.getenv("DISCORD_CHANNEL_ID", "").strip(),
+        discord_allowed_user_ids=_parse_user_ids(os.getenv("DISCORD_ALLOWED_USER_IDS", "")),
+        discord_heartbeat_minutes=int(os.getenv("DISCORD_HEARTBEAT_MINUTES", "30")),
+        discord_error_cooldown_minutes=int(os.getenv("DISCORD_ERROR_COOLDOWN_MINUTES", "15")),
+        discord_error_pin_count=int(os.getenv("DISCORD_ERROR_PIN_COUNT", "3")),
+        discord_error_pin_window_minutes=int(os.getenv("DISCORD_ERROR_PIN_WINDOW_MINUTES", "30")),
+        discord_pin_enabled=os.getenv("DISCORD_PIN_ENABLED", "1") == "1",
+        discord_pin_pnl_pct=float(os.getenv("DISCORD_PIN_PNL_PCT", "0.05")),
+        discord_pin_trade_usd=float(os.getenv("DISCORD_PIN_TRADE_USD", "25")),
+        discord_max_pins_retain=int(os.getenv("DISCORD_MAX_PINS_RETAIN", "15")),
+        discord_chat_log_enabled=os.getenv("DISCORD_CHAT_LOG_ENABLED", "1") == "1",
+        discord_chat_log_file=os.getenv("DISCORD_CHAT_LOG_FILE", "logs/discord_chat.log"),
+        alert_telegram_bot_token=os.getenv("ALERT_TELEGRAM_BOT_TOKEN", ""),
+        alert_telegram_chat_id=os.getenv("ALERT_TELEGRAM_CHAT_ID", ""),
+        alert_smtp_host=os.getenv("ALERT_SMTP_HOST", ""),
+        alert_smtp_port=int(os.getenv("ALERT_SMTP_PORT", "587")),
+        alert_smtp_user=os.getenv("ALERT_SMTP_USER", ""),
+        alert_smtp_password=os.getenv("ALERT_SMTP_PASSWORD", ""),
+        alert_email_from=os.getenv("ALERT_EMAIL_FROM", ""),
+        alert_email_to=os.getenv("ALERT_EMAIL_TO", ""),
+        alert_twilio_sid=os.getenv("ALERT_TWILIO_SID", ""),
+        alert_twilio_token=os.getenv("ALERT_TWILIO_TOKEN", ""),
+        alert_twilio_from=os.getenv("ALERT_TWILIO_FROM", ""),
+        alert_sms_to=os.getenv("ALERT_SMS_TO", ""),
+        api_key=os.getenv("KRAKEN_API_KEY", ""),
+        api_secret=os.getenv("KRAKEN_API_SECRET", ""),
+        state_file=ROOT / ".paper_state.json",
+        paper_portfolio_file=ROOT / os.getenv("PAPER_PORTFOLIO_FILE", "paper_portfolio.json"),
+        log_dir=ROOT / "logs",
+        receipts_dir=ROOT / "receipts",
+        log_rotate_hours=int(os.getenv("LOG_ROTATE_HOURS", "4")),
+        strategies=_parse_strategies(os.getenv("STRATEGIES", DEFAULT_STRATEGIES)),
+        slippage_buffer_pct=float(os.getenv("SLIPPAGE_BUFFER_PCT", "0.0005")),
+        min_net_profit_pct=float(os.getenv("MIN_NET_PROFIT_PCT", "0.0005")),
+        safe_assets=_parse_core_assets(os.getenv("SAFE_ASSETS", DEFAULT_SAFE_ASSETS)),
+        stat_arb_zscore_threshold=float(os.getenv("STAT_ARB_ZSCORE_THRESHOLD", "2.5")),
+        stat_arb_lookback=int(os.getenv("STAT_ARB_LOOKBACK", "48")),
+        stat_arb_pairs=_parse_stat_arb_pairs(
+            os.getenv("STAT_ARB_PAIRS", DEFAULT_STAT_ARB_PAIRS)
+        ),
+        momentum_timeframes=tuple(
+            tf.strip()
+            for tf in os.getenv("MOMENTUM_TIMEFRAMES", DEFAULT_MOMENTUM_TIMEFRAMES).split(",")
+            if tf.strip()
+        ),
+        circuit_breaker_enabled=os.getenv("CIRCUIT_BREAKER_ENABLED", "1") == "1",
+        diagnostic_dir=ROOT / "diagnostics",
+        idle_reeval_hours=float(os.getenv("IDLE_REEVAL_HOURS", "2")),
+        idle_reeval_max_attempts=int(os.getenv("IDLE_REEVAL_MAX_ATTEMPTS", "3")),
+        min_eth_reserve=float(os.getenv("MIN_ETH_RESERVE", "0.5")),
+        max_alt_allocation_pct=float(os.getenv("MAX_ALT_ALLOCATION_PCT", "0.40")),
+        strategy_growth_window_hours=float(os.getenv("STRATEGY_GROWTH_WINDOW_HOURS", "4")),
+        strategy_min_growth_pct=float(os.getenv("STRATEGY_MIN_GROWTH_PCT", "0.005")),
+        strategy_strong_growth_pct=float(os.getenv("STRATEGY_STRONG_GROWTH_PCT", "0.015")),
+        strategy_switch_edge_margin=float(os.getenv("STRATEGY_SWITCH_EDGE_MARGIN", "0.002")),
+        strategy_exploration_ratio=float(os.getenv("STRATEGY_EXPLORATION_RATIO", "0.25")),
+        kraken_request_timeout_ms=int(os.getenv("KRAKEN_REQUEST_TIMEOUT_MS", "5000")),
+        kraken_max_retries=int(os.getenv("KRAKEN_MAX_RETRIES", "2")),
+        kraken_retry_backoff_sec=float(os.getenv("KRAKEN_RETRY_BACKOFF_SEC", "0.75")),
+        auditor_enabled=os.getenv("AUDITOR_ENABLED", "1") == "1",
+        auditor_daily_run_hour_pacific=int(os.getenv("AUDITOR_DAILY_HOUR_PACIFIC", "8")),
+        auditor_trade_count_trigger=int(os.getenv("AUDITOR_TRADE_COUNT_TRIGGER", "20")),
+        auditor_pnl_pct_trigger=float(os.getenv("AUDITOR_PNL_PCT_TRIGGER", "0.05")),
+        auditor_news_enabled=os.getenv("AUDITOR_NEWS_ENABLED", "1") == "1",
+        auditor_news_provider=os.getenv("AUDITOR_NEWS_PROVIDER", "rss,coingecko"),
+        auditor_cryptopanic_api_key=os.getenv("AUDITOR_CRYPTOPANIC_KEY", "").strip(),
+        auditor_rss_feeds=os.getenv("AUDITOR_RSS_FEEDS", "").strip(),
+        auditor_news_max_items=int(os.getenv("AUDITOR_NEWS_MAX_ITEMS", "10")),
+        auditor_proposals_ttl_minutes=int(os.getenv("AUDITOR_PROPOSAL_TTL_MINUTES", "60")),
+        auditor_reports_dir=ROOT / os.getenv("AUDITOR_REPORTS_DIR", "reports"),
+        auditor_state_file=ROOT / ".auditor_state.json",
+        auditor_autoapply_enabled=os.getenv("AUDITOR_AUTOAPPLY_ENABLED", "0") == "1",
+        auditor_autoapply_window_start_hour=int(os.getenv("AUDITOR_AUTOAPPLY_WINDOW_START_HOUR", "1")),
+        auditor_autoapply_window_end_hour=int(os.getenv("AUDITOR_AUTOAPPLY_WINDOW_END_HOUR", "7")),
+        auditor_autoapply_min_severity=os.getenv("AUDITOR_AUTOAPPLY_MIN_SEVERITY", "high").lower().strip(),
+        auditor_autoapply_max_per_night=int(os.getenv("AUDITOR_AUTOAPPLY_MAX_PER_NIGHT", "1")),
+        auditor_autoapply_restart_enabled=os.getenv("AUDITOR_AUTOAPPLY_RESTART_ENABLED", "1") == "1",
+        auditor_chat_enabled=os.getenv("AUDITOR_CHAT_ENABLED", "0") == "1",
+        auditor_chat_backend=os.getenv("AUDITOR_CHAT_BACKEND", "gemini").lower().strip(),
+        auditor_chat_model=os.getenv("AUDITOR_CHAT_MODEL", "gemini-2.0-flash").strip(),
+        auditor_chat_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
+        auditor_chat_max_turns=int(os.getenv("AUDITOR_CHAT_MAX_TURNS", "10")),
+        auditor_chat_max_tokens=int(os.getenv("AUDITOR_CHAT_MAX_TOKENS", "1500")),
+        auditor_chat_temperature=float(os.getenv("AUDITOR_CHAT_TEMPERATURE", "0.3")),
+        auditor_chat_tool_iterations=int(os.getenv("AUDITOR_CHAT_TOOL_ITERATIONS", "4")),
+    )
+    _apply_runtime_overrides(fields)
+    return Settings(**fields)
