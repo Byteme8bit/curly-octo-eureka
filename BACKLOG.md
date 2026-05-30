@@ -48,9 +48,9 @@ what to work on.
 - [ ] **Add observability counters for triangular_arbitrage strategy.**
   How many loops scanned per tick? How many rejected for which reason?
   (Pure observability; do NOT change the strategy's decision logic.)
-- [ ] **Improve `pre-flight reject` messages.** Currently shows raw
+- [x] **Improve `pre-flight reject` messages.** Currently shows raw
   decimals (`gross +0.0012 - fees 0.0040 - slippage 0.0005`). Could
-  show basis points (12bps - 40bps - 5bps) which is easier to read.
+  show basis points (12bps - 40bps - 5bps) which is easier to read. *(auto/2026-05-30-preflight-bps)*
 - [ ] **Document the full Discord command set in `README.md`.** We have
   `DISCORD_COMMANDS.txt` but it's not linked from the README.
 

@@ -67,9 +67,11 @@ class PreFlightValidator:
                 slippage_pct=slippage_pct,
                 net_return_pct=net,
                 reason=(
-                    f"Pre-flight reject: net {net:+.4f} "
-                    f"(gross {gross:+.4f} - fees {fee_pct:.4f} - slippage {slippage_pct:.4f}) "
-                    f"<= min {threshold:.4f}"
+                    f"Pre-flight reject: net {net * 10000:+.1f}bps "
+                    f"(gross {gross * 10000:+.1f}bps"
+                    f" - fees {fee_pct * 10000:.1f}bps"
+                    f" - slippage {slippage_pct * 10000:.1f}bps)"
+                    f" <= min {threshold * 10000:.1f}bps"
                 ),
             )
 
@@ -79,5 +81,5 @@ class PreFlightValidator:
             fee_pct=fee_pct,
             slippage_pct=slippage_pct,
             net_return_pct=net,
-            reason=f"Pre-flight OK: net {net:+.4f}",
+            reason=f"Pre-flight OK: net {net * 10000:+.1f}bps",
         )
