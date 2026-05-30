@@ -1,0 +1,98 @@
+--- a/tests/test_auditor_chat.py
++++ b/tests/test_auditor_chat.py
+@@ -416,6 +416,95 @@
+ # ---------------------------------------------------------------------------
+ 
+ 
++def test_gemini_backend_translates_tools_without_nameerror(monkeypatch) -> None:
++    """Regression for the bare `t` typo in backends.py line 169.
++
++    We mock the Gemini SDK entry points so no network call happens, but we
++    DO drive the real ``GeminiBackend.complete`` code path with a non-empty
++    tools list. Before the fix this raised ``NameError: name 't' is not defined``.
++    """
++    from bot.auditor.chat.backends import GeminiBackend
++    from bot.auditor.chat.tools import Tool
++
++    backend = GeminiBackend(api_key="test-key", model="gemini-test")
++
++    # Fake google.genai types + client. The types module only needs the
++    # constructors the backend invokes.
++    class _Part:
++        def __init__(self, text=None, function_call=None, function_response=None):
++            self.text = text
++            self.function_call = function_call
++            self.function_response = function_response
++
++    class _Content:
++        def __init__(self, role, parts):
++            self.role = role
++            self.parts = parts
++
++    class _FunctionDeclaration:
++        def __init__(self, name, description, parameters):
++            self.name = name
++            self.description = description
++            self.parameters = parameters
++
++    class _ToolWrapper:
++        def __init__(self, function_declarations):
++            self.function_declarations = function_declarations
++
++    class _GenerateContentConfig:
++        def __init__(self, **kwargs):
++            self.kwargs = kwargs
++
++    class _FakeTypes:
++        Part = _Part
++        Content = _Content
++        FunctionDeclaration = _FunctionDeclaration
++        Tool = _ToolWrapper
++        GenerateContentConfig = _GenerateContentConfig
++        # Unused-but-imported placeholders the helpers might touch
++        FunctionCall = type("FunctionCall", (), {"__init__": lambda self, **kw: setattr(self, "__dict__", kw) or None})
++        FunctionResponse = type("FunctionResponse", (), {"__init__": lambda self, **kw: setattr(self, "__dict__", kw) or None})
++
++    captured = {}
++
++    class _FakeCandidate:
++        def __init__(self):
++            self.finish_reason = "stop"
++            self.content = _Content("model", [_Part(text="ok with tools")])
++
++    class _FakeResponse:
++        candidates = [_FakeCandidate()]
++
++    class _FakeModels:
++        def generate_content(self, *, model, contents, config):
++            captured["model"] = model
++            captured["config"] = config
++            return _FakeResponse()
++
++    class _FakeClient:
++        models = _FakeModels()
++
++    backend._client = _FakeClient()
++    backend._types = _FakeTypes
++
++    tool = Tool(
++        name="echo",
++        description="echoes",
++        parameters={"type": "object", "properties": {}, "required": []},
++        handler=lambda: {"ok": True},
++    )
++    reply = backend.complete(
++        [LLMMessage(role="user", content="hi")],
++        tools=[tool],
++    )
++    assert reply.text == "ok with tools"
++    assert reply.finish_reason == "stop"
++    # The fake config should have a `tools` entry — proves the comprehension
++    # ran without NameError and produced exactly one wrapped tool.
++    assert "tools" in captured["config"].kwargs
++    assert len(captured["config"].kwargs["tools"]) == 1
++
++
+ def test_settings_to_auditor_config_wiring_is_complete() -> None:
+     """Catches the class of bug where a new AuditorConfig field is added but
+     `bot/engine.py` forgets to pass it through from Settings. We literally
