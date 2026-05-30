@@ -604,6 +604,23 @@ def test_state_save_and_load_roundtrip(tmp_path: Path) -> None:
     assert restored.last_scheduled_run_at == state.last_scheduled_run_at
 
 
+def test_state_load_drops_expired_proposals(tmp_path: Path) -> None:
+    """Regression: a restart used to inherit proposals past their TTL,
+    causing the chat tool to surface ghost proposals from days ago."""
+    state_file = tmp_path / ".auditor_state.json"
+    state = AuditorState()
+    state.add_proposal(_future_proposal())   # still valid
+    state.add_proposal(_expired_proposal())  # 6 years old
+    state.save(state_file)
+
+    restored = AuditorState.load(state_file)
+    assert "abc12345" in restored.pending_proposals
+    assert "expired1" not in restored.pending_proposals, (
+        "AuditorState.load must prune expired proposals so chat tools "
+        "don't surface ghost data after a restart"
+    )
+
+
 # ---------------------------------------------------------------------------
 # report
 # ---------------------------------------------------------------------------

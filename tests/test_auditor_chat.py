@@ -155,6 +155,47 @@ def test_get_strategy_performance_aggregates_wins_losses(tmp_path: Path) -> None
     assert out["by_strategy"]["beta"]["losses"] == 1
 
 
+def test_get_pending_proposals_prunes_expired_before_returning(tmp_path: Path) -> None:
+    """Regression: chat tool used to surface ghost proposals past their TTL,
+    causing the LLM to report 'no pending proposals' AND describe an
+    expired one in the same reply."""
+    from datetime import timedelta
+
+    from bot.auditor.chat.tools import make_get_pending_proposals
+    from bot.auditor.proposer import ConfigProposal
+    from bot.auditor.state import AuditorState
+    from bot.local_time import format_pacific, pacific_now
+
+    now = pacific_now()
+    state = AuditorState()
+    state.add_proposal(ConfigProposal(
+        id="expired_one",
+        knob="MIN_TRADE_EDGE", current_value=0.006, proposed_value=0.008,
+        rationale="stale", severity="high",
+        created_at=format_pacific(now - timedelta(days=3)),
+        expires_at=format_pacific(now - timedelta(days=2)),  # 2 days expired
+    ))
+    state.add_proposal(ConfigProposal(
+        id="future_one",
+        knob="MIN_TRADE_EDGE", current_value=0.006, proposed_value=0.008,
+        rationale="fresh", severity="medium",
+        created_at=format_pacific(now),
+        expires_at=format_pacific(now + timedelta(hours=1)),
+    ))
+
+    tool = make_get_pending_proposals(lambda: state)
+    result = tool()
+
+    ids = {p.get("id") for p in result["proposals"]}
+    assert "expired_one" not in ids, (
+        "get_pending_proposals must prune expired proposals before returning "
+        "them to the chat LLM"
+    )
+    assert "future_one" in ids
+    # Side effect: pruning also cleans live state
+    assert "expired_one" not in state.pending_proposals
+
+
 def test_get_active_overrides_reads_runtime_file(tmp_path: Path) -> None:
     overrides = tmp_path / "runtime_overrides.json"
     overrides.write_text(json.dumps({"MIN_TRADE_EDGE": 0.012}), encoding="utf-8")

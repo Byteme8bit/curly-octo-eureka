@@ -179,7 +179,14 @@ class AuditorState:
         except (OSError, json.JSONDecodeError) as exc:
             logger.warning("Auditor state unreadable (%s) — starting fresh", exc)
             return cls()
-        return cls.from_dict(data)
+        state = cls.from_dict(data)
+        # Defense in depth: a restart should not inherit proposals that are
+        # already past their TTL. Without this, the chat tool / status command
+        # surface stale proposals between restarts until the next prune cycle.
+        pruned = state.prune_expired()
+        if pruned:
+            logger.info("Auditor state load: dropped %d expired proposal(s)", pruned)
+        return state
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
