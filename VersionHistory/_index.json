@@ -21,6 +21,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_131801--add-coverage-gate-to-ci.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "add coverage gate to CI",
+      "removed": 0,
+      "request_id": "auto-2026-05-30",
+      "timestamp": "2026-05-30 13:18:01 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -31,6 +43,18 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "BACKLOG.md": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_131801--mark-gitattributes-done-in-backlog.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark gitattributes done in backlog",
+      "removed": 0,
+      "request_id": "auto-2026-05-30",
+      "timestamp": "2026-05-30 13:18:01 PDT"
     }
   ],
   "bot/auditor/chat/backends.py": [
@@ -247,6 +271,18 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "requirements-dev.txt": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_131801--add-pytest-cov-dependency.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov dependency",
+      "removed": 0,
+      "request_id": "auto-2026-05-30",
+      "timestamp": "2026-05-30 13:18:01 PDT"
     }
   ],
   "scripts/version_history.py": [

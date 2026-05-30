@@ -255,3 +255,27 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## BACKLOG.md — r001
+
+- **When:** 2026-05-30 13:18:01 PDT
+- **Reason:** mark gitattributes done in backlog
+- **Request:** auto-2026-05-30
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_131801--mark-gitattributes-done-in-backlog.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-05-30 13:18:01 PDT
+- **Reason:** add pytest-cov dependency
+- **Request:** auto-2026-05-30
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_131801--add-pytest-cov-dependency.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-05-30 13:18:01 PDT
+- **Reason:** add coverage gate to CI
+- **Request:** auto-2026-05-30
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_131801--add-coverage-gate-to-ci.patch`
+
