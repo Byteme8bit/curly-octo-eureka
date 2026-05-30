@@ -93,7 +93,7 @@ def test_falls_back_to_public_schedule_on_permission_denied() -> None:
 
 def test_falls_back_to_public_schedule_on_not_supported(caplog) -> None:
     """ccxt raises NotSupported for kraken.fetchTradingFees() — must be silent
-    about the failure but report which source ultimately won."""
+    about the failure but report which source ultimately won (at INFO level)."""
     ex = _FakeExchange(
         personalised_raises=ccxt.NotSupported(
             "kraken fetchTradingFees() is not supported yet"
@@ -101,23 +101,22 @@ def test_falls_back_to_public_schedule_on_not_supported(caplog) -> None:
         markets={"ETH/USD": {"taker": 0.0026}},
     )
     engine = FeeEngine(ex, default_taker=0.0099)
-    with caplog.at_level("WARNING"):
+    with caplog.at_level("INFO"):
         assert engine.taker_fee("ETH/USD") == pytest.approx(0.0026)
-    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
-    # NotSupported itself shouldn't warn, BUT we want a single visible
-    # "Fee source: PUBLIC ..." line so the user can see which tier won.
-    messages = [r.message for r in warnings]
-    assert not any("Personalised fee fetch failed" in m for m in messages), (
-        f"NotSupported should not produce 'Personalised fee fetch failed' warning: {messages}"
+    # NotSupported itself shouldn't warn; the success path logs at INFO.
+    warning_msgs = [r.message for r in caplog.records if r.levelname == "WARNING"]
+    assert not any("Personalised fee fetch failed" in m for m in warning_msgs), (
+        f"NotSupported should not produce 'Personalised fee fetch failed' warning: {warning_msgs}"
     )
-    assert any("Fee source: PUBLIC" in m for m in messages), (
-        f"Expected visible 'Fee source: PUBLIC' message, got: {messages}"
+    info_msgs = [r.message for r in caplog.records if r.levelname == "INFO"]
+    assert any("Fee source: PUBLIC" in m for m in info_msgs), (
+        f"Expected 'Fee source: PUBLIC' at INFO level, got INFO: {info_msgs}"
     )
 
 
 def test_fee_source_log_includes_sample_pair_rates(caplog) -> None:
     """The single visible startup line should include sample taker rates so the
-    user can sanity-check the loaded values at a glance."""
+    user can sanity-check the loaded values at a glance (logged at INFO)."""
     ex = _FakeExchange(
         personalised_raises=ccxt.NotSupported("not yet"),
         markets={
@@ -127,10 +126,10 @@ def test_fee_source_log_includes_sample_pair_rates(caplog) -> None:
         },
     )
     engine = FeeEngine(ex, default_taker=0.0099)
-    with caplog.at_level("WARNING"):
+    with caplog.at_level("INFO"):
         engine.taker_fee("ETH/USD")
     summary = [r.message for r in caplog.records if "Fee source" in r.message]
-    assert summary, "Expected a 'Fee source' WARNING line"
+    assert summary, "Expected a 'Fee source' INFO line"
     line = summary[0]
     assert "ETH/USD=0.26%" in line
     assert "BTC/USD=0.26%" in line

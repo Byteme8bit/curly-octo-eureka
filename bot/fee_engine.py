@@ -76,7 +76,7 @@ class FeeEngine:
                 loaded += 1
         if loaded:
             sample = self._sample_fees()
-            logger.warning(
+            logger.info(
                 "Fee source: PERSONALISED (Kraken auth) — %d pair(s) loaded%s",
                 loaded, sample,
             )
@@ -99,7 +99,7 @@ class FeeEngine:
                 loaded += 1
         if loaded:
             sample = self._sample_fees()
-            logger.warning(
+            logger.info(
                 "Fee source: PUBLIC (Kraken base-tier, no auth needed) — "
                 "%d pair(s) loaded%s",
                 loaded, sample,
