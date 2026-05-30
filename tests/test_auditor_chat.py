@@ -243,6 +243,79 @@ def test_chat_service_executes_tool_call_then_synthesises_reply(tmp_path: Path) 
     assert "1.5 ETH" in result.text
 
 
+def test_chat_service_caches_duplicate_tool_calls_within_one_turn(tmp_path: Path) -> None:
+    """Same tool+args called twice in one turn should execute the handler only once."""
+    invocations = {"n": 0}
+
+    def counting_handler():
+        invocations["n"] += 1
+        return {"balances": {"ETH": 1.5}}
+
+    from bot.auditor.chat.tools import Tool, ToolRegistry
+
+    reg = ToolRegistry(tools=[
+        Tool(
+            name="get_portfolio_snapshot",
+            description="counted",
+            parameters={"type": "object", "properties": {}, "required": []},
+            handler=counting_handler,
+        ),
+    ])
+    backend = _ScriptedBackend(replies=[
+        LLMReply(
+            text="",
+            tool_calls=[
+                ToolCall(name="get_portfolio_snapshot", arguments={}, call_id="c1"),
+                ToolCall(name="get_portfolio_snapshot", arguments={}, call_id="c2"),
+            ],
+            finish_reason="tool",
+        ),
+        LLMReply(text="ok", finish_reason="stop"),
+    ])
+    service = ChatService(backend=backend, tools=reg, max_tool_iterations=2)
+    result = service.ask("snapshot please twice")
+    assert result.text == "ok"
+    # Cache should have collapsed the duplicate call.
+    assert invocations["n"] == 1
+    # But both tool result messages should still be present (one per call_id).
+    second_call_messages = backend.calls[1]
+    tool_messages = [m for m in second_call_messages if m.role == "tool"]
+    assert len(tool_messages) == 2
+    assert tool_messages[0].content == tool_messages[1].content
+
+
+def test_chat_service_truncates_oversized_tool_results(tmp_path: Path) -> None:
+    """Tool payloads exceeding tool_result_max_chars get a visible truncation marker."""
+    huge_payload = {"blob": "x" * 5000}
+
+    from bot.auditor.chat.tools import Tool, ToolRegistry
+
+    reg = ToolRegistry(tools=[
+        Tool(
+            name="get_recent_news",
+            description="big",
+            parameters={"type": "object", "properties": {}, "required": []},
+            handler=lambda: huge_payload,
+        ),
+    ])
+    backend = _ScriptedBackend(replies=[
+        LLMReply(
+            text="",
+            tool_calls=[ToolCall(name="get_recent_news", arguments={}, call_id="n1")],
+            finish_reason="tool",
+        ),
+        LLMReply(text="summarised", finish_reason="stop"),
+    ])
+    service = ChatService(
+        backend=backend, tools=reg, max_tool_iterations=2, tool_result_max_chars=500
+    )
+    service.ask("news")
+    second_call = backend.calls[1]
+    tool_msg = next(m for m in second_call if m.role == "tool")
+    assert len(tool_msg.content) <= 520  # 500 + a small truncation marker
+    assert "truncated" in tool_msg.content
+
+
 def test_chat_service_caps_tool_iterations(tmp_path: Path) -> None:
     reg = _make_registry(tmp_path)
     # Build a backend that keeps requesting tool calls forever.
@@ -377,6 +450,7 @@ def _auditor_service_with_chat(tmp_path: Path, **chat_overrides):
             "chat_max_tokens": 200,
             "chat_temperature": 0.0,
             "chat_tool_iterations": 2,
+            "chat_tool_result_max_chars": 2000,
             **chat_overrides,
         },
     )
@@ -409,11 +483,236 @@ def test_auditor_service_chat_status_reports_enabled_and_backend(tmp_path: Path)
     assert "enabled" in status.lower()
     assert "null" in status
     assert "test" in status  # the configured model name
+    assert "Tool result truncation" in status
+    assert "2000" in status
 
 
 # ---------------------------------------------------------------------------
 # Regression: every AuditorConfig field must be wired from Settings in engine.py
 # ---------------------------------------------------------------------------
+
+
+def test_gemini_backend_translates_tools_without_nameerror(monkeypatch) -> None:
+    """Regression for the bare `t` typo in backends.py line 169.
+
+    We mock the Gemini SDK entry points so no network call happens, but we
+    DO drive the real ``GeminiBackend.complete`` code path with a non-empty
+    tools list. Before the fix this raised ``NameError: name 't' is not defined``.
+    """
+    from bot.auditor.chat.backends import GeminiBackend
+    from bot.auditor.chat.tools import Tool
+
+    backend = GeminiBackend(api_key="test-key", model="gemini-test")
+
+    # Fake google.genai types + client. The types module only needs the
+    # constructors the backend invokes.
+    class _Part:
+        def __init__(self, text=None, function_call=None, function_response=None):
+            self.text = text
+            self.function_call = function_call
+            self.function_response = function_response
+
+    class _Content:
+        def __init__(self, role, parts):
+            self.role = role
+            self.parts = parts
+
+    class _FunctionDeclaration:
+        def __init__(self, name, description, parameters):
+            self.name = name
+            self.description = description
+            self.parameters = parameters
+
+    class _ToolWrapper:
+        def __init__(self, function_declarations):
+            self.function_declarations = function_declarations
+
+    class _GenerateContentConfig:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class _FakeTypes:
+        Part = _Part
+        Content = _Content
+        FunctionDeclaration = _FunctionDeclaration
+        Tool = _ToolWrapper
+        GenerateContentConfig = _GenerateContentConfig
+        # Unused-but-imported placeholders the helpers might touch
+        FunctionCall = type("FunctionCall", (), {"__init__": lambda self, **kw: setattr(self, "__dict__", kw) or None})
+        FunctionResponse = type("FunctionResponse", (), {"__init__": lambda self, **kw: setattr(self, "__dict__", kw) or None})
+
+    captured = {}
+
+    class _FakeCandidate:
+        def __init__(self):
+            self.finish_reason = "stop"
+            self.content = _Content("model", [_Part(text="ok with tools")])
+
+    class _FakeResponse:
+        candidates = [_FakeCandidate()]
+
+    class _FakeModels:
+        def generate_content(self, *, model, contents, config):
+            captured["model"] = model
+            captured["config"] = config
+            return _FakeResponse()
+
+    class _FakeClient:
+        models = _FakeModels()
+
+    backend._client = _FakeClient()
+    backend._types = _FakeTypes
+
+    tool = Tool(
+        name="echo",
+        description="echoes",
+        parameters={"type": "object", "properties": {}, "required": []},
+        handler=lambda: {"ok": True},
+    )
+    reply = backend.complete(
+        [LLMMessage(role="user", content="hi")],
+        tools=[tool],
+    )
+    assert reply.text == "ok with tools"
+    assert reply.finish_reason == "stop"
+    # The fake config should have a `tools` entry — proves the comprehension
+    # ran without NameError and produced exactly one wrapped tool.
+    assert "tools" in captured["config"].kwargs
+    assert len(captured["config"].kwargs["tools"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Gemini error classification + retry behavior
+# ---------------------------------------------------------------------------
+
+
+def test_classify_gemini_429_returns_rate_limit_with_retry_after() -> None:
+    from bot.auditor.chat.backends import _classify_gemini_error
+
+    raw = (
+        "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'quota'...,"
+        " 'retryDelay': '17s'}}"
+    )
+    kind, retry_after, friendly = _classify_gemini_error(RuntimeError(raw), "gemini-2.0-flash")
+    assert kind == "rate_limit"
+    assert retry_after == pytest.approx(17.0)
+    assert "rate limit" in friendly.lower()
+    assert "gemini-2.0-flash" in friendly
+    # Should not contain the raw multi-line JSON dump.
+    assert "RESOURCE_EXHAUSTED" not in friendly
+    assert "retryDelay" not in friendly
+
+
+def test_classify_gemini_auth_error_returns_helpful_text() -> None:
+    from bot.auditor.chat.backends import _classify_gemini_error
+
+    exc = RuntimeError("403 PERMISSION_DENIED: API key invalid")
+    kind, _, friendly = _classify_gemini_error(exc, "gemini-2.0-flash")
+    assert kind == "auth"
+    assert "GEMINI_API_KEY" in friendly
+
+
+def test_classify_gemini_unknown_error_strips_to_first_line() -> None:
+    from bot.auditor.chat.backends import _classify_gemini_error
+
+    multiline = "line one detail\nline two should be hidden\nline three"
+    kind, _, friendly = _classify_gemini_error(RuntimeError(multiline), "any-model")
+    assert kind == "other"
+    assert "line one detail" in friendly
+    assert "line two" not in friendly
+
+
+def test_gemini_backend_auto_retries_on_rate_limit(monkeypatch) -> None:
+    """When Gemini reports a short retry_delay we should sleep and retry once."""
+    from bot.auditor.chat.backends import GeminiBackend
+
+    backend = GeminiBackend(api_key="test-key", model="gemini-2.0-flash")
+
+    class _Part:
+        def __init__(self, text=None):
+            self.text = text
+            self.function_call = None
+            self.function_response = None
+
+    class _Content:
+        def __init__(self, role, parts):
+            self.role = role
+            self.parts = parts
+
+    class _GenerateContentConfig:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class _FakeTypes:
+        Part = _Part
+        Content = _Content
+        GenerateContentConfig = _GenerateContentConfig
+        FunctionDeclaration = type("FD", (), {"__init__": lambda self, **kw: None})
+        Tool = type("T", (), {"__init__": lambda self, **kw: None})
+        FunctionCall = type("FC", (), {"__init__": lambda self, **kw: None})
+        FunctionResponse = type("FR", (), {"__init__": lambda self, **kw: None})
+
+    call_count = {"n": 0}
+
+    class _SecondAttemptResponse:
+        class _Cand:
+            finish_reason = "stop"
+            content = _Content("model", [_Part(text="second-attempt ok")])
+
+        candidates = [_Cand()]
+
+    class _FakeModels:
+        def generate_content(self, *, model, contents, config):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                raise RuntimeError("429 RESOURCE_EXHAUSTED retryDelay: '2s'")
+            return _SecondAttemptResponse()
+
+    class _FakeClient:
+        models = _FakeModels()
+
+    backend._client = _FakeClient()
+    backend._types = _FakeTypes
+
+    slept = {"seconds": None}
+    monkeypatch.setattr("time.sleep", lambda s: slept.update(seconds=s))
+
+    reply = backend.complete([LLMMessage(role="user", content="hi")])
+    assert call_count["n"] == 2
+    assert reply.text == "second-attempt ok"
+    assert reply.finish_reason == "stop"
+    assert slept["seconds"] is not None and slept["seconds"] >= 2.0
+
+
+def test_gemini_backend_does_not_retry_when_retry_delay_too_long(monkeypatch) -> None:
+    """Long retry delays should surface immediately instead of stalling Discord."""
+    from bot.auditor.chat.backends import GeminiBackend
+
+    backend = GeminiBackend(api_key="test-key", model="gemini-2.0-flash")
+    backend._types = type("T", (), {
+        "Part": type("P", (), {"__init__": lambda self, **kw: None}),
+        "Content": type("C", (), {"__init__": lambda self, **kw: None}),
+        "GenerateContentConfig": type("G", (), {"__init__": lambda self, **kw: None}),
+        "FunctionDeclaration": type("FD", (), {"__init__": lambda self, **kw: None}),
+        "Tool": type("TT", (), {"__init__": lambda self, **kw: None}),
+        "FunctionCall": type("FC", (), {"__init__": lambda self, **kw: None}),
+        "FunctionResponse": type("FR", (), {"__init__": lambda self, **kw: None}),
+    })
+
+    call_count = {"n": 0}
+
+    class _FakeModels:
+        def generate_content(self, **kw):
+            call_count["n"] += 1
+            raise RuntimeError("429 RESOURCE_EXHAUSTED retryDelay: '120s'")
+
+    backend._client = type("C", (), {"models": _FakeModels()})()
+    monkeypatch.setattr("time.sleep", lambda s: None)
+
+    reply = backend.complete([LLMMessage(role="user", content="hi")])
+    assert call_count["n"] == 1  # no retry
+    assert reply.finish_reason == "error"
+    assert "rate limit" in reply.text.lower()
 
 
 def test_settings_to_auditor_config_wiring_is_complete() -> None:

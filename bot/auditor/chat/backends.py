@@ -118,6 +118,11 @@ class GeminiBackend:
 
     available = True
 
+    # When a 429 reports a retry delay <= this many seconds, we'll wait and
+    # retry once. Anything longer is surfaced to the user immediately so they
+    # aren't left wondering whether Discord hung.
+    AUTO_RETRY_MAX_SECONDS = 20.0
+
     def __init__(self, *, api_key: str, model: str) -> None:
         self.api_key = (api_key or "").strip()
         self.model = (model or "gemini-2.0-flash").strip()
@@ -166,19 +171,152 @@ class GeminiBackend:
         if system_text:
             config_kwargs["system_instruction"] = system_text
         if tools:
-            config_kwargs["tools"] = [_tool_to_gemini_declaration(t, types)]
+            config_kwargs["tools"] = [_tool_to_gemini_declaration(t, types) for t in tools]
 
-        try:
-            response = self._client.models.generate_content(  # type: ignore[union-attr]
+        def _call():
+            return self._client.models.generate_content(  # type: ignore[union-attr]
                 model=self.model,
                 contents=contents,
                 config=types.GenerateContentConfig(**config_kwargs),
             )
-        except Exception as exc:  # noqa: BLE001 — propagate as a graceful reply
-            logger.exception("Gemini generate_content failed")
-            return LLMReply(text=f"Gemini error: {exc}", finish_reason="error")
+
+        try:
+            response = _call()
+        except Exception as exc:  # noqa: BLE001 — categorise into a graceful reply
+            kind, retry_after, friendly = _classify_gemini_error(exc, self.model)
+            if kind == "rate_limit" and 0 < retry_after <= self.AUTO_RETRY_MAX_SECONDS:
+                logger.warning(
+                    "Gemini rate-limited; honoring retry_delay=%.1fs and retrying once",
+                    retry_after,
+                )
+                import time as _time
+                _time.sleep(retry_after + 0.5)  # small grace cushion
+                try:
+                    response = _call()
+                except Exception as retry_exc:  # noqa: BLE001
+                    _, _, friendly_retry = _classify_gemini_error(retry_exc, self.model)
+                    logger.warning("Gemini retry also failed: %s", retry_exc)
+                    return LLMReply(text=friendly_retry, finish_reason="error")
+            else:
+                if kind == "rate_limit":
+                    logger.warning(
+                        "Gemini rate-limited; retry_delay=%.0fs exceeds auto-retry cap",
+                        retry_after,
+                    )
+                else:
+                    logger.exception("Gemini generate_content failed")
+                return LLMReply(text=friendly, finish_reason="error")
 
         return _gemini_response_to_reply(response)
+
+
+_RATE_LIMIT_HINT = (
+    "**Gemini free-tier rate limit hit** on model `{model}`. "
+    "Wait {retry_after}s and try again, or:\n"
+    "• Switch to a different free model in `.env` (e.g. `AUDITOR_CHAT_MODEL=gemini-2.5-flash` "
+    "or `gemini-1.5-flash-latest`) and restart.\n"
+    "• See your quota at https://ai.dev/gemini-api/docs/rate-limits."
+)
+
+
+def _classify_gemini_error(exc: Exception, model: str) -> tuple[str, float, str]:
+    """Translate a raw Gemini SDK exception into ``(kind, retry_after, friendly_text)``.
+
+    ``kind`` is one of: ``"rate_limit"``, ``"auth"``, ``"bad_request"``, ``"server"``,
+    ``"network"``, ``"other"``. ``retry_after`` is the suggested seconds to wait
+    (0 when not provided / inapplicable). ``friendly_text`` is the message the
+    user should see in Discord — never the raw multi-line JSON dump.
+    """
+    text = str(exc)
+    code = _extract_status_code(exc, text)
+
+    if code == 429 or "RESOURCE_EXHAUSTED" in text or "rate limit" in text.lower():
+        retry_after = _extract_retry_after_seconds(exc, text)
+        friendly = _RATE_LIMIT_HINT.format(
+            model=model,
+            retry_after=int(retry_after) if retry_after else "a moment",
+        )
+        return "rate_limit", retry_after, friendly
+
+    if code in (401, 403) or "API_KEY" in text.upper() or "PERMISSION_DENIED" in text:
+        return (
+            "auth",
+            0.0,
+            "Gemini auth error: check `GEMINI_API_KEY` in `.env` and that "
+            "it has access to the configured model. Restart after fixing.",
+        )
+
+    if code == 400 or "INVALID_ARGUMENT" in text:
+        return (
+            "bad_request",
+            0.0,
+            f"Gemini rejected the request (bad argument). Detail: {_first_line(text)}",
+        )
+
+    if code is not None and 500 <= code < 600:
+        return (
+            "server",
+            5.0,
+            f"Gemini upstream error ({code}). Try again in a few seconds.",
+        )
+
+    if "DNS" in text.upper() or "Network" in text or "Connection" in text:
+        return (
+            "network",
+            0.0,
+            "Could not reach Gemini (network issue). Check your connection and try again.",
+        )
+
+    return "other", 0.0, f"Gemini error: {_first_line(text)}"
+
+
+def _extract_status_code(exc: Exception, text: str) -> int | None:
+    """Best-effort HTTP status extraction across SDK exception shapes."""
+    for attr in ("code", "status_code", "http_status"):
+        val = getattr(exc, attr, None)
+        if isinstance(val, int):
+            return val
+        if isinstance(val, str) and val.isdigit():
+            return int(val)
+    # Fallback: scrape the leading "429" / "404" out of the message.
+    import re as _re
+
+    match = _re.search(r"\b(\d{3})\b", text[:64])
+    return int(match.group(1)) if match else None
+
+
+def _extract_retry_after_seconds(exc: Exception, text: str) -> float:
+    """Find the Gemini-suggested retry delay (seconds) — defaults to 0 when absent."""
+    for attr in ("retry_delay", "retry_after", "retryDelay"):
+        val = getattr(exc, attr, None)
+        if isinstance(val, (int, float)):
+            return float(val)
+        if isinstance(val, str):
+            return _parse_duration_string(val)
+    # Try the verbose JSON-in-string form Gemini uses:
+    #   "'retryDelay': '17s'"  /  '"retryDelay":"17s"'
+    import re as _re
+
+    match = _re.search(r"retry[_]?[Dd]elay['\"]?\s*:\s*['\"]?(\d+(?:\.\d+)?)\s*s?", text)
+    if match:
+        return float(match.group(1))
+    return 0.0
+
+
+def _parse_duration_string(value: str) -> float:
+    value = value.strip().lower().rstrip("s")
+    try:
+        return float(value)
+    except ValueError:
+        return 0.0
+
+
+def _first_line(text: str, limit: int = 240) -> str:
+    """Return only the first informative line of a verbose error blob."""
+    first = (text or "").splitlines()[0] if text else ""
+    if len(first) > limit:
+        first = first[: limit - 1] + "…"
+    return first or "(no error detail)"
 
 
 # ---------------------------------------------------------------------------
