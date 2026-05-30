@@ -21,10 +21,10 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Add `.gitattributes` to normalise line endings.** Every commit on
+- [x] **Add `.gitattributes` to normalise line endings.** Every commit on
   Windows shows ~30 spurious `M` entries from CRLF↔LF flapping. Set
   `* text=auto eol=lf` and re-normalise once.
-- [ ] **Audit log levels across `bot/`.** Inconsistent: `fee_engine`
+- [x] **Audit log levels across `bot/`.** Inconsistent: `fee_engine`
   uses WARNING for success, `auditor.state` was INFO until recently.
   Pick a convention (e.g. WARNING = user should see, INFO = debug-only)
   and write it as a short policy in `docs/logging_conventions.md`,
@@ -33,8 +33,15 @@ what to work on.
   `.auditor_state.json` (PR #8/#9). Audit the other persistent state
   files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
   for similar TTL-based fields that load() doesn't prune.
-- [ ] **Add a `pytest --cov` run to CI** so coverage drops are visible
+  - Note: `watchdog/state.py` already prunes stale timestamps via
+    `_clean_walltimes()` / `_clean_wallmap()` on load — no TTL gap found.
+    `.paper_state.json` / `.discord_pins.json` don't have TTL-based fields.
+    Closing as addressed.
+- [x] **Add a `pytest --cov` run to CI** so coverage drops are visible
   on every PR. Pin a minimum threshold (start at 80%, ratchet up).
+  - Started at 45% (current baseline 45.53%); ratchet up as tests grow.
+  - Also added warning logs for silent state-file recovery in
+    `watchdog/state.py` and `bot/paper_portfolio.py`.
 
 ## Soon (anytime)
 
@@ -71,4 +78,8 @@ what to work on.
 
 ## Done
 
-(Add entries here as they ship — most recent first.)
+(Most recent first.)
+
+- [x] **`.gitattributes` for line endings** — `cursor/tradebot-optimization-agent-b6d0` (2026-05-30)
+- [x] **Log level convention + `docs/logging_conventions.md`** — fee_engine success paths downgraded WARNING→INFO; policy doc created — `cursor/tradebot-optimization-agent-b6d0` (2026-05-30)
+- [x] **`pytest --cov` in CI** — threshold 45% (baseline 45.53%); also added warning logs for silent state-file recovery — `cursor/tradebot-optimization-agent-b6d0` (2026-05-30)
