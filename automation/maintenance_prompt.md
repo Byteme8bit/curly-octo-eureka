@@ -107,10 +107,11 @@ Rules:
 - Branch name: `auto/YYYY-MM-DD-<slug>`.
 - Commit prefix: `chore(auto):`, `fix(auto):`, or `feat(auto):`.
 
-### 7. Post a Discord alert (ONLY when you made a change)
+### 7. Post a Discord alert (every run — even quiet ones)
 
-If — and only if — step 6 actually opened a PR or modified files, post to
-Discord so the user knows what happened without checking the PR queue.
+Always post a Discord message at the end of every run. The user wants
+confirmation the agent woke up, ran, and finished. Two templates depending
+on whether anything shipped.
 
 **First, locate the webhook URL.** It's provided to you via one of:
 
@@ -125,11 +126,10 @@ Discord so the user knows what happened without checking the PR queue.
    $env:DISCORD_WEBHOOK = "<the URL you see in memories>"
    ```
 
-If you find the URL via neither route, skip the post — the PR is still
-the durable record. Mention the missing webhook in the run report (step 8)
-so the user knows to add it.
+If you find the URL via neither route, skip the post and mention the
+missing webhook in the run report (step 8) so the user knows to add it.
 
-**Then post:**
+#### 7a. Post when a change shipped
 
 ```powershell
 python scripts/post_discord_alert.py `
@@ -146,8 +146,28 @@ that justified this work.>
 "@
 ```
 
-**Do NOT post when nothing was done.** The point is to surface real
-activity, not to be a heartbeat.
+#### 7b. Post when nothing was actionable (heartbeat)
+
+Keep this short — every 4h × 24h = 6 posts/day on a calm day. Aim for
+≤ 4 short bullets so the channel stays readable.
+
+```powershell
+python scripts/post_discord_alert.py `
+  --title "Auto-maintenance — ran clean, no changes" `
+  --body @"
+**Repo:** <N open PRs · X commits since last run>
+**Bot:**  <PnL · error count last 4h · anything notable from runtime.log, or "all quiet">
+**External:** <Kraken changes since last baseline, or "none">
+**Skipped because:** <one-line — e.g. "logs clean, no allow-list items applied" or "Kraken rate-limited, deferred">
+
+Next run: ~4h
+"@
+```
+
+If you found something worth flagging but chose NOT to act on it (because
+it's outside the allow-list, or needs the user's judgment), say so in the
+**Skipped because** line. That's how the user discovers things the agent
+won't touch.
 
 ### 8. Post a run report (chat/log surface only — not Discord)
 
