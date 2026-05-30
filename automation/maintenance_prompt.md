@@ -61,27 +61,81 @@ process, but you CAN inspect everything it has written:
   `reports/*/audit-*.md` summary and the latest `Considering` block from
   the rolling log.
 
-### 5. Identify ONE concrete improvement
+### 5. Identify improvements (aim for 1–3 per run)
 
-Pick **at most one** thing per run from this allow-list:
+This is a vibe-coding project — there's basically always something to
+improve. Be ambitious but disciplined: ship multiple small focused PRs
+rather than one big sprawling one. **Cap: 3 PRs per run** so you don't
+flood the user's review queue.
+
+#### Where to look (in priority order)
+
+1. **`BACKLOG.md` at the repo root** — the user (and prior runs of you)
+   curate concrete ideas here. Always check this first. If you complete
+   an item, edit BACKLOG.md to mark it done (`- [x]`) in the same PR.
+
+2. **Recent log evidence** — anything new in `logs/runtime.log` since
+   last run. A WARNING/ERROR pattern that repeats 5+ times is a signal.
+
+3. **Recent commits** — `git log --oneline -20`. If a recent change is
+   missing tests, missing docstrings, or has obvious follow-ups, do them.
+
+4. **Free exploration** — pick a module you haven't touched recently and
+   read it critically. Look for:
+   - Dead code or unused imports
+   - Inconsistent log levels (INFO mixed with WARNING for similar events)
+   - Functions over 60 lines that could be decomposed
+   - Try/except blocks that silently swallow exceptions
+   - Magic numbers that should be named constants
+   - Missing type hints on public functions
+   - Inconsistent naming (camelCase mixed with snake_case)
+   - Duplicated logic across two places
+   - TODO/FIXME comments older than a week
+
+#### Allow-list (you may modify these freely)
+
+- All of `bot/`, `scripts/`, `tests/`, `docs/`, `automation/`, `feature_logs/`
+- `.gitignore`, `.gitattributes`, `pytest.ini`, `requirements.txt`
+- `README.md` and any other markdown
+- The maintenance prompt itself (`automation/maintenance_prompt.md`) —
+  if a procedure here is unclear or wrong, propose a fix.
+
+#### Off-limits (require the user's explicit judgment)
+
+- **Strategy decision logic**: anything in `bot/strategies/**` that
+  changes WHEN to buy/sell or HOW edges are computed. You may ADD
+  observability (logging, debug output, tests) but not change behavior.
+- **Risk thresholds & money constants**: `MIN_TRADE_EDGE`, `FEE_RATE`,
+  `MIN_ETH_RESERVE`, `MAX_ALT_ALLOCATION_PCT`, `DRAWDOWN_*`, etc., in
+  any file. The user tunes these.
+- **`.env`** — gitignored, not your file.
+- **Auditor's tool registry behavior** (`bot/auditor/chat/tools.py`
+  handlers) — you may add new read-only tools but not change existing
+  ones, since you'd be modifying your own future runs.
+- **Auto-merge anything** — every PR is `--draft`, period.
+- **Anything touching real exchange API auth** (`KRAKEN_API_KEY`, etc.)
+
+#### Type-of-change reference
 
 | Type | Example |
 |---|---|
-| Bug fix | A WARNING/ERROR pattern that repeated > 10 times in the last 8h |
-| Test gap | A function touched in the last 3 days with no test coverage |
-| UX polish | A confusing user-facing message in Discord output |
-| Doc gap | A `.env` var added recently that's missing from `.env.example` |
-| Refactor | A function over 80 lines that needs decomposition (only if test coverage exists) |
+| Bug fix | A WARNING/ERROR pattern repeats; trace + fix |
+| Test gap | A function added in last 7d with no test |
+| Code quality | Decompose a 100-line function; consolidate duplicated logic |
+| Logging | Inconsistent levels, unhelpful messages, missing context |
+| Observability | Add debug counters/timings to help diagnose future issues |
+| Error handling | A `try/except: pass` that should at least log |
+| Type hints | Add to public functions in a recently-touched module |
+| Doc gap | Missing `.env.example` entry; out-of-date README section |
+| Refactor | Extract helper; rename for clarity (if test coverage exists) |
+| Performance | Redundant API call; cache opportunity |
+| Tooling | Improve a `scripts/` helper; add a missing script |
 
-**DO NOT** touch:
-- Strategy logic (`bot/strategies/**`) — that's the user's domain.
-- Position sizing, risk thresholds, or money-management constants.
-- `.env` itself.
-- Auditor's tool registry (you'd be modifying your own future runs).
+If you genuinely can't find anything (extremely rare on this codebase),
+seed BACKLOG.md with 2-3 candidate ideas you considered but didn't ship,
+so the next run has a head start.
 
-If nothing matches, say so and skip step 6.
-
-### 6. Ship as a draft PR
+### 6. Ship as draft PRs (1 PR per concrete change)
 
 ```bash
 $slug = "<short-kebab-slug-of-the-change>"
@@ -90,12 +144,12 @@ git checkout -b "auto/$today-$slug"
 # … make changes …
 .venv/Scripts/python.exe -m pytest        # MUST pass
 git add <files>
-git commit -m "chore(auto): <subject>
+git commit -m "<type>(auto): <subject>
 
 <body explaining what changed and why, in 2-3 sentences>"
 git push -u origin HEAD
 gh pr create --draft --base main `
-  --title "chore(auto): <subject>" `
+  --title "<type>(auto): <subject>" `
   --body-file <prepared body>
 ```
 
@@ -103,9 +157,14 @@ Rules:
 
 - Always `--draft`. Never auto-merge. Never `--admin` bypass.
 - Always run `pytest` before pushing. Never push red.
-- One change = one PR. Don't bundle.
-- Branch name: `auto/YYYY-MM-DD-<slug>`.
-- Commit prefix: `chore(auto):`, `fix(auto):`, or `feat(auto):`.
+- **One CONCEPTUAL change = one PR.** Don't bundle a bug fix with a
+  refactor. Smaller PRs review faster.
+- **Up to 3 PRs per run** if you find 3 independent things worth doing.
+  Stop at 3 even if you see more — log them in BACKLOG.md for next time.
+- Branch name: `auto/YYYY-MM-DD-<slug>`. If you ship multiple PRs in one
+  run, suffix: `auto/2026-05-30-fix-logs`, `auto/2026-05-30-add-tests`.
+- Commit prefix matches the type: `chore(auto):` `fix(auto):` `feat(auto):`
+  `test(auto):` `docs(auto):` `refactor(auto):` `perf(auto):`.
 
 ### 7. Post a Discord alert (every run — even quiet ones)
 
