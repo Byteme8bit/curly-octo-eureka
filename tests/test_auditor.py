@@ -620,6 +620,13 @@ def test_state_load_drops_expired_proposals(tmp_path: Path) -> None:
         "don't surface ghost data after a restart"
     )
 
+    # The cleaned state should also be persisted to disk immediately so the
+    # on-disk file reflects reality (otherwise an interrupted bot keeps the
+    # stale entries forever).
+    rehydrated = json.loads(state_file.read_text(encoding="utf-8"))
+    assert "expired1" not in rehydrated["pending_proposals"]
+    assert "abc12345" in rehydrated["pending_proposals"]
+
 
 # ---------------------------------------------------------------------------
 # report

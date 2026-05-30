@@ -183,9 +183,19 @@ class AuditorState:
         # Defense in depth: a restart should not inherit proposals that are
         # already past their TTL. Without this, the chat tool / status command
         # surface stale proposals between restarts until the next prune cycle.
+        # We also persist the cleaned state immediately so the on-disk file
+        # matches what is in memory — otherwise an interrupted bot would keep
+        # the stale entries forever.
         pruned = state.prune_expired()
         if pruned:
-            logger.info("Auditor state load: dropped %d expired proposal(s)", pruned)
+            logger.warning(
+                "Auditor state load: dropped %d expired proposal(s) from %s",
+                pruned, path,
+            )
+            try:
+                state.save(path)
+            except OSError as exc:
+                logger.warning("Could not persist pruned auditor state: %s", exc)
         return state
 
     def save(self, path: Path) -> None:
