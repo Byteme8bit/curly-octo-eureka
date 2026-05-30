@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Wall-clock timestamps are seconds since epoch (~1.7e9 in 2026).
 # Anything below this threshold is a stale monotonic value from an older
@@ -110,7 +113,8 @@ class WatchdogState:
                 recent_errors=list(data.get("recent_errors", [])),
                 error_pin_windows=error_pin_windows,
             )
-        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            logger.warning("WatchdogState: state file unreadable; starting fresh — %s", exc)
             return cls()
 
     def should_alert_error(self, key: str, cooldown_sec: float) -> bool:

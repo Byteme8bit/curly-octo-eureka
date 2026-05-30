@@ -50,4 +50,9 @@ jobs:
           DISCORD_CHANNEL_ID: ""
           GEMINI_API_KEY: ""
           AUDITOR_CHAT_ENABLED: "0"
-        run: pytest -v --tb=short --color=yes
+        # --cov-fail-under: set at 45 (current baseline ~46%).
+        # Ratchet this upward as tests are added; never lower it.
+        run: >
+          pytest -v --tb=short --color=yes
+          --cov=bot --cov=watchdog --cov-report=term-missing:skip-covered
+          --cov-fail-under=45

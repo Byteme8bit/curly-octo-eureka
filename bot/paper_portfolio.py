@@ -8,10 +8,13 @@ read this file for display.
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 from bot.local_time import format_pacific
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -82,7 +85,8 @@ class PaperPortfolioLog:
             return None
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("PaperPortfolioLog: portfolio file unreadable; skipping — %s", exc)
             return None
         holdings = data.get("holdings") or {}
         if not isinstance(holdings, dict):
@@ -113,7 +117,10 @@ class PaperPortfolioLog:
             return None
         try:
             data = json.loads(state_file.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "PaperPortfolioLog: paper state file unreadable; cannot bootstrap — %s", exc
+            )
             return None
 
         balances = data.get("balances") or {}
