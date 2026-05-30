@@ -126,6 +126,15 @@ class WatchdogEngine:
 
         self.state.session_started_at = format_pacific()
 
+        # Reset counters whose name implies "this bot process" — without this,
+        # trades_session etc. accumulate across restarts and the health score
+        # drifts down forever even on a clean restart (the >40-trade penalty
+        # in particular would pin the score at 90/100 indefinitely).
+        # Error timestamps and dedup state are intentionally preserved so a
+        # crash-loop bot still scores low and we don't re-alert old errors.
+
+        self.state.reset_process_session_counters()
+
         # Reset heartbeat anchor so first heartbeat fires after `heartbeat_minutes`
 
         # of fresh runtime (not based on stale value from a prior session).

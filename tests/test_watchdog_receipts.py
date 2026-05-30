@@ -83,3 +83,28 @@ def test_record_trade_from_receipt_does_not_return_alert(engine: WatchdogEngine)
     )
     engine._record_trade_from_receipt(trade)
     assert engine.state.trades_session == 1
+
+
+def test_begin_session_resets_per_process_counters(engine: WatchdogEngine):
+    """Regression: trades_session used to accumulate across restarts. Score
+    would stick at 90/100 forever (>40 trades = -10) until you manually
+    deleted .watchdog_state.json or ran 'TradeBot -reset'. Fixed by having
+    begin_session() reset the per-process counters."""
+    engine.state.trades_session = 114
+    engine.state.watchdog_pause_count = 3
+    engine.state.last_watchdog_pause_at = "2026-05-30 04:00:00 PDT"
+    # Record an error AFTER setting counters so we can verify it survives
+    engine.state.record_error(source="bot")
+
+    engine.begin_session()
+
+    assert engine.state.trades_session == 0, (
+        "begin_session must reset trades_session — otherwise health score "
+        "drifts down forever across restarts"
+    )
+    assert engine.state.watchdog_pause_count == 0
+    assert engine.state.last_watchdog_pause_at is None
+    # Errors deliberately preserved (crash-loop should still score low)
+    assert len(engine.state.error_timestamps) == 1
+    # Timestamp updated
+    assert engine.state.session_started_at is not None
