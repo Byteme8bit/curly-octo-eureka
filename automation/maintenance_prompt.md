@@ -110,7 +110,26 @@ Rules:
 ### 7. Post a Discord alert (ONLY when you made a change)
 
 If — and only if — step 6 actually opened a PR or modified files, post to
-Discord so the user knows what happened without checking the PR queue:
+Discord so the user knows what happened without checking the PR queue.
+
+**First, locate the webhook URL.** It's provided to you via one of:
+
+1. **Env var** `$env:DISCORD_WEBHOOK` — if Cursor is injecting secrets into
+   the sandbox, this is already set. Check first:
+   `if ($env:DISCORD_WEBHOOK) { … }`
+2. **Your memories** — the user added a line like
+   `DISCORD_WEBHOOK=https://discord.com/api/webhooks/...` to the
+   automation's Memories. Parse the URL out of your context and set it
+   yourself:
+   ```powershell
+   $env:DISCORD_WEBHOOK = "<the URL you see in memories>"
+   ```
+
+If you find the URL via neither route, skip the post — the PR is still
+the durable record. Mention the missing webhook in the run report (step 8)
+so the user knows to add it.
+
+**Then post:**
 
 ```powershell
 python scripts/post_discord_alert.py `
@@ -128,9 +147,7 @@ that justified this work.>
 ```
 
 **Do NOT post when nothing was done.** The point is to surface real
-activity, not to be a heartbeat. If `DISCORD_WEBHOOK` env var is missing
-(see "Failure modes"), the script exits 3 and you should still complete
-the run normally — the PR is the durable record.
+activity, not to be a heartbeat.
 
 ### 8. Post a run report (chat/log surface only — not Discord)
 
@@ -183,15 +200,22 @@ stays in the automation log; do NOT mirror it to Discord.
   keeps happening, surface it in the run report so the user can add the
   webhook as a Cursor automation secret.
 
-## Required secrets in the Cursor automation config
+## Required configuration in the Cursor automation
 
-Set these in the automation UI under **Secrets** (they become env vars):
+Cursor Background Agents can read two kinds of out-of-band config:
 
-| Secret | Why |
-|---|---|
-| `GH_TOKEN` | so `gh pr create / pr list / pr checks` work |
-| `DISCORD_WEBHOOK` | so step 7 can post change alerts to the bot channel |
+| Channel | Where the user adds it | How the agent reads it |
+|---|---|---|
+| **Secrets** (preferred) | Automation edit UI → "Secrets" / "Environment Variables" (location varies by Cursor version) | `$env:NAME` in the sandbox |
+| **Memories** (fallback) | Automation edit UI → "Memories" | Text appears in agent's context; agent must parse and set env var itself (see step 7) |
 
-Both are optional — the agent degrades gracefully if either is missing —
-but missing them means you (the user) won't see changes in Discord and
-the agent can't open PRs.
+What this automation needs:
+
+| Name | Why | Preferred channel |
+|---|---|---|
+| `DISCORD_WEBHOOK` | step 7 — alert user when a change ships | Either works |
+| `GH_TOKEN` | only if `gh pr create / list / checks` fail with "not authenticated". Cursor's GitHub App usually handles this automatically, so try without it first | Secrets only (don't put a GH token in Memories — it's visible in agent context) |
+
+If a required value is missing in BOTH places, the agent should degrade
+gracefully (no Discord post / no PR creation), complete the run, and
+mention the missing value in the run report.
