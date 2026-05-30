@@ -255,3 +255,59 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## bot/fee_engine.py — r001
+
+- **When:** 2026-05-30 09:15:03 PDT
+- **Reason:** fee source success: WARNING to INFO
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_091503--fee-source-success-warning-to-info.patch`
+
+## tests/test_fee_engine.py — r001
+
+- **When:** 2026-05-30 09:15:03 PDT
+- **Reason:** update caplog assertions to INFO level
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_091503--update-caplog-assertions-to-info-level.patch`
+
+## watchdog/state.py — r001
+
+- **When:** 2026-05-30 09:15:03 PDT
+- **Reason:** add logger + warn on corrupt state file
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_091503--add-logger-warn-on-corrupt-state-file.patch`
+
+## bot/paper_portfolio.py — r001
+
+- **When:** 2026-05-30 09:15:03 PDT
+- **Reason:** add logger + warn on corrupt state file
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_091503--add-logger-warn-on-corrupt-state-file.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-05-30 09:15:03 PDT
+- **Reason:** add pytest-cov coverage step
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_091503--add-pytest-cov-coverage-step.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-05-30 09:15:03 PDT
+- **Reason:** add pytest-cov dependency
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_091503--add-pytest-cov-dependency.patch`
+
+## BACKLOG.md — r001
+
+- **When:** 2026-05-30 09:15:03 PDT
+- **Reason:** mark 3 items done
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_091503--mark-3-items-done.patch`
+

@@ -1,0 +1,58 @@
+name: pytest
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel any in-flight runs for the same PR/branch when a new commit lands.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Verify imports
+        run: python scripts/verify_main_startup.py
+
+      - name: Run pytest
+        env:
+          # CI must never need real secrets — every test should mock them.
+          # We set blank placeholders so config.py doesn't crash on import.
+          KRAKEN_API_KEY: ""
+          KRAKEN_API_SECRET: ""
+          DISCORD_BOT_TOKEN: ""
+          DISCORD_CHANNEL_ID: ""
+          GEMINI_API_KEY: ""
+          AUDITOR_CHAT_ENABLED: "0"
+        # --cov-fail-under: set at 45 (current baseline ~46%).
+        # Ratchet this upward as tests are added; never lower it.
+        run: >
+          pytest -v --tb=short --color=yes
+          --cov=bot --cov=watchdog --cov-report=term-missing:skip-covered
+          --cov-fail-under=45

@@ -21,6 +21,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_091503--add-pytest-cov-coverage-step.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "add pytest-cov coverage step",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 09:15:03 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -31,6 +43,18 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "BACKLOG.md": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_091503--mark-3-items-done.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark 3 items done",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 09:15:03 PDT"
     }
   ],
   "bot/auditor/chat/backends.py": [
@@ -179,6 +203,30 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "bot/fee_engine.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_091503--fee-source-success-warning-to-info.patch",
+      "path": "bot/fee_engine.py",
+      "reason": "fee source success: WARNING to INFO",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 09:15:03 PDT"
+    }
+  ],
+  "bot/paper_portfolio.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_091503--add-logger-warn-on-corrupt-state-file.patch",
+      "path": "bot/paper_portfolio.py",
+      "reason": "add logger + warn on corrupt state file",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 09:15:03 PDT"
+    }
+  ],
   "config.py": [
     {
       "added": 0,
@@ -249,6 +297,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "requirements-dev.txt": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_091503--add-pytest-cov-dependency.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov dependency",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 09:15:03 PDT"
+    }
+  ],
   "scripts/version_history.py": [
     {
       "added": 0,
@@ -295,6 +355,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  "tests/test_fee_engine.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_091503--update-caplog-assertions-to-info-level.patch",
+      "path": "tests/test_fee_engine.py",
+      "reason": "update caplog assertions to INFO level",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 09:15:03 PDT"
+    }
+  ],
   "tests/test_version_history.py": [
     {
       "added": 0,
@@ -305,6 +377,18 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ],
+  "watchdog/state.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_091503--add-logger-warn-on-corrupt-state-file.patch",
+      "path": "watchdog/state.py",
+      "reason": "add logger + warn on corrupt state file",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 09:15:03 PDT"
     }
   ]
 }
