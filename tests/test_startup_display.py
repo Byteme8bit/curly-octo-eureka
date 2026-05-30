@@ -6,7 +6,7 @@ from bot.display import TerminalDisplay
 
 
 def test_startup_portfolio_shows_loaded_nonzero_balances(capsys):
-    display = TerminalDisplay(log_writer=lambda _: None)
+    display = TerminalDisplay()
     display.startup(
         strategy="orchestrator",
         timeframe="5m",
@@ -28,7 +28,7 @@ def test_startup_portfolio_shows_loaded_nonzero_balances(capsys):
 
 def test_startup_portfolio_not_config_defaults(capsys):
     """Regression: banner must not hardcode INITIAL_BALANCES when state differs."""
-    display = TerminalDisplay(log_writer=lambda _: None)
+    display = TerminalDisplay()
     display.startup(
         strategy="test",
         timeframe="5m",
