@@ -179,6 +179,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "bot/preflight.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_131815--show-reject-reasons-in-basis-points.patch",
+      "path": "bot/preflight.py",
+      "reason": "show reject reasons in basis points",
+      "removed": 0,
+      "request_id": "auto-2026-05-30",
+      "timestamp": "2026-05-30 13:18:15 PDT"
+    }
+  ],
   "config.py": [
     {
       "added": 0,

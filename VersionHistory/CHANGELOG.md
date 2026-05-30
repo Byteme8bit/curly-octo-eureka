@@ -255,3 +255,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## bot/preflight.py — r001
+
+- **When:** 2026-05-30 13:18:15 PDT
+- **Reason:** show reject reasons in basis points
+- **Request:** auto-2026-05-30
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_131815--show-reject-reasons-in-basis-points.patch`
+
