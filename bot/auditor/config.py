@@ -40,9 +40,18 @@ class AuditorConfig:
     # Conversational chat (default OFF — needs GEMINI_API_KEY to enable)
     chat_enabled: bool = False
     chat_backend: str = "gemini"           # "gemini" today; "null" for tests
-    chat_model: str = "gemini-2.0-flash"   # cheap, fast, ample free tier
+    # Default to flash-lite — best free-tier headroom of the flash family
+    # (15 RPM / 1000 RPD / 250K TPM vs 2.0-flash's 200 RPD).
+    chat_model: str = "gemini-2.5-flash-lite"
     chat_api_key: str = ""                 # GEMINI_API_KEY from .env
-    chat_max_turns: int = 10               # rolling history per channel
-    chat_max_tokens: int = 1500            # cap on a single reply
+    chat_max_turns: int = 6                # rolling history per channel (was 10)
+    chat_max_tokens: int = 1000            # cap on a single reply (was 1500)
     chat_temperature: float = 0.3          # factual responses
-    chat_tool_iterations: int = 4          # max LLM<->tool round-trips per question
+    # Hard cap on LLM<->tool round-trips per question. Lowered from 4→2:
+    # most useful answers need at most 1-2 tool waves. Higher means more
+    # API requests per chat which eats the free-tier RPD bucket fast.
+    chat_tool_iterations: int = 2
+    # Per-tool-result truncation (chars). Lower = less context bloat.
+    # Each iteration resends the entire conversation, so this dominates
+    # token usage when the LLM calls multiple tools.
+    chat_tool_result_max_chars: int = 2000  # was 8000 (4x reduction)

@@ -1,0 +1,231 @@
+==============================================================
+DISCORD CHAT COMMANDS - ETH Paper Trading Bot
+Generated: 2026-05-30
+==============================================================
+
+How to send commands
+--------------------
+- Bot prefixes accepted: TradeBot / TB
+                         WatchDog / WD
+                         Auditor / Audit / Au
+- Form: <Prefix> -<action> [optional args]
+- Examples:
+    TradeBot -portfolio
+    Au -ask How are we doing?
+    WatchDog -status
+- Prefixes and action names are case-insensitive.
+- Commands are restricted to users whose Discord IDs are in
+  DISCORD_ALLOWED_USER_IDS (in your .env). Send `whoami` to
+  get your own ID.
+
+
+==============================================================
+TradeBot - trading control + status
+==============================================================
+
+TradeBot -start
+  Aliases: TradeBot -resume, TradeBot -resume-trading
+  Resume market ticks (after a -stop or new session).
+  NOTE: This only flips an in-memory flag. It does NOT reload
+  runtime_overrides.json. For Auditor overrides to take effect
+  you must fully quit and re-run main.py.
+
+TradeBot -stop
+  Pause trading ticks. Bot stays alive, just stops opening
+  positions.
+  NOTE: Same caveat as -start - does not reload .env.
+
+TradeBot -resume
+  Exit circuit-breaker re-evaluation mode (clears the drawdown
+  hibernation pause).
+
+TradeBot -reset
+  Reset paper balances back to INITIAL_BALANCES from .env.
+  Also clears TradeBot + WatchDog error counts, all pinned
+  messages, and channel chat.
+
+TradeBot -portfolio
+  Aliases: TradeBot -balance
+  Show current holdings, USD value, PnL, drawdown.
+
+TradeBot -planned
+  Aliases: TradeBot -considering, TradeBot -actions
+  Show trades the bot is currently weighing.
+
+TradeBot -strategy
+  Aliases: TradeBot -strategies, TradeBot -focus
+  Show active strategy plugins + current focus.
+
+TradeBot -help
+  Show TradeBot command help only.
+
+
+==============================================================
+WatchDog - monitoring + maintenance
+==============================================================
+
+WatchDog -status
+  Health score and risk assessment.
+
+WatchDog -pause
+  WatchDog forces TradeBot to pause trading.
+
+WatchDog -clearchat
+  Aliases: WatchDog -clear, WatchDog -clear-chat
+  Bulk-delete recent channel messages (skips pinned).
+
+WatchDog -help
+  Show WatchDog command help only.
+
+
+==============================================================
+Auditor - review, proposals, conversational Q&A
+==============================================================
+
+--- Review + audit ---
+
+Auditor -review
+  Aliases: Auditor -audit
+  Run a full audit: trades, news, forecast, proposals.
+  Writes reports/YYYY-MM-DD/audit-HHMMSS.md.
+
+Auditor -forecast
+  Aliases: Auditor -predict
+  Audit with PnL forecast bands highlighted.
+
+Auditor -strategy <name>
+  Aliases: Auditor -strategies
+  Audit focused on a specific strategy.
+
+Auditor -summary
+  Aliases: Auditor -last
+  Quick recap of the most recent audit.
+
+--- Proposals + overrides ---
+
+Auditor -pending
+  Aliases: Auditor -list
+  List pending proposals + active runtime overrides.
+
+Auditor -confirm <id>
+  Aliases: Auditor -apply
+  Apply a proposal (writes runtime_overrides.json).
+  Requires FULL process restart (Ctrl+C + re-run main.py)
+  for the new value to take effect.
+
+Auditor -revert <knob>
+  Aliases: Auditor -undo
+  Remove an active runtime override. Restart required.
+
+--- Conversational chat (needs AUDITOR_CHAT_ENABLED=1 + GEMINI_API_KEY) ---
+
+Auditor -ask <question>
+  Single-turn Q&A. No memory. Returns a fresh answer each call.
+
+Auditor -chat <message>
+  Multi-turn conversation. Keeps last N exchanges per Discord
+  user (configurable via AUDITOR_CHAT_MAX_TURNS).
+
+Auditor -clearchat
+  Aliases: Auditor -clear-chat
+  Wipe YOUR chat history for this session.
+
+Auditor -chatstatus
+  Aliases: Auditor -chat-status
+  Show chat backend, model, active sessions.
+
+--- Service status + help ---
+
+Auditor -status
+  Service status: scheduled run, triggers, active overrides,
+  auto-apply window (if enabled), chat sessions.
+
+Auditor -help
+  Show Auditor command help only.
+
+
+==============================================================
+Global commands (no prefix required)
+==============================================================
+
+help
+  Aliases: commands
+  Show all bots + utility commands.
+
+whoami
+  Aliases: myid, id
+  Show your Discord user ID. Required to set up
+  DISCORD_ALLOWED_USER_IDS in .env.
+
+
+==============================================================
+Legacy aliases (DEPRECATED - still work, logs a warning)
+==============================================================
+
+The following bare commands work without a bot prefix as a
+backwards-compat layer. Each emits a deprecation warning
+suggesting the new form. Will be removed in a future release.
+
+  start, go, resume, resume-trading, resume trading,
+  clear-circuit
+      -> TradeBot -start  (or TradeBot -resume for circuit clear)
+
+  stop, pause, halt
+      -> TradeBot -stop
+
+  reset, reset paper, reset paper status
+      -> TradeBot -reset
+
+  portfolio, status, balance
+      -> TradeBot -portfolio
+
+  planned, considering, actions
+      -> TradeBot -planned
+
+  strategy, strategies, focus
+      -> TradeBot -strategy
+
+  watchdog, wd, guardian, watchdog status, wd status,
+  guardian status
+      -> WatchDog -status
+
+  watchdog pause, wd pause, guardian pause
+      -> WatchDog -pause
+
+
+==============================================================
+Quick reference - the ones you'll use day to day
+==============================================================
+
+  TradeBot -portfolio       Current holdings + PnL
+  TradeBot -planned         What the bot is thinking about
+  TradeBot -reset           Fresh paper start
+  WatchDog -status          Health check
+  Auditor -review           Run a full audit
+  Auditor -pending          See proposals waiting for you
+  Auditor -confirm <id>     Apply a proposal (then restart)
+  Auditor -ask <question>   Single-shot question
+  Auditor -chat <message>   Conversation
+  help                      All commands at a glance
+
+
+==============================================================
+Notes about commands that DON'T reload settings
+==============================================================
+
+These ONLY toggle an in-memory flag - they do NOT restart the
+Python process or reload runtime_overrides.json:
+  TradeBot -start
+  TradeBot -stop
+
+If you've confirmed an Auditor proposal and want it to take
+effect, you must:
+  1. Ctrl+C in the terminal running main.py
+  2. Re-run:  .\.venv\Scripts\python.exe main.py
+
+The startup pin in Discord will then include a line like
+"Auditor overrides active: MIN_TRADE_EDGE=0.0091" confirming
+the override loaded.
+
+
+End of file.

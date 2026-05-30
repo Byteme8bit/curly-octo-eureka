@@ -303,6 +303,7 @@ class TradingEngine:
                 chat_max_tokens=settings.auditor_chat_max_tokens,
                 chat_temperature=settings.auditor_chat_temperature,
                 chat_tool_iterations=settings.auditor_chat_tool_iterations,
+                chat_tool_result_max_chars=settings.auditor_chat_tool_result_max_chars,
             ),
             broker=self.broker,
             governor=self.governor,

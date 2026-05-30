@@ -246,6 +246,7 @@ class AuditorService:
             f"• Backend: `{self.config.chat_backend}` model `{self.config.chat_model}`",
             f"• Max turns retained per session: {self.config.chat_max_turns}",
             f"• Max tool round-trips per question: {self.config.chat_tool_iterations}",
+            f"• Tool result truncation: {self.config.chat_tool_result_max_chars} chars",
             f"• Reply token cap: {self.config.chat_max_tokens}",
         ]
         summary = chat.history_summary()
@@ -328,6 +329,7 @@ class AuditorService:
             max_tool_iterations=self.config.chat_tool_iterations,
             temperature=self.config.chat_temperature,
             max_output_tokens=self.config.chat_max_tokens,
+            tool_result_max_chars=self.config.chat_tool_result_max_chars,
         )
 
     def _news_client_for_chat(self):

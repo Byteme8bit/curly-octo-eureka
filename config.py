@@ -152,6 +152,7 @@ class Settings:
     auditor_chat_max_tokens: int
     auditor_chat_temperature: float
     auditor_chat_tool_iterations: int
+    auditor_chat_tool_result_max_chars: int
 
 
 def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
@@ -352,12 +353,13 @@ def load_settings() -> Settings:
         auditor_autoapply_restart_enabled=os.getenv("AUDITOR_AUTOAPPLY_RESTART_ENABLED", "1") == "1",
         auditor_chat_enabled=os.getenv("AUDITOR_CHAT_ENABLED", "0") == "1",
         auditor_chat_backend=os.getenv("AUDITOR_CHAT_BACKEND", "gemini").lower().strip(),
-        auditor_chat_model=os.getenv("AUDITOR_CHAT_MODEL", "gemini-2.0-flash").strip(),
+        auditor_chat_model=os.getenv("AUDITOR_CHAT_MODEL", "gemini-2.5-flash-lite").strip(),
         auditor_chat_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
-        auditor_chat_max_turns=int(os.getenv("AUDITOR_CHAT_MAX_TURNS", "10")),
-        auditor_chat_max_tokens=int(os.getenv("AUDITOR_CHAT_MAX_TOKENS", "1500")),
+        auditor_chat_max_turns=int(os.getenv("AUDITOR_CHAT_MAX_TURNS", "6")),
+        auditor_chat_max_tokens=int(os.getenv("AUDITOR_CHAT_MAX_TOKENS", "1000")),
         auditor_chat_temperature=float(os.getenv("AUDITOR_CHAT_TEMPERATURE", "0.3")),
-        auditor_chat_tool_iterations=int(os.getenv("AUDITOR_CHAT_TOOL_ITERATIONS", "4")),
+        auditor_chat_tool_iterations=int(os.getenv("AUDITOR_CHAT_TOOL_ITERATIONS", "2")),
+        auditor_chat_tool_result_max_chars=int(os.getenv("AUDITOR_CHAT_TOOL_RESULT_MAX_CHARS", "2000")),
     )
     _apply_runtime_overrides(fields)
     return Settings(**fields)
