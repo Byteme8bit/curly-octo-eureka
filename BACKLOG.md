@@ -21,9 +21,9 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Add `.gitattributes` to normalise line endings.** Every commit on
+- [x] **Add `.gitattributes` to normalise line endings.** Every commit on
   Windows shows ~30 spurious `M` entries from CRLF↔LF flapping. Set
-  `* text=auto eol=lf` and re-normalise once.
+  `* text=auto eol=lf` and re-normalise once. *(auto/2026-05-30-gitattributes)*
 - [ ] **Audit log levels across `bot/`.** Inconsistent: `fee_engine`
   uses WARNING for success, `auditor.state` was INFO until recently.
   Pick a convention (e.g. WARNING = user should see, INFO = debug-only)

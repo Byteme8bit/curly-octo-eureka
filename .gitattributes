@@ -1,0 +1,12 @@
+# Normalise line endings to LF for all text files.
+# This prevents spurious "modified" entries when developers switch
+# between Windows (CRLF) and Linux/macOS (LF) checkouts.
+* text=auto eol=lf
+
+# Explicitly mark binary formats so Git never mangles them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pyc binary
