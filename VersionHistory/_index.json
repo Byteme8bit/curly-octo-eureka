@@ -9,6 +9,16 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:58 PDT"
+    },
+    {
+      "added": 39,
+      "number": 2,
+      "patch": "r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch",
+      "path": ".env.example",
+      "reason": "Slash Gemini token usage: dedup, truncate, fewer iters, better default model",
+      "removed": 1,
+      "request_id": "023",
+      "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
   ".gitignore": [
@@ -23,6 +33,40 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "bot/auditor/chat/backends.py": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-05-30_021733--fix-nameerror-in-geminibackend-tools-com.patch",
+      "path": "bot/auditor/chat/backends.py",
+      "reason": "Fix NameError in GeminiBackend tools comprehension",
+      "removed": 1,
+      "request_id": "022",
+      "timestamp": "2026-05-30 02:17:33 PDT"
+    },
+    {
+      "added": 143,
+      "number": 2,
+      "patch": "r002--2026-05-30_023221--slash-gemini-token-usage-dedup-truncate.patch",
+      "path": "bot/auditor/chat/backends.py",
+      "reason": "Slash Gemini token usage: dedup, truncate, fewer iters, better default model",
+      "removed": 5,
+      "request_id": "023",
+      "timestamp": "2026-05-30 02:32:21 PDT"
+    }
+  ],
+  "bot/auditor/chat/service.py": [
+    {
+      "added": 45,
+      "number": 1,
+      "patch": "r001--2026-05-30_023221--slash-gemini-token-usage-dedup-truncate.patch",
+      "path": "bot/auditor/chat/service.py",
+      "reason": "Slash Gemini token usage: dedup, truncate, fewer iters, better default model",
+      "removed": 9,
+      "request_id": "023",
+      "timestamp": "2026-05-30 02:32:21 PDT"
+    }
+  ],
   "bot/auditor/config.py": [
     {
       "added": 0,
@@ -33,6 +77,16 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:57 PDT"
+    },
+    {
+      "added": 19,
+      "number": 2,
+      "patch": "r002--2026-05-30_023221--slash-gemini-token-usage-dedup-truncate.patch",
+      "path": "bot/auditor/config.py",
+      "reason": "Slash Gemini token usage: dedup, truncate, fewer iters, better default model",
+      "removed": 0,
+      "request_id": "023",
+      "timestamp": "2026-05-30 02:32:21 PDT"
     }
   ],
   "bot/auditor/state.py": [
@@ -57,6 +111,16 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:58 PDT"
+    },
+    {
+      "added": 151,
+      "number": 2,
+      "patch": "r002--2026-05-30_023221--slash-gemini-token-usage-dedup-truncate.patch",
+      "path": "bot/auditor_service.py",
+      "reason": "Slash Gemini token usage: dedup, truncate, fewer iters, better default model",
+      "removed": 0,
+      "request_id": "023",
+      "timestamp": "2026-05-30 02:32:21 PDT"
     }
   ],
   "bot/discord_bot.py": [
@@ -91,6 +155,16 @@
       "removed": 20,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:58 PDT"
+    },
+    {
+      "added": 28,
+      "number": 3,
+      "patch": "r003--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch",
+      "path": "bot/engine.py",
+      "reason": "Slash Gemini token usage: dedup, truncate, fewer iters, better default model",
+      "removed": 3,
+      "request_id": "023",
+      "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -115,6 +189,16 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:58 PDT"
+    },
+    {
+      "added": 19,
+      "number": 2,
+      "patch": "r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch",
+      "path": "config.py",
+      "reason": "Slash Gemini token usage: dedup, truncate, fewer iters, better default model",
+      "removed": 1,
+      "request_id": "023",
+      "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
   "docs/architecture/modules.md": [
@@ -187,6 +271,28 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:58 PDT"
+    }
+  ],
+  "tests/test_auditor_chat.py": [
+    {
+      "added": 89,
+      "number": 1,
+      "patch": "r001--2026-05-30_021733--fix-nameerror-in-geminibackend-tools-com.patch",
+      "path": "tests/test_auditor_chat.py",
+      "reason": "Fix NameError in GeminiBackend tools comprehension",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 02:17:33 PDT"
+    },
+    {
+      "added": 210,
+      "number": 2,
+      "patch": "r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch",
+      "path": "tests/test_auditor_chat.py",
+      "reason": "Slash Gemini token usage: dedup, truncate, fewer iters, better default model",
+      "removed": 0,
+      "request_id": "023",
+      "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
   "tests/test_version_history.py": [
