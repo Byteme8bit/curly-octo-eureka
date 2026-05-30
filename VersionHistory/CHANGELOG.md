@@ -175,3 +175,83 @@ See `bot/version_history.py` for the writer.
 
 > _2026-05-27 03:55:05 PDT_ — no-op snapshot requested for `tests/test_version_history.py` (reason: 'Sleep-window auto-apply + multi-path snapshot') - no change since r001
 
+## bot/auditor/chat/backends.py — r001
+
+- **When:** 2026-05-30 02:17:33 PDT
+- **Reason:** Fix NameError in GeminiBackend tools comprehension
+- **Request:** 022
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-05-30_021733--fix-nameerror-in-geminibackend-tools-com.patch`
+
+## tests/test_auditor_chat.py — r001
+
+- **When:** 2026-05-30 02:17:33 PDT
+- **Reason:** Fix NameError in GeminiBackend tools comprehension
+- **Request:** 022
+- **Diff:** +89 / -0
+- **Patch:** `r001--2026-05-30_021733--fix-nameerror-in-geminibackend-tools-com.patch`
+
+## bot/auditor/chat/service.py — r001
+
+- **When:** 2026-05-30 02:32:21 PDT
+- **Reason:** Slash Gemini token usage: dedup, truncate, fewer iters, better default model
+- **Request:** 023
+- **Diff:** +45 / -9
+- **Patch:** `r001--2026-05-30_023221--slash-gemini-token-usage-dedup-truncate.patch`
+
+## bot/auditor/chat/backends.py — r002
+
+- **When:** 2026-05-30 02:32:21 PDT
+- **Reason:** Slash Gemini token usage: dedup, truncate, fewer iters, better default model
+- **Request:** 023
+- **Diff:** +143 / -5
+- **Patch:** `r002--2026-05-30_023221--slash-gemini-token-usage-dedup-truncate.patch`
+
+## bot/auditor/config.py — r002
+
+- **When:** 2026-05-30 02:32:21 PDT
+- **Reason:** Slash Gemini token usage: dedup, truncate, fewer iters, better default model
+- **Request:** 023
+- **Diff:** +19 / -0
+- **Patch:** `r002--2026-05-30_023221--slash-gemini-token-usage-dedup-truncate.patch`
+
+## bot/auditor_service.py — r002
+
+- **When:** 2026-05-30 02:32:21 PDT
+- **Reason:** Slash Gemini token usage: dedup, truncate, fewer iters, better default model
+- **Request:** 023
+- **Diff:** +151 / -0
+- **Patch:** `r002--2026-05-30_023221--slash-gemini-token-usage-dedup-truncate.patch`
+
+## bot/engine.py — r003
+
+- **When:** 2026-05-30 02:32:22 PDT
+- **Reason:** Slash Gemini token usage: dedup, truncate, fewer iters, better default model
+- **Request:** 023
+- **Diff:** +28 / -3
+- **Patch:** `r003--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
+
+## config.py — r002
+
+- **When:** 2026-05-30 02:32:22 PDT
+- **Reason:** Slash Gemini token usage: dedup, truncate, fewer iters, better default model
+- **Request:** 023
+- **Diff:** +19 / -1
+- **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
+
+## .env.example — r002
+
+- **When:** 2026-05-30 02:32:22 PDT
+- **Reason:** Slash Gemini token usage: dedup, truncate, fewer iters, better default model
+- **Request:** 023
+- **Diff:** +39 / -1
+- **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
+
+## tests/test_auditor_chat.py — r002
+
+- **When:** 2026-05-30 02:32:22 PDT
+- **Reason:** Slash Gemini token usage: dedup, truncate, fewer iters, better default model
+- **Request:** 023
+- **Diff:** +210 / -0
+- **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
+
