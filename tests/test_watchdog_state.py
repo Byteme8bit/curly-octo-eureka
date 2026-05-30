@@ -93,3 +93,33 @@ def test_reset_session_clears_both_buckets():
     state.reset_session()
     assert state.error_timestamps == []
     assert state.watchdog_error_timestamps == []
+
+
+def test_reset_process_session_counters_clears_trades_not_errors():
+    """Regression: per-process counters used to accumulate across restarts,
+    pinning health score at 90/100 forever once trades_session > 40.
+
+    The per-process reset is called from begin_session() and should ONLY
+    touch counters whose name implies per-process scope. Error history
+    and dedup state must persist so a crash-loop bot stays scored low."""
+    state = WatchdogState()
+    state.trades_session = 114          # the user's actual observed value
+    state.watchdog_pause_count = 3
+    state.last_watchdog_pause_at = "2026-05-30 04:00:00 PDT"
+    state.record_error(source="bot")
+    state.record_error(source="watchdog")
+    state.seen_error_keys["err-A"] = time.time()
+    state.last_pnl_band = 5
+
+    state.reset_process_session_counters()
+
+    # Cleared (per-process scope)
+    assert state.trades_session == 0
+    assert state.watchdog_pause_count == 0
+    assert state.last_watchdog_pause_at is None
+
+    # Preserved (cross-restart scope)
+    assert len(state.error_timestamps) == 1
+    assert len(state.watchdog_error_timestamps) == 1
+    assert "err-A" in state.seen_error_keys
+    assert state.last_pnl_band == 5

@@ -163,7 +163,12 @@ class WatchdogState:
         self.watchdog_pause_count += 1
 
     def reset_session(self) -> None:
-        """Clear scoring counters; keep file offsets so we don't re-alert history."""
+        """Full reset — called by ``TradeBot -reset``. Clears every scoring
+        signal so the score returns to 100/100 with a clean slate.
+
+        Keeps ``file_offsets`` / ``seen_receipts`` so the watchdog doesn't
+        re-process historical log lines and re-alert on them.
+        """
         self.last_pnl_band = 0
         self.last_drawdown_warn = 0.0
         self.seen_error_keys.clear()
@@ -177,6 +182,26 @@ class WatchdogState:
         self.last_heartbeat_at = 0.0
         self.recent_errors.clear()
         self.error_pin_windows.clear()
+
+    def reset_process_session_counters(self) -> None:
+        """Reset counters whose name implies per-process scope.
+
+        Called from ``begin_session()`` on every bot startup so the
+        meaning of ``trades_session`` (and friends) matches their name:
+        "since this bot process started", not "since the last paper reset".
+
+        Deliberately does NOT touch:
+          - ``error_timestamps`` / ``watchdog_error_timestamps`` — preserved
+            across restarts so a crash-loop bot still scores low (you want
+            to see it).
+          - ``seen_error_keys`` / ``stale_alert_sent`` — dedup state; reset
+            would cause re-alerts on historical errors.
+          - ``last_pnl_band`` / ``last_drawdown_warn`` — alert tracking.
+          - file offsets / receipts — log replay protection.
+        """
+        self.trades_session = 0
+        self.watchdog_pause_count = 0
+        self.last_watchdog_pause_at = None
 
     def append_error(self, record: dict, max_retain: int = 30) -> None:
         self.recent_errors.append(record)
