@@ -207,7 +207,55 @@ class GeminiBackend:
                     logger.exception("Gemini generate_content failed")
                 return LLMReply(text=friendly, finish_reason="error")
 
-        return _gemini_response_to_reply(response)
+        reply = _gemini_response_to_reply(response)
+
+        # Gemini quirk: with function-calling enabled, the model sometimes
+        # finishes with finish_reason=STOP but no text and no tool call —
+        # essentially refusing to respond. The user has seen this multiple
+        # times. Retry ONCE with an explicit "please respond" nudge before
+        # surfacing the diagnostic. This costs ~1 extra request per stuck
+        # turn but turns a dead-end into an actual answer most of the time.
+        if (
+            not reply.tool_calls
+            and reply.finish_reason in {"stop", "empty"}
+            and _is_empty_stop_diagnostic(reply.text)
+        ):
+            logger.warning(
+                "Gemini returned empty STOP with no tool calls — retrying with nudge"
+            )
+            nudge = LLMMessage(
+                role="user",
+                content=(
+                    "(System notice: your previous response was empty. "
+                    "Please answer the original question above directly with "
+                    "1–4 short sentences. If you don't know, say so plainly. "
+                    "Do NOT call any tools.)"
+                ),
+            )
+            nudge_system_text, nudge_contents = _split_system_from_contents(
+                [*messages, nudge], types,
+            )
+            nudge_config = dict(config_kwargs)
+            if nudge_system_text:
+                nudge_config["system_instruction"] = nudge_system_text
+            # Drop tools on the retry — the empty STOP often means the model
+            # was confused about whether to call a tool or answer; removing
+            # them forces a direct text reply.
+            nudge_config.pop("tools", None)
+            try:
+                retry_response = self._client.models.generate_content(  # type: ignore[union-attr]
+                    model=self.model,
+                    contents=nudge_contents,
+                    config=types.GenerateContentConfig(**nudge_config),
+                )
+                retry_reply = _gemini_response_to_reply(retry_response)
+                if retry_reply.text and not _is_empty_stop_diagnostic(retry_reply.text):
+                    return retry_reply
+                logger.warning("Gemini nudge retry also produced empty content")
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Gemini nudge retry failed: %s", exc)
+
+        return reply
 
 
 _RATE_LIMIT_HINT = (
@@ -501,6 +549,26 @@ _EMPTY_REPLY_HINTS = {
         "Try rephrasing or retry in a few seconds."
     ),
 }
+
+
+def _is_empty_stop_diagnostic(text: str) -> bool:
+    """Return True if ``text`` looks like one of our own empty-response diagnostics.
+
+    Used to decide whether to retry with a nudge. We don't want to mistake a
+    real model answer that happens to mention "empty response" for a diagnostic.
+    """
+    if not text:
+        return True
+    lowered = text.lower()
+    markers = (
+        "gemini returned an empty response",
+        "gemini returned no candidates",
+        "gemini blocked the response",
+        "gemini blocked the **prompt**",
+        "gemini hit the output-token cap",
+        "gemini emitted a malformed tool call",
+    )
+    return any(m in lowered for m in markers)
 
 
 def _diagnose_empty_response(response: Any, finish_reasons: list[str]) -> str:
