@@ -186,6 +186,15 @@ def make_get_pending_proposals(state_provider: Callable[[], Any]) -> Callable[[]
         state = state_provider()
         if state is None or not hasattr(state, "pending_proposals"):
             return {"proposals": []}
+        # Drop anything past its TTL before reporting — otherwise the chat
+        # tool surfaces ghost proposals that confuse the LLM (it'll claim
+        # "no pending proposals" AND describe an expired one in the same
+        # reply).
+        if hasattr(state, "prune_expired"):
+            try:
+                state.prune_expired()
+            except Exception:  # noqa: BLE001
+                pass  # never let chat tooling crash on bookkeeping
         out = []
         for pid, prop in state.pending_proposals.items():
             try:
