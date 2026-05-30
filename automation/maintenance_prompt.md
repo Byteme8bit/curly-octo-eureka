@@ -107,9 +107,34 @@ Rules:
 - Branch name: `auto/YYYY-MM-DD-<slug>`.
 - Commit prefix: `chore(auto):`, `fix(auto):`, or `feat(auto):`.
 
-### 7. Post a run report
+### 7. Post a Discord alert (ONLY when you made a change)
 
-End every run with a brief summary in the chat:
+If — and only if — step 6 actually opened a PR or modified files, post to
+Discord so the user knows what happened without checking the PR queue:
+
+```powershell
+python scripts/post_discord_alert.py `
+  --title "Auto-maintenance — opened draft PR #<N>" `
+  --body @"
+**What changed:** <one-line description of the change>
+
+**Why:** <2-3 sentences. Cite the evidence (log line, test gap, etc.)
+that justified this work.>
+
+**PR:** <https://github.com/Byteme8bit/curly-octo-eureka/pull/<N>>
+**Branch:** ``auto/YYYY-MM-DD-<slug>``
+**Tests:** <pytest result, e.g. "251 pass">
+"@
+```
+
+**Do NOT post when nothing was done.** The point is to surface real
+activity, not to be a heartbeat. If `DISCORD_WEBHOOK` env var is missing
+(see "Failure modes"), the script exits 3 and you should still complete
+the run normally — the PR is the durable record.
+
+### 8. Post a run report (chat/log surface only — not Discord)
+
+End every run with a brief summary in the chat / automation log:
 
 ```
 **Scheduled maintenance run** (8h interval) — <timestamp PT>
@@ -121,12 +146,14 @@ External:   <Kraken changes since last run, or "none">
 This run:
 - <one-liner of what you did>
 - PR #N (draft): <link>
+- Discord alert posted: <yes/no>
 
 Next run: ~8h from now.
 ```
 
 If nothing was done, that's fine — say so and explain why ("logs clean, no
-new external changes, nothing in the allow-list applied").
+new external changes, nothing in the allow-list applied"). This summary
+stays in the automation log; do NOT mirror it to Discord.
 
 ---
 
@@ -151,3 +178,20 @@ new external changes, nothing in the allow-list applied").
   is obvious; otherwise just report it and stop.
 - **Pre-existing draft PR from previous auto run still open**: leave it
   alone — the user will get to it.
+- **`DISCORD_WEBHOOK` env var missing**: `post_discord_alert.py` exits 3.
+  Continue the run normally; the PR itself is the durable record. If this
+  keeps happening, surface it in the run report so the user can add the
+  webhook as a Cursor automation secret.
+
+## Required secrets in the Cursor automation config
+
+Set these in the automation UI under **Secrets** (they become env vars):
+
+| Secret | Why |
+|---|---|
+| `GH_TOKEN` | so `gh pr create / pr list / pr checks` work |
+| `DISCORD_WEBHOOK` | so step 7 can post change alerts to the bot channel |
+
+Both are optional — the agent degrades gracefully if either is missing —
+but missing them means you (the user) won't see changes in Discord and
+the agent can't open PRs.
