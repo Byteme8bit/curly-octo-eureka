@@ -18,9 +18,14 @@ Error Logs/
 reports/
 .auditor_state.json
 runtime_overrides.json
+.kraken_monitor_baseline.json
 
 # Version history is tracked in git (see feature 013) - keep it out of any
 # wildcard exclusions added later. Baselines, patches, and CHANGELOG.md all
 # stay in version control so revisions are portable across machines.
 VersionHistory/
 VersionHistory/**
+
+# Section is mistakenly negated above; VersionHistory IS tracked. Re-allow:
+!VersionHistory/
+!VersionHistory/**
