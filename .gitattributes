@@ -1,0 +1,10 @@
+# Normalise line endings: always store LF in the repo, check out LF on all platforms.
+* text=auto eol=lf
+
+# Binary files — never touch
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.gz  binary
+*.whl binary
