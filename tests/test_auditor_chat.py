@@ -715,6 +715,116 @@ def test_gemini_backend_does_not_retry_when_retry_delay_too_long(monkeypatch) ->
     assert "rate limit" in reply.text.lower()
 
 
+# ---------------------------------------------------------------------------
+# Empty-response diagnostics — regression for "(no reply text)" silent failure
+# ---------------------------------------------------------------------------
+
+
+def _make_fake_response(*, candidates=None, prompt_feedback=None):
+    return SimpleNamespace(
+        candidates=candidates or [],
+        prompt_feedback=prompt_feedback,
+    )
+
+
+def _make_candidate(*, finish_reason=None, parts=None, content_none=False):
+    if content_none:
+        content = None
+    else:
+        content = SimpleNamespace(parts=parts or [])
+    return SimpleNamespace(finish_reason=finish_reason, content=content)
+
+
+def test_empty_response_with_safety_finish_reason_surfaces_hint() -> None:
+    from bot.auditor.chat.backends import _gemini_response_to_reply
+
+    response = _make_fake_response(
+        candidates=[_make_candidate(finish_reason="SAFETY", content_none=True)],
+    )
+    reply = _gemini_response_to_reply(response)
+    assert reply.text != "(no reply text)"
+    assert "safety" in reply.text.lower()
+    assert reply.finish_reason == "safety"
+    assert reply.tool_calls == []
+
+
+def test_empty_response_with_max_tokens_surfaces_token_hint() -> None:
+    from bot.auditor.chat.backends import _gemini_response_to_reply
+
+    response = _make_fake_response(
+        candidates=[_make_candidate(finish_reason="MAX_TOKENS", content_none=True)],
+    )
+    reply = _gemini_response_to_reply(response)
+    assert "token" in reply.text.lower()
+    assert "AUDITOR_CHAT_MAX_TOKENS" in reply.text
+    assert reply.finish_reason == "max_tokens"
+
+
+def test_empty_response_with_prompt_block_explains_prompt_was_blocked() -> None:
+    from bot.auditor.chat.backends import _gemini_response_to_reply
+
+    response = _make_fake_response(
+        candidates=[_make_candidate(finish_reason="STOP", content_none=True)],
+        prompt_feedback=SimpleNamespace(block_reason="SAFETY"),
+    )
+    reply = _gemini_response_to_reply(response)
+    assert "prompt" in reply.text.lower()
+    assert "SAFETY" in reply.text
+
+
+def test_empty_response_with_no_candidates_returns_transient_hint() -> None:
+    from bot.auditor.chat.backends import _gemini_response_to_reply
+
+    response = _make_fake_response(candidates=[])
+    reply = _gemini_response_to_reply(response)
+    assert "transient" in reply.text.lower() or "no candidates" in reply.text.lower()
+    # finish_reason should not be the misleading default "stop" when there
+    # were literally zero candidates — we surface "empty" so callers can tell.
+    assert reply.finish_reason == "empty"
+
+
+def test_finish_reason_enum_with_name_attr_is_normalised() -> None:
+    """Some google-genai SDK versions return enum objects, not strings."""
+    from bot.auditor.chat.backends import _gemini_response_to_reply
+
+    fake_enum = SimpleNamespace(name="SAFETY")
+    response = _make_fake_response(
+        candidates=[_make_candidate(finish_reason=fake_enum, content_none=True)],
+    )
+    reply = _gemini_response_to_reply(response)
+    assert reply.finish_reason == "safety"
+    assert "safety" in reply.text.lower()
+
+
+def test_successful_response_unchanged_by_diagnostic_path() -> None:
+    """Sanity: real text replies must NOT be replaced with a diagnostic."""
+    from bot.auditor.chat.backends import _gemini_response_to_reply
+
+    text_part = SimpleNamespace(text="all good", function_call=None)
+    response = _make_fake_response(
+        candidates=[_make_candidate(finish_reason="STOP", parts=[text_part])],
+    )
+    reply = _gemini_response_to_reply(response)
+    assert reply.text == "all good"
+    assert reply.finish_reason == "stop"
+    assert reply.tool_calls == []
+
+
+def test_tool_only_response_unchanged_by_diagnostic_path() -> None:
+    """Tool-call-only replies (no text) are legitimate — not empty-response."""
+    from bot.auditor.chat.backends import _gemini_response_to_reply
+
+    fc = SimpleNamespace(name="get_portfolio_snapshot", args={"foo": 1}, id="call_1")
+    fc_part = SimpleNamespace(text=None, function_call=fc)
+    response = _make_fake_response(
+        candidates=[_make_candidate(finish_reason="STOP", parts=[fc_part])],
+    )
+    reply = _gemini_response_to_reply(response)
+    assert reply.text == ""
+    assert len(reply.tool_calls) == 1
+    assert reply.tool_calls[0].name == "get_portfolio_snapshot"
+
+
 def test_settings_to_auditor_config_wiring_is_complete() -> None:
     """Catches the class of bug where a new AuditorConfig field is added but
     `bot/engine.py` forgets to pass it through from Settings. We literally

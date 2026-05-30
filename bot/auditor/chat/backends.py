@@ -387,16 +387,27 @@ def _tool_to_gemini_declaration(tool: Tool, types):
 
 
 def _gemini_response_to_reply(response: Any) -> LLMReply:
-    """Convert a Gemini ``GenerateContentResponse`` to our normalised reply."""
+    """Convert a Gemini ``GenerateContentResponse`` to our normalised reply.
+
+    When Gemini returns NO text and NO function calls (safety block, prompt
+    block, MAX_TOKENS truncation, or just an empty candidate) we synthesise an
+    informative diagnostic text instead of letting an empty reply bubble up as
+    a bare ``"(no reply text)"`` line in Discord. The diagnostic includes the
+    actual finish_reason / block_reason so the user can act on it (rephrase,
+    raise the token cap, etc.) without having to crack open logs.
+    """
     text_chunks: list[str] = []
     tool_calls: list[ToolCall] = []
     finish_reason = "stop"
+    finish_reasons_seen: list[str] = []
     try:
         candidates = getattr(response, "candidates", None) or []
         for cand in candidates:
             fr = getattr(cand, "finish_reason", None)
             if fr is not None:
-                finish_reason = str(fr).lower()
+                normalised = _normalise_finish_reason(fr)
+                finish_reason = normalised
+                finish_reasons_seen.append(normalised)
             content = getattr(cand, "content", None)
             if content is None:
                 continue
@@ -422,9 +433,111 @@ def _gemini_response_to_reply(response: Any) -> LLMReply:
     except Exception:  # noqa: BLE001
         logger.exception("Failed to parse Gemini response")
         return LLMReply(text="(failed to parse Gemini response)", finish_reason="error", raw=response)
+
+    text = "\n".join(text_chunks).strip()
+
+    if not text and not tool_calls:
+        diagnostic = _diagnose_empty_response(response, finish_reasons_seen)
+        logger.warning(
+            "Gemini returned no usable content (finish_reasons=%s, "
+            "prompt_feedback=%s, candidate_count=%d)",
+            finish_reasons_seen or ["<none>"],
+            _safe_repr(getattr(response, "prompt_feedback", None)),
+            len(getattr(response, "candidates", None) or []),
+        )
+        return LLMReply(
+            text=diagnostic,
+            tool_calls=[],
+            finish_reason=finish_reason if finish_reasons_seen else "empty",
+            raw=response,
+        )
+
     return LLMReply(
-        text="\n".join(text_chunks).strip(),
+        text=text,
         tool_calls=tool_calls,
         finish_reason=finish_reason,
         raw=response,
     )
+
+
+def _normalise_finish_reason(value: Any) -> str:
+    """Turn the various google-genai finish_reason shapes into a lowercase string."""
+    name = getattr(value, "name", None)
+    if isinstance(name, str) and name:
+        return name.lower()
+    text = str(value)
+    # Some SDK versions return "FinishReason.SAFETY" — peel the prefix.
+    if "." in text:
+        text = text.rsplit(".", 1)[-1]
+    return text.lower()
+
+
+_EMPTY_REPLY_HINTS = {
+    "safety": (
+        "Gemini blocked the response with the safety filter. "
+        "Rephrase the question without keywords that could look adversarial."
+    ),
+    "recitation": (
+        "Gemini blocked the response (recitation filter — content too close "
+        "to training data). Ask the same thing in your own words."
+    ),
+    "max_tokens": (
+        "Gemini hit the output-token cap before producing any text. "
+        "Ask a narrower question OR raise `AUDITOR_CHAT_MAX_TOKENS` in `.env`."
+    ),
+    "length": (
+        "Gemini hit the output-token cap before producing any text. "
+        "Ask a narrower question OR raise `AUDITOR_CHAT_MAX_TOKENS` in `.env`."
+    ),
+    "blocklist": "Gemini blocked the response (term blocklist).",
+    "prohibited_content": "Gemini blocked the response (prohibited content filter).",
+    "spii": "Gemini blocked the response (sensitive personal info filter).",
+    "malformed_function_call": (
+        "Gemini emitted a malformed tool call. This is usually transient — "
+        "try the same question again."
+    ),
+    "other": (
+        "Gemini returned an empty response for an unspecified reason. "
+        "Try rephrasing or retry in a few seconds."
+    ),
+}
+
+
+def _diagnose_empty_response(response: Any, finish_reasons: list[str]) -> str:
+    """Build a user-facing message explaining why Gemini returned nothing."""
+    pf = getattr(response, "prompt_feedback", None)
+    block_reason = getattr(pf, "block_reason", None) if pf is not None else None
+    if block_reason:
+        return (
+            f"Gemini blocked the **prompt** (reason: `{block_reason}`). "
+            "The prompt itself tripped a filter — try rephrasing your question."
+        )
+
+    for fr in finish_reasons:
+        hint = _EMPTY_REPLY_HINTS.get(fr)
+        if hint:
+            return hint
+
+    if not finish_reasons:
+        return (
+            "Gemini returned no candidates at all. Likely a transient API "
+            "issue — try again. If it keeps happening, check "
+            "https://status.cloud.google.com."
+        )
+
+    return (
+        "Gemini returned an empty response "
+        f"(finish_reason=`{finish_reasons[0]}`). "
+        "Try rephrasing or running `Auditor -clearchat` and asking again."
+    )
+
+
+def _safe_repr(value: Any, limit: int = 200) -> str:
+    """repr() that never raises and never returns multi-kilobyte blobs."""
+    if value is None:
+        return "<none>"
+    try:
+        text = repr(value)
+    except Exception:  # noqa: BLE001
+        text = f"<unreprable {type(value).__name__}>"
+    return text if len(text) <= limit else text[: limit - 1] + "…"
