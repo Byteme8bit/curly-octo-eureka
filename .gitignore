@@ -12,6 +12,9 @@ paper_portfolio.json
 .watchdog_state.json
 diagnostics/
 git_setup_result.txt
+.coverage
+coverage.xml
+htmlcov/
 logs/discord_chat*.log
 logs/discord_chat.log.*
 Error Logs/
