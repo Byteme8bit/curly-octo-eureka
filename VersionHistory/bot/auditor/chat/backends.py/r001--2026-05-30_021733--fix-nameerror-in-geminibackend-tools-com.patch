@@ -1,0 +1,11 @@
+--- a/bot/auditor/chat/backends.py
++++ b/bot/auditor/chat/backends.py
+@@ -166,7 +166,7 @@
+         if system_text:
+             config_kwargs["system_instruction"] = system_text
+         if tools:
+-            config_kwargs["tools"] = [_tool_to_gemini_declaration(t, types)]
++            config_kwargs["tools"] = [_tool_to_gemini_declaration(t, types) for t in tools]
+ 
+         try:
+             response = self._client.models.generate_content(  # type: ignore[union-attr]

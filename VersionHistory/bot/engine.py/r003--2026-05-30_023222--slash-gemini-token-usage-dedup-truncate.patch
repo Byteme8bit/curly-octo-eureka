@@ -1,0 +1,68 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -295,6 +295,15 @@
+                 autoapply_min_severity=settings.auditor_autoapply_min_severity,
+                 autoapply_max_per_night=settings.auditor_autoapply_max_per_night,
+                 autoapply_restart_enabled=settings.auditor_autoapply_restart_enabled,
++                chat_enabled=settings.auditor_chat_enabled,
++                chat_backend=settings.auditor_chat_backend,
++                chat_model=settings.auditor_chat_model,
++                chat_api_key=settings.auditor_chat_api_key,
++                chat_max_turns=settings.auditor_chat_max_turns,
++                chat_max_tokens=settings.auditor_chat_max_tokens,
++                chat_temperature=settings.auditor_chat_temperature,
++                chat_tool_iterations=settings.auditor_chat_tool_iterations,
++                chat_tool_result_max_chars=settings.auditor_chat_tool_result_max_chars,
+             ),
+             broker=self.broker,
+             governor=self.governor,
+@@ -306,7 +315,7 @@
+ 
+ 
+ 
+-    def _handle_auditor_command(self, command: str) -> str:
++    def _handle_auditor_command(self, command: str, user_id: str = "") -> str:
+ 
+         token, _, args = command.partition(" ")
+ 
+@@ -363,6 +372,22 @@
+         if token == "auditor-status":
+ 
+             return self.auditor.status()
++
++        if token == "auditor-ask":
++
++            return self.auditor.ask(args)
++
++        if token == "auditor-chat":
++
++            return self.auditor.chat(user_id or "global", args)
++
++        if token == "auditor-clearchat":
++
++            return self.auditor.clear_chat(user_id or "global")
++
++        if token == "auditor-chatstatus":
++
++            return self.auditor.chat_status()
+ 
+         return f"Unknown auditor command `{token}` — send `Auditor -help` for options."
+ 
+@@ -736,7 +761,7 @@
+ 
+ 
+ 
+-    def _handle_discord_command(self, command: str, _user_id: str) -> str:
++    def _handle_discord_command(self, command: str, user_id: str) -> str:
+ 
+         if command == "help":
+ 
+@@ -764,7 +789,7 @@
+ 
+         if command.startswith("auditor-"):
+ 
+-            return self._handle_auditor_command(command)
++            return self._handle_auditor_command(command, user_id)
+ 
+ 
+ 

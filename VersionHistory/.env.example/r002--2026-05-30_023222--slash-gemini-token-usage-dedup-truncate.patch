@@ -1,0 +1,53 @@
+--- a/.env.example
++++ b/.env.example
+@@ -37,7 +37,7 @@
+ IDLE_REEVAL_MAX_ATTEMPTS=3
+ 
+ # Portfolio allocation rules
+-MIN_ETH_RESERVE=0.25
++MIN_ETH_RESERVE=0.5
+ MAX_ALT_ALLOCATION_PCT=0.40
+ 
+ # Strategy governance — stick with winners, explore when flat
+@@ -181,3 +181,41 @@
+ # value loads immediately. When 0 the override is written but won't take
+ # effect until you restart manually.
+ AUDITOR_AUTOAPPLY_RESTART_ENABLED=1
++
++# --- Auditor conversational chat (DEFAULT OFF) ---
++# Lets you ask Auditor questions in Discord about TradeBot/WatchDog state.
++# Strictly read-only — chat can never execute trades or restart the bot.
++# Commands:
++#   Auditor -ask <question>   : single-turn Q&A
++#   Auditor -chat <message>   : multi-turn (memory per Discord user)
++#   Auditor -clearchat        : wipe your chat history
++#   Auditor -chatstatus       : backend/model/active sessions
++AUDITOR_CHAT_ENABLED=0
++# Backend selector. Today: "gemini" or "null" (test stub). Anthropic/OpenAI
++# may be added later through the same interface.
++AUDITOR_CHAT_BACKEND=gemini
++# Gemini model — free-tier per-day caps differ a LOT between models:
++#   gemini-2.5-flash-lite : 15 RPM / 1000 RPD / 250K TPM  ← default (best headroom)
++#   gemini-2.5-flash      : 10 RPM /  250 RPD / 250K TPM
++#   gemini-2.0-flash      : 15 RPM /  200 RPD /   1M TPM  ← burns through fast
++#   gemini-2.5-pro        :  5 RPM /   25 RPD / 250K TPM  ← deeper, very tight
++# See https://ai.dev/gemini-api/docs/rate-limits for current values.
++AUDITOR_CHAT_MODEL=gemini-2.5-flash-lite
++# Get a free API key at https://aistudio.google.com (NOT the same as the
++# consumer Gemini Pro subscription at gemini.google.com).
++GEMINI_API_KEY=
++# How many user/assistant pairs to remember per Discord user before pruning.
++# Each remembered turn is resent on every subsequent chat → smaller = cheaper.
++AUDITOR_CHAT_MAX_TURNS=6
++# Hard cap on a single Gemini reply (tokens, not chars).
++AUDITOR_CHAT_MAX_TOKENS=1000
++# 0.0 = deterministic, 1.0 = creative. Keep low for factual Q&A.
++AUDITOR_CHAT_TEMPERATURE=0.3
++# Max LLM<->tool round-trips per question. Each round-trip is ONE API call,
++# so 2 means a single chat costs at most 2 requests against the daily cap.
++# Higher = the LLM can chain more lookups, but eats your quota faster.
++AUDITOR_CHAT_TOOL_ITERATIONS=2
++# Max chars from any single tool result before truncation. Tool outputs are
++# resent on every subsequent loop iteration in the same chat, so this is the
++# single biggest token-usage knob. 2000 is enough for a portfolio + 20 trades.
++AUDITOR_CHAT_TOOL_RESULT_MAX_CHARS=2000
