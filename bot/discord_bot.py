@@ -392,7 +392,7 @@ class DiscordBot:
             return
         self._thread = threading.Thread(target=self._poll_loop, name="discord-listener", daemon=True)
         self._thread.start()
-        logger.warning("Discord command listener started")
+        logger.info("Discord command listener started")
         self.chat_log.log_event("Discord listener started")
 
     def stop(self) -> None:

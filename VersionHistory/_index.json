@@ -33,6 +33,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "BACKLOG.md": [
+    {
+      "added": 3,
+      "number": 1,
+      "patch": "r001--2026-05-31_051449--mark-log-audit-and-gitattributes-items-d.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark log-audit and gitattributes items done",
+      "removed": 3,
+      "request_id": "022",
+      "timestamp": "2026-05-31 05:14:49 PDT"
+    }
+  ],
   "bot/auditor/chat/backends.py": [
     {
       "added": 1,
@@ -133,6 +145,16 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    },
+    {
+      "added": 127,
+      "number": 2,
+      "patch": "r002--2026-05-31_051449--demote-listener-started-log-from-warning.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "demote listener-started log from WARNING to INFO",
+      "removed": 7,
+      "request_id": "022",
+      "timestamp": "2026-05-31 05:14:49 PDT"
     }
   ],
   "bot/engine.py": [
@@ -177,6 +199,18 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "bot/fee_engine.py": [
+    {
+      "added": 2,
+      "number": 1,
+      "patch": "r001--2026-05-31_051449--demote-success-fee-source-log-from-warni.patch",
+      "path": "bot/fee_engine.py",
+      "reason": "demote success fee-source log from WARNING to INFO",
+      "removed": 2,
+      "request_id": "022",
+      "timestamp": "2026-05-31 05:14:49 PDT"
     }
   ],
   "config.py": [
@@ -293,6 +327,18 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:22 PDT"
+    }
+  ],
+  "tests/test_fee_engine.py": [
+    {
+      "added": 9,
+      "number": 1,
+      "patch": "r001--2026-05-31_051449--update-caplog-level-assertions-for-info.patch",
+      "path": "tests/test_fee_engine.py",
+      "reason": "update caplog level assertions for INFO fee source",
+      "removed": 9,
+      "request_id": "022",
+      "timestamp": "2026-05-31 05:14:49 PDT"
     }
   ],
   "tests/test_version_history.py": [

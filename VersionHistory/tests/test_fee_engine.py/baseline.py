@@ -101,17 +101,17 @@ def test_falls_back_to_public_schedule_on_not_supported(caplog) -> None:
         markets={"ETH/USD": {"taker": 0.0026}},
     )
     engine = FeeEngine(ex, default_taker=0.0099)
-    with caplog.at_level("INFO"):
+    with caplog.at_level("WARNING"):
         assert engine.taker_fee("ETH/USD") == pytest.approx(0.0026)
     warnings = [r for r in caplog.records if r.levelname == "WARNING"]
     # NotSupported itself shouldn't warn, BUT we want a single visible
-    # "Fee source: PUBLIC ..." INFO line so the user can see which tier won.
-    messages_info = [r.message for r in caplog.records if r.levelname == "INFO"]
-    assert not any("Personalised fee fetch failed" in m for m in warnings), (
-        f"NotSupported should not produce 'Personalised fee fetch failed' warning: {warnings}"
+    # "Fee source: PUBLIC ..." line so the user can see which tier won.
+    messages = [r.message for r in warnings]
+    assert not any("Personalised fee fetch failed" in m for m in messages), (
+        f"NotSupported should not produce 'Personalised fee fetch failed' warning: {messages}"
     )
-    assert any("Fee source: PUBLIC" in m for m in messages_info), (
-        f"Expected visible 'Fee source: PUBLIC' INFO message, got: {messages_info}"
+    assert any("Fee source: PUBLIC" in m for m in messages), (
+        f"Expected visible 'Fee source: PUBLIC' message, got: {messages}"
     )
 
 
@@ -127,10 +127,10 @@ def test_fee_source_log_includes_sample_pair_rates(caplog) -> None:
         },
     )
     engine = FeeEngine(ex, default_taker=0.0099)
-    with caplog.at_level("INFO"):
+    with caplog.at_level("WARNING"):
         engine.taker_fee("ETH/USD")
     summary = [r.message for r in caplog.records if "Fee source" in r.message]
-    assert summary, "Expected a 'Fee source' INFO line"
+    assert summary, "Expected a 'Fee source' WARNING line"
     line = summary[0]
     assert "ETH/USD=0.26%" in line
     assert "BTC/USD=0.26%" in line

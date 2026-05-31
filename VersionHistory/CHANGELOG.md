@@ -255,3 +255,35 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## bot/fee_engine.py — r001
+
+- **When:** 2026-05-31 05:14:49 PDT
+- **Reason:** demote success fee-source log from WARNING to INFO
+- **Request:** 022
+- **Diff:** +2 / -2
+- **Patch:** `r001--2026-05-31_051449--demote-success-fee-source-log-from-warni.patch`
+
+## bot/discord_bot.py — r002
+
+- **When:** 2026-05-31 05:14:49 PDT
+- **Reason:** demote listener-started log from WARNING to INFO
+- **Request:** 022
+- **Diff:** +127 / -7
+- **Patch:** `r002--2026-05-31_051449--demote-listener-started-log-from-warning.patch`
+
+## tests/test_fee_engine.py — r001
+
+- **When:** 2026-05-31 05:14:49 PDT
+- **Reason:** update caplog level assertions for INFO fee source
+- **Request:** 022
+- **Diff:** +9 / -9
+- **Patch:** `r001--2026-05-31_051449--update-caplog-level-assertions-for-info.patch`
+
+## BACKLOG.md — r001
+
+- **When:** 2026-05-31 05:14:49 PDT
+- **Reason:** mark log-audit and gitattributes items done
+- **Request:** 022
+- **Diff:** +3 / -3
+- **Patch:** `r001--2026-05-31_051449--mark-log-audit-and-gitattributes-items-d.patch`
+
