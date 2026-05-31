@@ -255,3 +255,51 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## bot/fee_engine.py — r001
+
+- **When:** 2026-05-31 01:13:00 PDT
+- **Reason:** WARNING->INFO for successful fee schedule loads
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_011300--warning-info-for-successful-fee-schedule.patch`
+
+## watchdog/state.py — r001
+
+- **When:** 2026-05-31 01:13:06 PDT
+- **Reason:** add _clean_recent_errors TTL prune on load
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_011306--add-cleanrecenterrors-ttl-prune-on-load.patch`
+
+## tests/test_fee_engine.py — r001
+
+- **When:** 2026-05-31 01:13:06 PDT
+- **Reason:** fix caplog assertions to INFO level
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_011306--fix-caplog-assertions-to-info-level.patch`
+
+## tests/test_watchdog_state.py — r001
+
+- **When:** 2026-05-31 01:13:06 PDT
+- **Reason:** add test for recent_errors TTL prune on load
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_011306--add-test-for-recenterrors-ttl-prune-on-l.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-05-31 01:13:06 PDT
+- **Reason:** add pytest-cov
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_011306--add-pytest-cov.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-05-31 01:13:06 PDT
+- **Reason:** add --cov flags to CI pytest run
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_011306--add-cov-flags-to-ci-pytest-run.patch`
+

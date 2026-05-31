@@ -21,6 +21,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_011306--add-cov-flags-to-ci-pytest-run.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "add --cov flags to CI pytest run",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 01:13:06 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -179,6 +191,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "bot/fee_engine.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_011300--warning-info-for-successful-fee-schedule.patch",
+      "path": "bot/fee_engine.py",
+      "reason": "WARNING->INFO for successful fee schedule loads",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 01:13:00 PDT"
+    }
+  ],
   "config.py": [
     {
       "added": 0,
@@ -249,6 +273,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "requirements-dev.txt": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_011306--add-pytest-cov.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 01:13:06 PDT"
+    }
+  ],
   "scripts/version_history.py": [
     {
       "added": 0,
@@ -295,6 +331,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  "tests/test_fee_engine.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_011306--fix-caplog-assertions-to-info-level.patch",
+      "path": "tests/test_fee_engine.py",
+      "reason": "fix caplog assertions to INFO level",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 01:13:06 PDT"
+    }
+  ],
   "tests/test_version_history.py": [
     {
       "added": 0,
@@ -305,6 +353,30 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ],
+  "tests/test_watchdog_state.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_011306--add-test-for-recenterrors-ttl-prune-on-l.patch",
+      "path": "tests/test_watchdog_state.py",
+      "reason": "add test for recent_errors TTL prune on load",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 01:13:06 PDT"
+    }
+  ],
+  "watchdog/state.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_011306--add-cleanrecenterrors-ttl-prune-on-load.patch",
+      "path": "watchdog/state.py",
+      "reason": "add _clean_recent_errors TTL prune on load",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 01:13:06 PDT"
     }
   ]
 }

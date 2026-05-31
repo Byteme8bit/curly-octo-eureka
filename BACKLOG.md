@@ -21,20 +21,20 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Add `.gitattributes` to normalise line endings.** Every commit on
+- [x] **Add `.gitattributes` to normalise line endings.** Every commit on
   Windows shows ~30 spurious `M` entries from CRLF↔LF flapping. Set
-  `* text=auto eol=lf` and re-normalise once.
-- [ ] **Audit log levels across `bot/`.** Inconsistent: `fee_engine`
+  `* text=auto eol=lf` and re-normalise once. *(done: 029)*
+- [x] **Audit log levels across `bot/`.** Inconsistent: `fee_engine`
   uses WARNING for success, `auditor.state` was INFO until recently.
   Pick a convention (e.g. WARNING = user should see, INFO = debug-only)
   and write it as a short policy in `docs/logging_conventions.md`,
-  then sweep modules to match.
-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
+  then sweep modules to match. *(done: fee_engine fixed, convention doc written — 029)*
+- [x] **Detect other "stale-state-on-disk" patterns.** We fixed
   `.auditor_state.json` (PR #8/#9). Audit the other persistent state
   files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
-  for similar TTL-based fields that load() doesn't prune.
-- [ ] **Add a `pytest --cov` run to CI** so coverage drops are visible
-  on every PR. Pin a minimum threshold (start at 80%, ratchet up).
+  for similar TTL-based fields that load() doesn't prune. *(done: recent_errors TTL prune added to WatchdogState.load() — 029)*
+- [x] **Add a `pytest --cov` run to CI** so coverage drops are visible
+  on every PR. Pin a minimum threshold (start at 80%, ratchet up). *(done: 45% floor, ~46% baseline — 029)*
 
 ## Soon (anytime)
 
