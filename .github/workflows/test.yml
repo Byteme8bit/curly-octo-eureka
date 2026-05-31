@@ -50,4 +50,17 @@ jobs:
           DISCORD_CHANNEL_ID: ""
           GEMINI_API_KEY: ""
           AUDITOR_CHAT_ENABLED: "0"
-        run: pytest -v --tb=short --color=yes
+        run: |
+          pytest -v --tb=short --color=yes \
+            --cov=bot --cov=watchdog \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=40
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 14
