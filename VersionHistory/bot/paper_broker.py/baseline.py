@@ -289,16 +289,7 @@ class PaperBroker:
             trade_type = "cross" if quote != "USD" else "usd"
             if trade_type == "cross":
                 from_usd = quote_spend * quote_usd
-                base_usd = self._asset_usd(base, usd_prices)
-                if base_usd > 0:
-                    to_usd = base_qty * base_usd
-                else:
-                    # No USD reference for the asset we just bought (common when
-                    # diversifying into a coin we did not previously hold). Value
-                    # it from the post-fee quote we converted so a conversion's
-                    # immediate P&L is just the fee paid, not a phantom loss of
-                    # the whole notional.
-                    to_usd = net_quote * quote_usd
+                to_usd = base_qty * self._asset_usd(base, usd_prices)
                 gain_loss = to_usd - from_usd
             else:
                 gain_loss = 0.0

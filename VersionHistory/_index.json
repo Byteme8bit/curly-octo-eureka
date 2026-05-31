@@ -257,6 +257,18 @@
       "timestamp": "2026-05-30 22:08:03 PDT"
     }
   ],
+  "bot/paper_broker.py": [
+    {
+      "added": 10,
+      "number": 1,
+      "patch": "r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "fee-only PnL when base USD price missing",
+      "removed": 1,
+      "request_id": "028",
+      "timestamp": "2026-05-30 22:52:19 PDT"
+    }
+  ],
   "bot/report.py": [
     {
       "added": 7,
