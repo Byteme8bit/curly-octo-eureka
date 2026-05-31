@@ -21,14 +21,20 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [x] **Add `.gitattributes` to normalise line endings.** (022)
-- [x] **Audit log levels across `bot/`.** `fee_engine` fixed; policy doc
-  written at `docs/logging_conventions.md`. (022)
-- [x] **Detect other "stale-state-on-disk" patterns.** Fixed unbounded
-  `seen_diagnostics` list in `watchdog/state.py`. Other persistent state
-  files audited — no further issues. (022)
-- [x] **Add a `pytest --cov` run to CI** — threshold at 45 % (current
-  baseline), ratchet up 5 pp per quarter. (022)
+- [ ] **Add `.gitattributes` to normalise line endings.** Every commit on
+  Windows shows ~30 spurious `M` entries from CRLF↔LF flapping. Set
+  `* text=auto eol=lf` and re-normalise once.
+- [ ] **Audit log levels across `bot/`.** Inconsistent: `fee_engine`
+  uses WARNING for success, `auditor.state` was INFO until recently.
+  Pick a convention (e.g. WARNING = user should see, INFO = debug-only)
+  and write it as a short policy in `docs/logging_conventions.md`,
+  then sweep modules to match.
+- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
+  `.auditor_state.json` (PR #8/#9). Audit the other persistent state
+  files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
+  for similar TTL-based fields that load() doesn't prune.
+- [ ] **Add a `pytest --cov` run to CI** so coverage drops are visible
+  on every PR. Pin a minimum threshold (start at 80%, ratchet up).
 
 ## Soon (anytime)
 
@@ -42,8 +48,9 @@ what to work on.
 - [ ] **Add observability counters for triangular_arbitrage strategy.**
   How many loops scanned per tick? How many rejected for which reason?
   (Pure observability; do NOT change the strategy's decision logic.)
-- [x] **Improve `pre-flight reject` messages.** Now shows basis points
-  (e.g. `+12.0bps` instead of `+0.0012`). (022)
+- [ ] **Improve `pre-flight reject` messages.** Currently shows raw
+  decimals (`gross +0.0012 - fees 0.0040 - slippage 0.0005`). Could
+  show basis points (12bps - 40bps - 5bps) which is easier to read.
 - [ ] **Document the full Discord command set in `README.md`.** We have
   `DISCORD_COMMANDS.txt` but it's not linked from the README.
 
@@ -65,9 +72,3 @@ what to work on.
 ## Done
 
 (Add entries here as they ship — most recent first.)
-
-- [x] **`.gitattributes` / CRLF normalisation** — feature log 022 (2026-05-31)
-- [x] **Log-level audit: `fee_engine.py`** + policy doc — feature log 022 (2026-05-31)
-- [x] **`seen_diagnostics` retention cap** in `watchdog/state.py` — feature log 022 (2026-05-31)
-- [x] **`pytest --cov` in CI** (45 % threshold) — feature log 022 (2026-05-31)
-- [x] **Pre-flight messages in basis points** — feature log 022 (2026-05-31)

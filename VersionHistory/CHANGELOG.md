@@ -255,3 +255,59 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## bot/fee_engine.py — r001
+
+- **When:** 2026-05-30 21:12:57 PDT
+- **Reason:** warning→info on success fee-source logs
+- **Request:** 022
+- **Diff:** +2 / -2
+- **Patch:** `r001--2026-05-30_211257--warninginfo-on-success-fee-source-logs.patch`
+
+## bot/preflight.py — r001
+
+- **When:** 2026-05-30 21:12:57 PDT
+- **Reason:** pre-flight reject messages in basis points
+- **Request:** 022
+- **Diff:** +8 / -4
+- **Patch:** `r001--2026-05-30_211257--pre-flight-reject-messages-in-basis-poin.patch`
+
+## watchdog/state.py — r001
+
+- **When:** 2026-05-30 21:12:57 PDT
+- **Reason:** cap seen_diagnostics at 500 entries
+- **Request:** 022
+- **Diff:** +4 / -2
+- **Patch:** `r001--2026-05-30_211257--cap-seendiagnostics-at-500-entries.patch`
+
+## tests/test_fee_engine.py — r001
+
+- **When:** 2026-05-30 21:12:57 PDT
+- **Reason:** update caplog level to INFO for fee source
+- **Request:** 022
+- **Diff:** +12 / -10
+- **Patch:** `r001--2026-05-30_211257--update-caplog-level-to-info-for-fee-sour.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-05-30 21:12:57 PDT
+- **Reason:** add pytest-cov
+- **Request:** 022
+- **Diff:** +1 / -0
+- **Patch:** `r001--2026-05-30_211257--add-pytest-cov.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-05-30 21:12:57 PDT
+- **Reason:** add --cov with 45% threshold
+- **Request:** 022
+- **Diff:** +5 / -1
+- **Patch:** `r001--2026-05-30_211257--add-cov-with-45-threshold.patch`
+
+## BACKLOG.md — r001
+
+- **When:** 2026-05-30 21:12:57 PDT
+- **Reason:** mark 022 items done
+- **Request:** 022
+- **Diff:** +16 / -17
+- **Patch:** `r001--2026-05-30_211257--mark-022-items-done.patch`
+

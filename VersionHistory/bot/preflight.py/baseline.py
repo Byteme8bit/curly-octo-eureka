@@ -59,9 +59,6 @@ class PreFlightValidator:
                 reason="Defensive exit — pre-flight bypass",
             )
 
-        def _bps(pct: float) -> str:
-            return f"{pct * 10_000:+.1f}bps"
-
         if net <= threshold:
             return PreFlightResult(
                 allowed=False,
@@ -70,10 +67,9 @@ class PreFlightValidator:
                 slippage_pct=slippage_pct,
                 net_return_pct=net,
                 reason=(
-                    f"Pre-flight reject: net {_bps(net)} "
-                    f"(gross {_bps(gross)} - fees {fee_pct * 10_000:.1f}bps"
-                    f" - slippage {slippage_pct * 10_000:.1f}bps) "
-                    f"<= min {threshold * 10_000:.1f}bps"
+                    f"Pre-flight reject: net {net:+.4f} "
+                    f"(gross {gross:+.4f} - fees {fee_pct:.4f} - slippage {slippage_pct:.4f}) "
+                    f"<= min {threshold:.4f}"
                 ),
             )
 
@@ -83,5 +79,5 @@ class PreFlightValidator:
             fee_pct=fee_pct,
             slippage_pct=slippage_pct,
             net_return_pct=net,
-            reason=f"Pre-flight OK: net {_bps(net)}",
+            reason=f"Pre-flight OK: net {net:+.4f}",
         )

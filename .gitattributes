@@ -1,0 +1,17 @@
+# Normalise line endings to LF in the repository.
+# Checked-out copies use LF everywhere too (eol=lf) so Windows editors
+# don't flip every file and produce spurious diff noise.
+* text=auto eol=lf
+
+# Explicitly binary — never touch line endings.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.tar  binary
+*.gz   binary
+*.whl  binary
+*.pyc  binary

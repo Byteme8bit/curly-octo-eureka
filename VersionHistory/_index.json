@@ -21,6 +21,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 5,
+      "number": 1,
+      "patch": "r001--2026-05-30_211257--add-cov-with-45-threshold.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "add --cov with 45% threshold",
+      "removed": 1,
+      "request_id": "022",
+      "timestamp": "2026-05-30 21:12:57 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -31,6 +43,18 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "BACKLOG.md": [
+    {
+      "added": 16,
+      "number": 1,
+      "patch": "r001--2026-05-30_211257--mark-022-items-done.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark 022 items done",
+      "removed": 17,
+      "request_id": "022",
+      "timestamp": "2026-05-30 21:12:57 PDT"
     }
   ],
   "bot/auditor/chat/backends.py": [
@@ -179,6 +203,30 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "bot/fee_engine.py": [
+    {
+      "added": 2,
+      "number": 1,
+      "patch": "r001--2026-05-30_211257--warninginfo-on-success-fee-source-logs.patch",
+      "path": "bot/fee_engine.py",
+      "reason": "warning\u2192info on success fee-source logs",
+      "removed": 2,
+      "request_id": "022",
+      "timestamp": "2026-05-30 21:12:57 PDT"
+    }
+  ],
+  "bot/preflight.py": [
+    {
+      "added": 8,
+      "number": 1,
+      "patch": "r001--2026-05-30_211257--pre-flight-reject-messages-in-basis-poin.patch",
+      "path": "bot/preflight.py",
+      "reason": "pre-flight reject messages in basis points",
+      "removed": 4,
+      "request_id": "022",
+      "timestamp": "2026-05-30 21:12:57 PDT"
+    }
+  ],
   "config.py": [
     {
       "added": 0,
@@ -249,6 +297,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "requirements-dev.txt": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-05-30_211257--add-pytest-cov.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 21:12:57 PDT"
+    }
+  ],
   "scripts/version_history.py": [
     {
       "added": 0,
@@ -295,6 +355,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  "tests/test_fee_engine.py": [
+    {
+      "added": 12,
+      "number": 1,
+      "patch": "r001--2026-05-30_211257--update-caplog-level-to-info-for-fee-sour.patch",
+      "path": "tests/test_fee_engine.py",
+      "reason": "update caplog level to INFO for fee source",
+      "removed": 10,
+      "request_id": "022",
+      "timestamp": "2026-05-30 21:12:57 PDT"
+    }
+  ],
   "tests/test_version_history.py": [
     {
       "added": 0,
@@ -305,6 +377,18 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ],
+  "watchdog/state.py": [
+    {
+      "added": 4,
+      "number": 1,
+      "patch": "r001--2026-05-30_211257--cap-seendiagnostics-at-500-entries.patch",
+      "path": "watchdog/state.py",
+      "reason": "cap seen_diagnostics at 500 entries",
+      "removed": 2,
+      "request_id": "022",
+      "timestamp": "2026-05-30 21:12:57 PDT"
     }
   ]
 }
