@@ -6,6 +6,11 @@ from pathlib import Path
 from bot.markets import PairInfo, TradeRoute
 from bot.strategies.base import Signal
 
+# Maximum number of completed trades retained in .paper_state.json.
+# Older entries are dropped (oldest first) to prevent unbounded file growth
+# over long-running sessions. The risk/balance state is unaffected.
+MAX_TRADES_RETAINED = 500
+
 
 @dataclass
 class RiskState:
@@ -116,11 +121,16 @@ class PaperBroker:
 
         if self.state_file.exists():
             with open(self.state_file, encoding="utf-8") as f:
-                return PaperState.from_dict(json.load(f))
+                state = PaperState.from_dict(json.load(f))
+            if len(state.trades) > MAX_TRADES_RETAINED:
+                state.trades = state.trades[-MAX_TRADES_RETAINED:]
+            return state
 
         return PaperState(balances=dict(self.initial_balances), cost_basis={})
 
     def save(self) -> None:
+        if len(self.state.trades) > MAX_TRADES_RETAINED:
+            self.state.trades = self.state.trades[-MAX_TRADES_RETAINED:]
         with open(self.state_file, "w", encoding="utf-8") as f:
             json.dump(self.state.to_dict(), f, indent=2)
 
