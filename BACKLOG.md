@@ -21,20 +21,12 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
-  `.auditor_state.json` (PR #8/#9). Audit the other persistent state
-  files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
-  for similar TTL-based fields that `load()` doesn't prune. Add a regression
-  test per file that loads a stale fixture and asserts the expired entries
-  are dropped.
-- [ ] **Surface the news review in the auditor report.** `scripts/review_news.py`
-  now exists (read-only `NewsClient` wrapper). Wire the same headline summary
-  into `bot/auditor/report.py` so the periodic audit cites 1–2 ETH/BTC
-  headlines next to the regime read. Observability only — no decision changes.
-- [ ] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
-  CI emits coverage but doesn't fail on regressions. Add `--cov-fail-under`
-  (start at the current measured number, ratchet up). Read the latest CI run
-  to find the baseline first.
+- [x] **Detect other "stale-state-on-disk" patterns.** Shipped 2026-05-31
+  (feature log 029 — `watchdog/state.py` + `bot/paper_broker.py`, 12 new tests).
+- [x] **Surface the news review in the auditor report.** Shipped 2026-05-31
+  (feature log 030 — `bot/auditor/report.py`, 2 new tests).
+- [x] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
+  Shipped 2026-05-31 (feature log 031 — baseline 47.14%, `--cov-fail-under=47`).
 
 ## Soon (anytime)
 
