@@ -1,0 +1,20 @@
+# Normalise line endings: commit as LF, checkout as LF (even on Windows).
+# This stops Git from showing ~30 spurious CRLF-modified-file entries on
+# every `git status` when the repo is cloned on Windows.
+* text=auto eol=lf
+
+# Explicitly binary — never mangle these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pyc binary
+*.pyd binary
+*.pyo binary
