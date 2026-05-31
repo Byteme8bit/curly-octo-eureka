@@ -95,6 +95,30 @@ def test_reset_session_clears_both_buckets():
     assert state.watchdog_error_timestamps == []
 
 
+def test_load_prunes_stale_recent_errors(tmp_path):
+    """recent_errors older than 24h are dropped on load; fresh ones survive."""
+    path = tmp_path / ".watchdog_state.json"
+    now_dt = __import__("datetime").datetime.now()
+    fresh_at = now_dt.strftime("%Y-%m-%d %H:%M:%S PDT")
+    stale_dt = now_dt - __import__("datetime").timedelta(hours=25)
+    stale_at = stale_dt.strftime("%Y-%m-%d %H:%M:%S PDT")
+    path.write_text(
+        json.dumps({
+            "recent_errors": [
+                {"at": fresh_at, "level": "ERROR", "source": "bot", "message": "fresh"},
+                {"at": stale_at, "level": "ERROR", "source": "bot", "message": "stale"},
+                {"at": "", "level": "ERROR", "source": "bot", "message": "no-ts"},
+            ]
+        }),
+        encoding="utf-8",
+    )
+    state = WatchdogState.load(path)
+    messages = [r["message"] for r in state.recent_errors]
+    assert "fresh" in messages, "fresh error should survive prune"
+    assert "stale" not in messages, "stale error should be pruned"
+    assert "no-ts" in messages, "errors without timestamp should be kept defensively"
+
+
 def test_reset_process_session_counters_clears_trades_not_errors():
     """Regression: per-process counters used to accumulate across restarts,
     pinning health score at 90/100 forever once trades_session > 40.

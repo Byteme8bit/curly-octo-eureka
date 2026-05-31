@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 # Wall-clock timestamps are seconds since epoch (~1.7e9 in 2026).
@@ -31,6 +32,37 @@ def _clean_wallmap(
         k: v for k, v in mapping.items()
         if v >= WALL_CLOCK_MIN and v >= cutoff and v <= now + 60
     }
+
+
+def _clean_recent_errors(
+    records: list[dict], *, max_age_sec: float = 86400.0
+) -> list[dict]:
+    """Drop ``recent_errors`` records whose ``at`` timestamp is older than
+    ``max_age_sec``.
+
+    The ``at`` field comes from the log parser and has the form
+    ``"YYYY-MM-DD HH:MM:SS TZAbbr"`` (e.g. ``"2026-05-31 08:02:59 PDT"``).
+    Records with an unparseable timestamp are kept defensively.
+    """
+    cutoff = time.time() - max_age_sec
+    out: list[dict] = []
+    for rec in records:
+        if not isinstance(rec, dict):
+            continue
+        at = rec.get("at", "")
+        keep = True
+        if at:
+            parts = str(at).rsplit(" ", 1)
+            body = parts[0] if len(parts) == 2 else at
+            try:
+                naive = datetime.strptime(body, "%Y-%m-%d %H:%M:%S")
+                ts = naive.timestamp()
+                keep = ts >= cutoff
+            except (ValueError, TypeError):
+                pass  # unparseable timestamp — keep the record
+        if keep:
+            out.append(rec)
+    return out
 
 
 @dataclass
@@ -107,7 +139,9 @@ class WatchdogState:
                 session_started_at=data.get("session_started_at"),
                 running=bool(data.get("running", False)),
                 last_heartbeat_at=last_heartbeat,
-                recent_errors=list(data.get("recent_errors", [])),
+                recent_errors=_clean_recent_errors(
+                    list(data.get("recent_errors", []))
+                ),
                 error_pin_windows=error_pin_windows,
             )
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
