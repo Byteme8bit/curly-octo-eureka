@@ -43,6 +43,16 @@
       "removed": 11,
       "request_id": "027",
       "timestamp": "2026-05-30 22:16:52 PDT"
+    },
+    {
+      "added": 2,
+      "number": 2,
+      "patch": "r002--2026-05-31_091029--mark-stale-state-audit-done.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark stale-state audit done",
+      "removed": 2,
+      "request_id": "029",
+      "timestamp": "2026-05-31 09:10:29 PDT"
     }
   ],
   "automation/maintenance_prompt.md": [
@@ -267,6 +277,16 @@
       "removed": 1,
       "request_id": "028",
       "timestamp": "2026-05-30 22:52:19 PDT"
+    },
+    {
+      "added": 29,
+      "number": 2,
+      "patch": "r002--2026-05-31_091029--prune-stale-pauseduntil-and-hourwindow-o.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "prune stale paused_until and hour_window on load",
+      "removed": 3,
+      "request_id": "029",
+      "timestamp": "2026-05-31 09:10:29 PDT"
     }
   ],
   "bot/report.py": [
@@ -453,6 +473,18 @@
       "timestamp": "2026-05-30 22:08:03 PDT"
     }
   ],
+  "tests/test_paper_portfolio.py": [
+    {
+      "added": 87,
+      "number": 1,
+      "patch": "r001--2026-05-31_091029--stale-state-regression-tests-for-paper-s.patch",
+      "path": "tests/test_paper_portfolio.py",
+      "reason": "stale-state regression tests for paper state",
+      "removed": 1,
+      "request_id": "029",
+      "timestamp": "2026-05-31 09:10:29 PDT"
+    }
+  ],
   "tests/test_trade_log.py": [
     {
       "added": 51,
@@ -475,6 +507,18 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ],
+  "tests/test_watchdog_state.py": [
+    {
+      "added": 27,
+      "number": 1,
+      "patch": "r001--2026-05-31_091029--add-24h-ttl-pruning-regression-test.patch",
+      "path": "tests/test_watchdog_state.py",
+      "reason": "add 24h TTL pruning regression test",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 09:10:29 PDT"
     }
   ]
 }

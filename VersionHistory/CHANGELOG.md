@@ -390,3 +390,35 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -1
 - **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
 
+## bot/paper_broker.py — r002
+
+- **When:** 2026-05-31 09:10:29 PDT
+- **Reason:** prune stale paused_until and hour_window on load
+- **Request:** 029
+- **Diff:** +29 / -3
+- **Patch:** `r002--2026-05-31_091029--prune-stale-pauseduntil-and-hourwindow-o.patch`
+
+## tests/test_paper_portfolio.py — r001
+
+- **When:** 2026-05-31 09:10:29 PDT
+- **Reason:** stale-state regression tests for paper state
+- **Request:** 029
+- **Diff:** +87 / -1
+- **Patch:** `r001--2026-05-31_091029--stale-state-regression-tests-for-paper-s.patch`
+
+## tests/test_watchdog_state.py — r001
+
+- **When:** 2026-05-31 09:10:29 PDT
+- **Reason:** add 24h TTL pruning regression test
+- **Request:** 029
+- **Diff:** +27 / -0
+- **Patch:** `r001--2026-05-31_091029--add-24h-ttl-pruning-regression-test.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-05-31 09:10:29 PDT
+- **Reason:** mark stale-state audit done
+- **Request:** 029
+- **Diff:** +2 / -2
+- **Patch:** `r002--2026-05-31_091029--mark-stale-state-audit-done.patch`
+

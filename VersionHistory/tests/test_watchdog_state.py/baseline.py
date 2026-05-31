@@ -95,33 +95,6 @@ def test_reset_session_clears_both_buckets():
     assert state.watchdog_error_timestamps == []
 
 
-def test_load_prunes_24h_old_error_timestamps(tmp_path):
-    """Wall-clock error timestamps older than 24h must be dropped on load.
-
-    This is distinct from the monotonic-timestamp test: the values here ARE
-    valid epoch seconds, just too old to be useful."""
-    path = tmp_path / ".watchdog_state.json"
-    now = time.time()
-    old_ts = now - (86400 + 60)   # 24h + 1 minute — expired
-    recent_ts = now - 3600         # 1h ago — still valid
-    path.write_text(
-        json.dumps({
-            "error_timestamps": [old_ts, recent_ts],
-            "watchdog_error_timestamps": [old_ts],
-            "seen_error_keys": {
-                "stale-key": old_ts,
-                "fresh-key": recent_ts,
-            },
-        }),
-        encoding="utf-8",
-    )
-    state = WatchdogState.load(path)
-    assert state.error_timestamps == [recent_ts]
-    assert state.watchdog_error_timestamps == []
-    assert "stale-key" not in state.seen_error_keys
-    assert "fresh-key" in state.seen_error_keys
-
-
 def test_reset_process_session_counters_clears_trades_not_errors():
     """Regression: per-process counters used to accumulate across restarts,
     pinning health score at 90/100 forever once trades_session > 40.
