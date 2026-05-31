@@ -1,0 +1,3 @@
+--- a/watchdog/state.py
++++ b/watchdog/state.py
+# initial revision - file matches git HEAD

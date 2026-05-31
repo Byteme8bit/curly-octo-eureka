@@ -255,3 +255,27 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## watchdog/state.py — r001
+
+- **When:** 2026-05-30 17:08:50 PDT
+- **Reason:** cap seen_diagnostics at 500 entries
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_170850--cap-seendiagnostics-at-500-entries.patch`
+
+## bot/paper_broker.py — r001
+
+- **When:** 2026-05-30 17:08:50 PDT
+- **Reason:** cap PaperState.trades at 500 entries
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_170850--cap-paperstatetrades-at-500-entries.patch`
+
+## BACKLOG.md — r001
+
+- **When:** 2026-05-30 17:08:50 PDT
+- **Reason:** mark gitattributes and stale-state items done
+- **Request:** 022
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-30_170850--mark-gitattributes-and-stale-state-items.patch`
+

@@ -33,6 +33,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "BACKLOG.md": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_170850--mark-gitattributes-and-stale-state-items.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark gitattributes and stale-state items done",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 17:08:50 PDT"
+    }
+  ],
   "bot/auditor/chat/backends.py": [
     {
       "added": 1,
@@ -179,6 +191,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "bot/paper_broker.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_170850--cap-paperstatetrades-at-500-entries.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "cap PaperState.trades at 500 entries",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 17:08:50 PDT"
+    }
+  ],
   "config.py": [
     {
       "added": 0,
@@ -305,6 +329,18 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ],
+  "watchdog/state.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-30_170850--cap-seendiagnostics-at-500-entries.patch",
+      "path": "watchdog/state.py",
+      "reason": "cap seen_diagnostics at 500 entries",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-30 17:08:50 PDT"
     }
   ]
 }
