@@ -1,0 +1,46 @@
+--- a/bot/fee_engine.py
++++ b/bot/fee_engine.py
+@@ -13,15 +13,33 @@
+ class FeeEngine:
+     """Fetch and cache per-symbol taker fees from the exchange API."""
+ 
+-    def __init__(self, exchange: ccxt.kraken, default_taker: float, cache_ttl_sec: int = 3600):
++    def __init__(
++        self,
++        exchange: ccxt.kraken,
++        default_taker: float,
++        cache_ttl_sec: int = 3600,
++        force_static: bool = False,
++    ):
+         self.exchange = exchange
+         self.default_taker = default_taker
+         self.cache_ttl_sec = cache_ttl_sec
++        # When True, ignore the live Kraken schedule and use ``default_taker``
++        # (the env FEE_RATE) for every pair. Lets the user trade against an
++        # assumed lower fee instead of Kraken's current live taker rate.
++        self.force_static = force_static
+         self._fee_cache: dict[str, tuple[float, float]] = {}  # symbol -> (fee, monotonic_ts)
+         self._schedule_loaded = False
+         self._pair_fee: dict[str, float] = {}
+ 
+     def _load_schedule(self) -> None:
++        if self.force_static:
++            if not self._schedule_loaded:
++                logger.warning(
++                    "Fee source: STATIC override (FEE_FORCE_STATIC=1) — using env "
++                    "FEE_RATE %.4f for all pairs", self.default_taker,
++                )
++            self._schedule_loaded = True
++            return
+         """Resolve per-pair taker fees with progressive fallback.
+ 
+         Priority (best → worst):
+@@ -121,6 +139,8 @@
+         return f" [{', '.join(samples)}]" if samples else ""
+ 
+     def taker_fee(self, symbol: str) -> float:
++        if self.force_static:
++            return self.default_taker
+         now = time.monotonic()
+         cached = self._fee_cache.get(symbol)
+         if cached and (now - cached[1]) < self.cache_ttl_sec:

@@ -1,0 +1,22 @@
+--- a/config.py
++++ b/config.py
+@@ -116,6 +116,9 @@
+     diagnostic_dir: Path
+     idle_reeval_hours: float
+     idle_reeval_max_attempts: int
++    idle_probe_force_minutes: float
++    idle_probe_size_pct: float
++    fee_force_static: bool
+     min_eth_reserve: float
+     max_alt_allocation_pct: float
+     strategy_growth_window_hours: float
+@@ -332,6 +335,9 @@
+         diagnostic_dir=ROOT / "diagnostics",
+         idle_reeval_hours=float(os.getenv("IDLE_REEVAL_HOURS", "2")),
+         idle_reeval_max_attempts=int(os.getenv("IDLE_REEVAL_MAX_ATTEMPTS", "3")),
++        idle_probe_force_minutes=float(os.getenv("IDLE_PROBE_FORCE_MINUTES", "0")),
++        idle_probe_size_pct=float(os.getenv("IDLE_PROBE_SIZE_PCT", "0.05")),
++        fee_force_static=os.getenv("FEE_FORCE_STATIC", "0") == "1",
+         min_eth_reserve=float(os.getenv("MIN_ETH_RESERVE", "0.25")),
+         max_alt_allocation_pct=float(os.getenv("MAX_ALT_ALLOCATION_PCT", "0.40")),
+         strategy_growth_window_hours=float(os.getenv("STRATEGY_GROWTH_WINDOW_HOURS", "4")),

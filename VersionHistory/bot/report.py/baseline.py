@@ -2,12 +2,7 @@
 
 from bot.local_time import format_pacific
 from bot.status import StatusSnapshot
-from bot.trade_log import (
-    format_trade_route,
-    pnl_label_for_trade,
-    trade_narrative,
-    trade_rationale,
-)
+from bot.trade_log import format_trade_route, pnl_label_for_trade, trade_narrative
 
 
 def format_holdings(holdings: dict[str, float], usd_prices: dict[str, float]) -> list[str]:
@@ -162,7 +157,6 @@ def format_trade_executed_alert(trade: dict, portfolio: float, baseline_pnl: flo
     lines = [
         "**Trade executed**",
         trade_narrative(trade),
-        trade_rationale(trade),
         format_trade_route(trade),
     ]
     if size_pct is not None:

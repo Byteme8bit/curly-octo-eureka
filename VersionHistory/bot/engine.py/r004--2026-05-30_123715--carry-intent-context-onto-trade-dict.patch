@@ -1,0 +1,19 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -1311,6 +1311,16 @@
+ 
+                 if trade:
+ 
++                    trade["edge"] = intent.edge
++
++                    trade["gross_return_pct"] = intent.gross_return_pct
++
++                    trade["is_defensive"] = intent.is_defensive
++
++                    trade["is_expansion"] = intent.is_expansion
++
++                    trade["is_held_swap"] = intent.is_held_swap
++
+                     receipt_path = self.receipts.save(trade)
+ 
+                     trade["receipt_file"] = str(receipt_path)

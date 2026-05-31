@@ -1,0 +1,51 @@
+--- a/config.py
++++ b/config.py
+@@ -240,6 +240,15 @@
+ def load_settings() -> Settings:
+     usd_symbols = _parse_usd_symbols(os.getenv("SYMBOLS", DEFAULT_SYMBOLS))
+     watch_assets = tuple(SYMBOL_ASSETS[s] for s in usd_symbols)
++    # "Day-trader mode" — opt-in aggressive profile (DAY_TRADER_MODE=1). It only
++    # changes the *defaults* for the cadence/sizing knobs below; any explicit
++    # env var still overrides. Edges remain fee-protected by preflight, so
++    # "aggressive" means more/larger trades, not unprofitable ones.
++    day_trader = os.getenv("DAY_TRADER_MODE", "0") == "1"
++
++    def _dt(aggressive: str, normal: str) -> str:
++        return aggressive if day_trader else normal
++
+     fields: dict = dict(
+         watch_assets=watch_assets,
+         usd_symbols=usd_symbols,
+@@ -254,7 +263,7 @@
+         ema_fast=int(os.getenv("EMA_FAST", "9")),
+         ema_slow=int(os.getenv("EMA_SLOW", "21")),
+         momentum_sell=float(os.getenv("MOMENTUM_SELL", "-0.002")),
+-        trade_size_pct=float(os.getenv("TRADE_SIZE_PCT", "0.10")),
++        trade_size_pct=float(os.getenv("TRADE_SIZE_PCT", _dt("0.20", "0.10"))),
+         expansion_size_pct=float(os.getenv("EXPANSION_SIZE_PCT", "0.15")),
+         min_usd_trade=float(os.getenv("MIN_USD_TRADE", "10.0")),
+         diversify_bonus=float(os.getenv("DIVERSIFY_BONUS", "0.0015")),
+@@ -263,10 +272,10 @@
+             os.getenv("DRAWDOWN_HIBERNATE_PCT") or os.getenv("DRAWDOWN_PAUSE_PCT", "0.15")
+         ),
+         hibernate_hours=float(os.getenv("HIBERNATE_HOURS") or os.getenv("PAUSE_HOURS", "12")),
+-        trade_cooldown_seconds=int(os.getenv("TRADE_COOLDOWN_SECONDS", "180")),
+-        max_trades_per_hour=int(os.getenv("MAX_TRADES_PER_HOUR", "12")),
+-        min_trade_edge=float(os.getenv("MIN_TRADE_EDGE", "0.006")),
+-        leader_stable_seconds=int(os.getenv("LEADER_STABLE_SECONDS", "600")),
++        trade_cooldown_seconds=int(os.getenv("TRADE_COOLDOWN_SECONDS", _dt("45", "180"))),
++        max_trades_per_hour=int(os.getenv("MAX_TRADES_PER_HOUR", _dt("40", "12"))),
++        min_trade_edge=float(os.getenv("MIN_TRADE_EDGE", _dt("0.004", "0.006"))),
++        leader_stable_seconds=int(os.getenv("LEADER_STABLE_SECONDS", _dt("120", "600"))),
+         fee_safety_multiplier=float(os.getenv("FEE_SAFETY_MULTIPLIER", "2.0")),
+         reset_paper_state=os.getenv("RESET_PAPER_STATE", "0") == "1",
+         alerts_enabled=os.getenv("ALERTS_ENABLED", "0") == "1",
+@@ -323,7 +332,7 @@
+         diagnostic_dir=ROOT / "diagnostics",
+         idle_reeval_hours=float(os.getenv("IDLE_REEVAL_HOURS", "2")),
+         idle_reeval_max_attempts=int(os.getenv("IDLE_REEVAL_MAX_ATTEMPTS", "3")),
+-        min_eth_reserve=float(os.getenv("MIN_ETH_RESERVE", "0.5")),
++        min_eth_reserve=float(os.getenv("MIN_ETH_RESERVE", "0.25")),
+         max_alt_allocation_pct=float(os.getenv("MAX_ALT_ALLOCATION_PCT", "0.40")),
+         strategy_growth_window_hours=float(os.getenv("STRATEGY_GROWTH_WINDOW_HOURS", "4")),
+         strategy_min_growth_pct=float(os.getenv("STRATEGY_MIN_GROWTH_PCT", "0.005")),
