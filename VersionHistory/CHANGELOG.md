@@ -382,3 +382,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +20 / -11
 - **Patch:** `r001--2026-05-30_221652--done-items-reseed-for-action-bias.patch`
 
+## bot/paper_broker.py — r001
+
+- **When:** 2026-05-30 22:52:19 PDT
+- **Reason:** fee-only PnL when base USD price missing
+- **Request:** 028
+- **Diff:** +10 / -1
+- **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
+
