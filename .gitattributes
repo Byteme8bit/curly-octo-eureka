@@ -1,0 +1,30 @@
+# Normalise line endings to LF in the repository, regardless of OS.
+# This prevents Windows ↔ Linux round-trips from showing ~30 spurious
+# "M" entries in git status on every commit.
+* text=auto eol=lf
+
+# Binary files — never mangle.
+*.png  binary
+*.jpg  binary
+*.gif  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.eot  binary
+*.otf  binary
+*.zip  binary
+*.gz   binary
+*.tar  binary
+
+# Force-text files that might be mis-detected.
+*.py   text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.cfg  text eol=lf
+*.ini  text eol=lf
+*.env  text eol=lf
