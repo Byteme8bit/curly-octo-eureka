@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import time
+from datetime import datetime
 
 from watchdog.state import WALL_CLOCK_MIN, WatchdogState
 
@@ -93,6 +94,49 @@ def test_reset_session_clears_both_buckets():
     state.reset_session()
     assert state.error_timestamps == []
     assert state.watchdog_error_timestamps == []
+
+
+def test_load_prunes_stale_recent_errors(tmp_path):
+    """recent_errors older than 24 h must be dropped on WatchdogState.load()."""
+    import time as _time
+
+    path = tmp_path / ".watchdog_state.json"
+    now = _time.time()
+    # Build an 'at' string that is 48 h in the past (stale)
+    stale_dt = datetime.utcfromtimestamp(now - 48 * 3600)
+    stale_at = stale_dt.strftime("%Y-%m-%d %H:%M:%S") + " UTC"
+    # Build an 'at' string that is 1 h in the past (fresh)
+    fresh_dt = datetime.utcfromtimestamp(now - 3600)
+    fresh_at = fresh_dt.strftime("%Y-%m-%d %H:%M:%S") + " UTC"
+
+    path.write_text(
+        json.dumps({
+            "recent_errors": [
+                {"at": stale_at, "msg": "old error"},
+                {"at": fresh_at, "msg": "recent error"},
+            ]
+        }),
+        encoding="utf-8",
+    )
+    state = WatchdogState.load(path)
+    assert len(state.recent_errors) == 1
+    assert state.recent_errors[0]["msg"] == "recent error"
+
+
+def test_load_keeps_recent_errors_with_unparseable_at(tmp_path):
+    """recent_errors with unparseable 'at' are kept defensively."""
+    path = tmp_path / ".watchdog_state.json"
+    path.write_text(
+        json.dumps({
+            "recent_errors": [
+                {"at": "not-a-date", "msg": "mystery error"},
+                {"msg": "no-at-field"},
+            ]
+        }),
+        encoding="utf-8",
+    )
+    state = WatchdogState.load(path)
+    assert len(state.recent_errors) == 2
 
 
 def test_reset_process_session_counters_clears_trades_not_errors():
