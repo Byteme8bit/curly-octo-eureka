@@ -255,3 +255,130 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## bot/trade_log.py — r001
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** add classify_trade + trade_rationale
+- **Request:** 024
+- **Diff:** +50 / -0
+- **Patch:** `r001--2026-05-30_123715--add-classifytrade-traderationale.patch`
+
+## bot/report.py — r001
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** insert trade rationale in alert
+- **Request:** 024
+- **Diff:** +7 / -1
+- **Patch:** `r001--2026-05-30_123715--insert-trade-rationale-in-alert.patch`
+
+## bot/engine.py — r004
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** carry intent context onto trade dict
+- **Request:** 024
+- **Diff:** +10 / -0
+- **Patch:** `r004--2026-05-30_123715--carry-intent-context-onto-trade-dict.patch`
+
+## config.py — r003
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** day-trader mode profile + eth reserve
+- **Request:** 024
+- **Diff:** +15 / -6
+- **Patch:** `r003--2026-05-30_123715--day-trader-mode-profile-eth-reserve.patch`
+
+## tests/test_trade_log.py — r001
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** tests for classify + rationale
+- **Request:** 024
+- **Diff:** +51 / -1
+- **Patch:** `r001--2026-05-30_123715--tests-for-classify-rationale.patch`
+
+## bot/adaptive.py — r001
+
+- **When:** 2026-05-30 13:07:54 PDT
+- **Reason:** faster idle relaxation (probe mode)
+- **Request:** 025
+- **Diff:** +13 / -3
+- **Patch:** `r001--2026-05-30_130754--faster-idle-relaxation-probe-mode.patch`
+
+## bot/risk.py — r001
+
+- **When:** 2026-05-30 13:07:54 PDT
+- **Reason:** probe-mode hunting notification
+- **Request:** 025
+- **Diff:** +7 / -5
+- **Patch:** `r001--2026-05-30_130754--probe-mode-hunting-notification.patch`
+
+## bot/fee_engine.py — r001
+
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** force-static fee override (rollback)
+- **Request:** 026
+- **Diff:** +21 / -1
+- **Patch:** `r001--2026-05-30_220803--force-static-fee-override-rollback.patch`
+
+## bot/engine.py — r005
+
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** forced hail-mary probe trade
+- **Request:** 026
+- **Diff:** +101 / -2
+- **Patch:** `r005--2026-05-30_220803--forced-hail-mary-probe-trade.patch`
+
+## bot/discord_bot.py — r002
+
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** quiet transient discord poll errors
+- **Request:** 026
+- **Diff:** +151 / -9
+- **Patch:** `r002--2026-05-30_220803--quiet-transient-discord-poll-errors.patch`
+
+## config.py — r004
+
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** probe + fee-static settings
+- **Request:** 026
+- **Diff:** +6 / -0
+- **Patch:** `r004--2026-05-30_220803--probe-fee-static-settings.patch`
+
+## tests/test_fee_engine.py — r001
+
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** tests for fee static override
+- **Request:** 026
+- **Diff:** +22 / -0
+- **Patch:** `r001--2026-05-30_220803--tests-for-fee-static-override.patch`
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `bot/fee_engine.py` (reason: 'force-static fee override (rollback)') - no change since r001
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `bot/engine.py` (reason: 'forced hail-mary probe trade') - no change since r005
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `bot/discord_bot.py` (reason: 'quiet transient discord poll errors') - no change since r002
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `config.py` (reason: 'probe + fee-static settings') - no change since r004
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `tests/test_fee_engine.py` (reason: 'tests for fee static override') - no change since r001
+
+## automation/maintenance_prompt.md — r001
+
+- **When:** 2026-05-30 22:16:52 PDT
+- **Reason:** action-biased rewrite, 4h, news + fallback
+- **Request:** 027
+- **Diff:** +204 / -229
+- **Patch:** `r001--2026-05-30_221652--action-biased-rewrite-4h-news-fallback.patch`
+
+## BACKLOG.md — r001
+
+- **When:** 2026-05-30 22:16:52 PDT
+- **Reason:** done items + reseed for action-bias
+- **Request:** 027
+- **Diff:** +20 / -11
+- **Patch:** `r001--2026-05-30_221652--done-items-reseed-for-action-bias.patch`
+
