@@ -120,7 +120,9 @@ class TradingEngine:
 
         )
 
-        self.fee_engine = FeeEngine(self.data.exchange, settings.fee_rate)
+        self.fee_engine = FeeEngine(
+            self.data.exchange, settings.fee_rate, force_static=settings.fee_force_static
+        )
 
         self.preflight = PreFlightValidator(
 
@@ -633,6 +635,103 @@ class TradingEngine:
             self.discord.post_error(context, exc)
 
 
+
+    def _maybe_force_probe(self, intents, result, holdings, usd_prices, portfolio, trades) -> None:
+        """Guaranteed-activity valve. If nothing traded this tick and the bot has
+        been idle past ``idle_probe_force_minutes``, take ONE small trade that
+        ignores the edge/fee gates so there is visible action. Paper-only — this
+        may lose fees by design; it exists so a flat market doesn't look frozen.
+        """
+        if trades:
+            return
+        minutes = self.settings.idle_probe_force_minutes
+        if minutes <= 0 or not self.runtime.is_trading_active():
+            return
+        if self.risk.idle_hours() * 60.0 < minutes:
+            return
+        import time as _t
+        last = getattr(self, "_last_probe_monotonic", 0.0)
+        if _t.monotonic() - last < max(60.0, minutes * 30.0):
+            return
+        self._last_probe_monotonic = _t.monotonic()
+
+        intent = self._pick_probe_candidate(intents, result, holdings, usd_prices)
+        if intent is None:
+            return
+        intent.size_pct = min(intent.size_pct or 1.0, max(0.01, self.settings.idle_probe_size_pct))
+        intent.is_defensive = False
+        intent.reason = (
+            "Forced probe \u2014 no setup cleared the bar while idle; trading small "
+            "to stay active (paper test, edge not guaranteed)"
+        )
+        trade = self._execute_intent(intent, usd_prices)
+        if not trade:
+            return
+        trade["edge"] = intent.edge
+        trade["gross_return_pct"] = intent.gross_return_pct
+        trade["is_defensive"] = False
+        trade["is_expansion"] = False
+        trade["is_held_swap"] = intent.is_held_swap
+        trade["is_probe"] = True
+        receipt_path = self.receipts.save(trade)
+        trade["receipt_file"] = str(receipt_path)
+        trades.append(trade)
+        self.governor.record_trade(
+            intent.strategy_name or "probe", portfolio, float(trade.get("gain_loss", 0.0))
+        )
+        self.risk.record_trade()
+        self.auditor.note_trade(trade)
+        if self.settings.discord_enabled:
+            self.discord.post_important(
+                "\U0001F0CF **Forced probe trade** \u2014 no setup cleared the bar while "
+                "idle, so I took a small one to keep things active. Paper test; may lose fees.",
+                pin=False,
+            )
+
+    def _pick_probe_candidate(self, intents, result, holdings, usd_prices):
+        """Choose the best thing to probe: the top-ranked (but gate-blocked)
+        intent, else a considered opportunity, else a safe fallback that always
+        has a route (sell a sliver of the largest holding to USD, or buy ETH)."""
+        from bot.strategies.base import TradeIntent
+
+        if intents:
+            top = intents[0]
+            return TradeIntent(
+                from_asset=top.from_asset,
+                to_asset=top.to_asset,
+                reason=top.reason,
+                size_pct=top.size_pct or 0.05,
+                edge=top.edge,
+                gross_return_pct=top.gross_return_pct,
+                is_held_swap=top.is_held_swap,
+                strategy_name=top.strategy_name or "probe",
+            )
+        opportunities = getattr(result, "opportunities", None) or []
+        if opportunities:
+            op = opportunities[0]
+            return TradeIntent(
+                from_asset=op.from_asset,
+                to_asset=op.to_asset,
+                reason=f"probe via {op.category}",
+                size_pct=0.05,
+                edge=op.edge,
+                gross_return_pct=op.edge,
+                strategy_name="probe",
+            )
+        live = {a: q for a, q in holdings.items() if q > 0}
+        non_usd = {a: q * usd_prices.get(a, 0.0) for a, q in live.items() if a != "USD"}
+        if non_usd:
+            asset = max(non_usd, key=non_usd.get)
+            return TradeIntent(
+                from_asset=asset, to_asset="USD", reason="probe to USD",
+                size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
+            )
+        if live.get("USD", 0.0) > self.settings.min_usd_trade:
+            return TradeIntent(
+                from_asset="USD", to_asset="ETH", reason="probe into ETH",
+                size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
+            )
+        return None
 
     def _notify_discord_trades(
         self, trades: list[dict], portfolio: float, baseline_pnl: float
@@ -1311,6 +1410,16 @@ class TradingEngine:
 
                 if trade:
 
+                    trade["edge"] = intent.edge
+
+                    trade["gross_return_pct"] = intent.gross_return_pct
+
+                    trade["is_defensive"] = intent.is_defensive
+
+                    trade["is_expansion"] = intent.is_expansion
+
+                    trade["is_held_swap"] = intent.is_held_swap
+
                     receipt_path = self.receipts.save(trade)
 
                     trade["receipt_file"] = str(receipt_path)
@@ -1333,7 +1442,7 @@ class TradingEngine:
 
                     break
 
-
+            self._maybe_force_probe(intents, result, holdings, usd_prices, portfolio, trades)
 
         status = build_status_snapshot(
 
