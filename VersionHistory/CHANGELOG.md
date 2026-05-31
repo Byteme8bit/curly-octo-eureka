@@ -255,3 +255,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## bot/fee_engine.py — r001
+
+- **When:** 2026-05-31 04:09:21 PDT
+- **Reason:** retry fee schedule
+- **Request:** 022
+- **Diff:** +23 / -5
+- **Patch:** `r001--2026-05-31_040921--retry-fee-schedule.patch`
+
+## tests/test_fee_engine.py — r001
+
+- **When:** 2026-05-31 04:09:21 PDT
+- **Reason:** fee retry regression
+- **Request:** 022
+- **Diff:** +15 / -0
+- **Patch:** `r001--2026-05-31_040921--fee-retry-regression.patch`
+

@@ -162,21 +162,6 @@ def test_env_default_when_both_personalised_and_public_fail() -> None:
     assert engine.taker_fee("BTC/USD") == pytest.approx(0.0026)
 
 
-def test_fee_schedule_retries_after_transient_public_failure() -> None:
-    ex = _FakeExchange(
-        personalised_raises=ccxt.AuthenticationError("no key"),
-        markets_raises=ccxt.NetworkError("kraken down"),
-    )
-    engine = FeeEngine(ex, default_taker=0.0010, schedule_retry_sec=0)
-
-    assert engine.taker_fee("ETH/USD") == pytest.approx(0.0010)
-
-    ex._markets_raises = None
-    ex.markets = {"ETH/USD": {"taker": 0.0040}}
-
-    assert engine.taker_fee("ETH/USD") == pytest.approx(0.0040)
-
-
 # ---------------------------------------------------------------------------
 # Caching + compounded cost
 # ---------------------------------------------------------------------------
