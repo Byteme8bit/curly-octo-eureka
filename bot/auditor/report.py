@@ -65,6 +65,24 @@ def _format_news_tag(headline) -> str:
     return "[news]"
 
 
+_REGIME_TICKERS = frozenset({"ETH", "BTC"})
+
+
+def _select_regime_headlines(
+    headlines: list[NewsHeadline], *, max_items: int = 2
+) -> list[NewsHeadline]:
+    """Return up to ``max_items`` ETH/BTC headlines for the regime callout.
+
+    Prefers headlines tagged with ETH or BTC; falls back to the first
+    ``max_items`` headlines when none match those tickers.
+    """
+    if not headlines:
+        return []
+    priority = [h for h in headlines if _REGIME_TICKERS & set(h.tickers)]
+    pool = priority if priority else headlines
+    return pool[:max_items]
+
+
 def _strategy_row(p: StrategyPerformance) -> str:
     pairs = ", ".join(p.pairs_used[:3]) + ("…" if len(p.pairs_used) > 3 else "")
     drag = f"{p.fee_drag_ratio:.2f}x" if p.fee_drag_ratio != float("inf") else "∞"
@@ -170,6 +188,17 @@ def render_markdown_report(
     lines.append("")
     lines.append("_Confidence is heuristic only; bands are not investment advice._")
     lines.append("")
+
+    # Market context: cite up to 2 ETH/BTC headlines next to the regime read.
+    # This is observability only — no decision changes.
+    regime_heads = _select_regime_headlines(headlines, max_items=2)
+    if regime_heads:
+        lines.append("**Market context (ETH/BTC headlines):**")
+        for h in regime_heads:
+            tag = _format_news_tag(h)
+            title = h.title if len(h.title) <= 120 else h.title[:117] + "…"
+            lines.append(f"- {tag} {title}")
+        lines.append("")
 
     # 6) News
     lines.append("## News headlines")

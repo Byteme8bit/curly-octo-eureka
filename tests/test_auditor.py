@@ -655,6 +655,58 @@ def test_render_markdown_report_contains_all_sections() -> None:
     assert "Auditor -confirm" in md  # confirm syntax surfaced
 
 
+def test_render_markdown_report_market_context_shows_eth_btc_headlines() -> None:
+    """ETH/BTC headlines must appear as a 'Market context' callout in the Forecast section."""
+    from bot.auditor.report import _select_regime_headlines
+
+    eth_head = NewsHeadline(
+        title="ETH rally continues", url="u1", published_at="2026-05-31",
+        source="CoinDesk", tickers=["ETH"], sentiment="positive",
+    )
+    sol_head = NewsHeadline(
+        title="SOL network upgrade", url="u2", published_at="2026-05-31",
+        source="Decrypt", tickers=["SOL"], sentiment="neutral",
+    )
+    btc_head = NewsHeadline(
+        title="BTC hits resistance", url="u3", published_at="2026-05-31",
+        source="Cointelegraph", tickers=["BTC"], sentiment="negative",
+    )
+
+    # _select_regime_headlines should prefer ETH/BTC
+    selected = _select_regime_headlines([sol_head, eth_head, btc_head], max_items=2)
+    assert len(selected) == 2
+    assert all(bool({"ETH", "BTC"} & set(h.tickers)) for h in selected)
+
+    # Full markdown report must contain the Market context block
+    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
+    md = render_markdown_report(
+        insights, forecast, [sol_head, eth_head, btc_head], [],
+        settings=_settings_stub(),
+    )
+    assert "Market context" in md
+    assert "ETH rally continues" in md or "BTC hits resistance" in md
+
+    # When no headlines, the Market context block should be absent
+    md_no_news = render_markdown_report(
+        insights, forecast, [], [], settings=_settings_stub(),
+    )
+    assert "Market context" not in md_no_news
+
+
+def test_render_markdown_report_market_context_falls_back_to_any_headline() -> None:
+    """When no ETH/BTC headlines exist, fall back to the first headline."""
+    sol_head = NewsHeadline(
+        title="SOL validator count surges", url="u", published_at="2026-05-31",
+        source="TheBlock", tickers=["SOL"], sentiment="positive",
+    )
+    insights = analyze_trades([], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [])
+    md = render_markdown_report(insights, forecast, [sol_head], [], settings=_settings_stub())
+    assert "Market context" in md
+    assert "SOL validator count surges" in md
+
+
 def test_render_discord_summary_uses_source_when_sentiment_unknown() -> None:
     """RSS feeds carry source but no sentiment — we should show the publication name
     instead of the visually-noisy `[unknown]` tag."""
