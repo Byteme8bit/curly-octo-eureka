@@ -31,6 +31,16 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    },
+    {
+      "added": 14,
+      "number": 2,
+      "patch": "r002--2026-05-31_051608--add-pytest-cov-artefacts-to-gitignore.patch",
+      "path": ".gitignore",
+      "reason": "add pytest-cov artefacts to gitignore",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-31 05:16:08 PDT"
     }
   ],
   "BACKLOG.md": [

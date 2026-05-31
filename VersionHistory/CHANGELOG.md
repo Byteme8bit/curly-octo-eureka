@@ -287,3 +287,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +3 / -3
 - **Patch:** `r001--2026-05-31_051449--mark-log-audit-and-gitattributes-items-d.patch`
 
+## .gitignore — r002
+
+- **When:** 2026-05-31 05:16:08 PDT
+- **Reason:** add pytest-cov artefacts to gitignore
+- **Request:** 022
+- **Diff:** +14 / -0
+- **Patch:** `r002--2026-05-31_051608--add-pytest-cov-artefacts-to-gitignore.patch`
+
