@@ -95,6 +95,17 @@ def test_reset_session_clears_both_buckets():
     assert state.watchdog_error_timestamps == []
 
 
+def test_mark_diagnostic_seen_caps_list():
+    """seen_diagnostics must not grow beyond max_retain (mirrors seen_receipts behaviour)."""
+    state = WatchdogState()
+    for i in range(600):
+        state.mark_diagnostic_seen(f"diag-{i}", max_retain=500)
+    assert len(state.seen_diagnostics) == 500
+    # Only the 500 most recent entries should survive
+    assert "diag-99" not in state.seen_diagnostics
+    assert "diag-599" in state.seen_diagnostics
+
+
 def test_reset_process_session_counters_clears_trades_not_errors():
     """Regression: per-process counters used to accumulate across restarts,
     pinning health score at 90/100 forever once trades_session > 40.

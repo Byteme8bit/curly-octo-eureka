@@ -129,10 +129,12 @@ class WatchdogState:
             self.seen_receipts = self.seen_receipts[-max_retain:]
         return True
 
-    def mark_diagnostic_seen(self, name: str) -> bool:
+    def mark_diagnostic_seen(self, name: str, max_retain: int = 500) -> bool:
         if name in self.seen_diagnostics:
             return False
         self.seen_diagnostics.append(name)
+        if len(self.seen_diagnostics) > max_retain:
+            self.seen_diagnostics = self.seen_diagnostics[-max_retain:]
         return True
 
     def record_error(self, *, source: str = "bot", max_retain: int = 200) -> None:
