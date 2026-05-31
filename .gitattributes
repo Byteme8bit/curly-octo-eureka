@@ -1,0 +1,16 @@
+# Normalise line endings to LF in the repository.
+# This prevents the ~30 spurious "M" entries that appear on Windows
+# when CRLF <-> LF conversion flaps on every git status/diff.
+* text=auto eol=lf
+
+# Explicitly mark binary files so Git never tries to convert them.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.whl  binary
+*.pyc  binary
