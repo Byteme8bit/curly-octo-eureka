@@ -769,14 +769,36 @@ class DiscordBot:
         )
         return True
 
+    # Transient upstream hiccups (Discord/Cloudflare) — expected occasionally and
+    # self-healing. We log these quietly and only escalate if they persist.
+    _TRANSIENT_MARKERS = (
+        "HTTP 429", "HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504",
+        "Service Unavailable", "Bad Gateway", "Gateway Time-out",
+        "connection termination", "disconnect/reset", "timed out",
+    )
+
     def _poll_loop(self) -> None:
+        consecutive_transient = 0
         while not self._stop_event.is_set():
             try:
                 self._poll_commands()
+                consecutive_transient = 0
             except Exception as exc:
-                logger.exception("Discord command poll failed")
-                if self.on_error:
-                    self.on_error("Discord command listener", exc)
+                msg = str(exc)
+                if any(m in msg for m in self._TRANSIENT_MARKERS):
+                    consecutive_transient += 1
+                    first_line = msg.splitlines()[0] if msg else repr(exc)
+                    logger.warning(
+                        "Discord poll transient error #%d (self-healing): %s",
+                        consecutive_transient, first_line,
+                    )
+                    # Only bother the user if it stays broken for a while.
+                    if consecutive_transient == 15 and self.on_error:
+                        self.on_error("Discord command listener (persistent upstream errors)", exc)
+                else:
+                    logger.exception("Discord command poll failed")
+                    if self.on_error:
+                        self.on_error("Discord command listener", exc)
             self._stop_event.wait(self.config.poll_interval)
 
     def _poll_commands(self) -> None:

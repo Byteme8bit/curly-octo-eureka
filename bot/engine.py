@@ -120,7 +120,9 @@ class TradingEngine:
 
         )
 
-        self.fee_engine = FeeEngine(self.data.exchange, settings.fee_rate)
+        self.fee_engine = FeeEngine(
+            self.data.exchange, settings.fee_rate, force_static=settings.fee_force_static
+        )
 
         self.preflight = PreFlightValidator(
 
@@ -633,6 +635,155 @@ class TradingEngine:
             self.discord.post_error(context, exc)
 
 
+
+    def _maybe_force_probe(self, intents, result, holdings, usd_prices, portfolio, trades) -> None:
+        """Guaranteed-activity valve. If nothing traded this tick and the bot has
+        been idle past ``idle_probe_force_minutes``, take ONE small trade that
+        ignores the edge/fee gates so there is visible action. Paper-only — this
+        may lose fees by design; it exists so a flat market doesn't look frozen.
+        """
+        if trades:
+            return
+        minutes = self.settings.idle_probe_force_minutes
+        if minutes <= 0 or not self.runtime.is_trading_active():
+            return
+        if self.risk.idle_hours() * 60.0 < minutes:
+            return
+        import time as _t
+        last = getattr(self, "_last_probe_monotonic", 0.0)
+        if _t.monotonic() - last < max(60.0, minutes * 30.0):
+            return
+        self._last_probe_monotonic = _t.monotonic()
+
+        intent = self._pick_probe_candidate(intents, result, holdings, usd_prices)
+        if intent is None:
+            return
+        intent.size_pct = min(intent.size_pct or 1.0, max(0.01, self.settings.idle_probe_size_pct))
+        intent.is_defensive = False
+        intent.reason = (
+            "Forced probe \u2014 no setup cleared the bar while idle; trading small "
+            "to stay active (paper test, edge not guaranteed)"
+        )
+        trade = self._execute_intent(intent, usd_prices)
+        if not trade:
+            return
+        trade["edge"] = intent.edge
+        trade["gross_return_pct"] = intent.gross_return_pct
+        trade["is_defensive"] = False
+        trade["is_expansion"] = False
+        trade["is_held_swap"] = intent.is_held_swap
+        trade["is_probe"] = True
+        receipt_path = self.receipts.save(trade)
+        trade["receipt_file"] = str(receipt_path)
+        trades.append(trade)
+        self.governor.record_trade(
+            intent.strategy_name or "probe", portfolio, float(trade.get("gain_loss", 0.0))
+        )
+        self.risk.record_trade()
+        self.auditor.note_trade(trade)
+        if self.settings.discord_enabled:
+            self.discord.post_important(
+                "\U0001F0CF **Forced probe trade** \u2014 no setup cleared the bar while "
+                "idle, so I took a small one to keep things active. Paper test; may lose fees.",
+                pin=False,
+            )
+
+    def _probe_respects_eth_reserve(self, from_asset: str, holdings: dict[str, float]) -> bool:
+        """A probe must never sell ETH below the configured reserve floor.
+
+        The probe bypasses the normal constraint pipeline (that's the point —
+        it ignores edge/fee gates), so the ETH-reserve protection has to be
+        re-applied here explicitly.
+        """
+        if from_asset != "ETH":
+            return True
+        size = max(0.01, self.settings.idle_probe_size_pct)
+        return holdings.get("ETH", 0.0) * (1.0 - size) >= self.settings.min_eth_reserve
+
+    def _pick_probe_candidate(self, intents, result, holdings, usd_prices):
+        """Choose what to probe, preferring genuine diversification.
+
+        Order of preference (intents + opportunities searched together):
+          1. A candidate whose destination we do NOT already hold (so a string
+             of forced probes spreads across coins instead of piling into the
+             same one), respecting the ETH reserve.
+          2. Any candidate that respects the ETH reserve.
+          3. Safe fallbacks: diversify spare USD into an unheld core coin, or
+             trim a sliver of the largest over-reserve holding to USD.
+        """
+        from bot.strategies.base import TradeIntent
+
+        held = {a for a, q in holdings.items() if q > 0 and a != "USD"}
+
+        def _as_intent(src) -> TradeIntent:
+            # ``src`` is either a TradeIntent (actionable, gate-blocked) or a
+            # RotationOption (a considered opportunity). Normalise to a probe
+            # intent either way.
+            if isinstance(src, TradeIntent):
+                return TradeIntent(
+                    from_asset=src.from_asset,
+                    to_asset=src.to_asset,
+                    reason=src.reason,
+                    size_pct=src.size_pct or 0.05,
+                    edge=src.edge,
+                    gross_return_pct=src.gross_return_pct,
+                    is_held_swap=src.is_held_swap,
+                    strategy_name=src.strategy_name or "probe",
+                )
+            return TradeIntent(
+                from_asset=src.from_asset,
+                to_asset=src.to_asset,
+                reason=f"probe via {getattr(src, 'category', 'rotation')}",
+                size_pct=0.05,
+                edge=getattr(src, "edge", 0.0),
+                gross_return_pct=getattr(src, "edge", 0.0),
+                strategy_name="probe",
+            )
+
+        opportunities = list(getattr(result, "opportunities", None) or [])
+        # Intents are the ranked/actionable candidates; opportunities are the
+        # broader "considered" set. Search both so a run of forced probes keeps
+        # rotating into NEW coins instead of piling into the one intent the
+        # strategy happened to emit.
+        candidates = list(intents) + opportunities
+
+        # 1) diversify: first candidate into a coin we don't hold yet
+        for cand in candidates:
+            if cand.to_asset in held or cand.to_asset == "USD":
+                continue
+            if self._probe_respects_eth_reserve(cand.from_asset, holdings):
+                return _as_intent(cand)
+        # 2) any candidate that keeps ETH above its reserve
+        for cand in candidates:
+            if self._probe_respects_eth_reserve(cand.from_asset, holdings):
+                return _as_intent(cand)
+
+        # 3) fallbacks. Prefer putting spare USD to work in an unheld core coin.
+        live = {a: q for a, q in holdings.items() if q > 0}
+        if live.get("USD", 0.0) > self.settings.min_usd_trade:
+            for core in self.settings.core_assets:
+                if core != "USD" and core not in held:
+                    return TradeIntent(
+                        from_asset="USD", to_asset=core, reason=f"probe diversify into {core}",
+                        size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
+                    )
+            return TradeIntent(
+                from_asset="USD", to_asset="ETH", reason="probe into ETH",
+                size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
+            )
+        # else trim a sliver of the largest holding that respects the ETH reserve
+        non_usd = {
+            a: q * usd_prices.get(a, 0.0)
+            for a, q in live.items()
+            if a != "USD" and self._probe_respects_eth_reserve(a, holdings)
+        }
+        if non_usd:
+            asset = max(non_usd, key=non_usd.get)
+            return TradeIntent(
+                from_asset=asset, to_asset="USD", reason="probe to USD",
+                size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
+            )
+        return None
 
     def _notify_discord_trades(
         self, trades: list[dict], portfolio: float, baseline_pnl: float
@@ -1311,6 +1462,16 @@ class TradingEngine:
 
                 if trade:
 
+                    trade["edge"] = intent.edge
+
+                    trade["gross_return_pct"] = intent.gross_return_pct
+
+                    trade["is_defensive"] = intent.is_defensive
+
+                    trade["is_expansion"] = intent.is_expansion
+
+                    trade["is_held_swap"] = intent.is_held_swap
+
                     receipt_path = self.receipts.save(trade)
 
                     trade["receipt_file"] = str(receipt_path)
@@ -1333,7 +1494,7 @@ class TradingEngine:
 
                     break
 
-
+            self._maybe_force_probe(intents, result, holdings, usd_prices, portfolio, trades)
 
         status = build_status_snapshot(
 
