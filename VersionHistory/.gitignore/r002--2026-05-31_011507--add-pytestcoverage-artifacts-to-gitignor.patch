@@ -1,0 +1,38 @@
+--- a/.gitignore
++++ b/.gitignore
+@@ -3,10 +3,17 @@
+ *.py[cod]
+ .venv/
+ venv/
++
++# pytest / coverage artifacts
++.coverage
++.coverage.*
++htmlcov/
++coverage.xml
+ logs/
+ receipts/
+ *.log
+ .paper_state.json
++paper_portfolio.json
+ .discord_pins.json
+ .watchdog_state.json
+ diagnostics/
+@@ -14,9 +21,17 @@
+ logs/discord_chat*.log
+ logs/discord_chat.log.*
+ Error Logs/
++reports/
++.auditor_state.json
++runtime_overrides.json
++.kraken_monitor_baseline.json
+ 
+ # Version history is tracked in git (see feature 013) - keep it out of any
+ # wildcard exclusions added later. Baselines, patches, and CHANGELOG.md all
+ # stay in version control so revisions are portable across machines.
++VersionHistory/
++VersionHistory/**
++
++# Section is mistakenly negated above; VersionHistory IS tracked. Re-allow:
+ !VersionHistory/
+ !VersionHistory/**

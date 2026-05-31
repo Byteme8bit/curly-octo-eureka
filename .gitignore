@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# pytest / coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 logs/
 receipts/
 *.log
