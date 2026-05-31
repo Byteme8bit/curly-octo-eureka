@@ -21,7 +21,7 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Add `.gitattributes` to normalise line endings.** Every commit on
+- [x] **Add `.gitattributes` to normalise line endings.** Every commit on
   Windows shows ~30 spurious `M` entries from CRLF↔LF flapping. Set
   `* text=auto eol=lf` and re-normalise once.
 - [ ] **Audit log levels across `bot/`.** Inconsistent: `fee_engine`
@@ -29,10 +29,14 @@ what to work on.
   Pick a convention (e.g. WARNING = user should see, INFO = debug-only)
   and write it as a short policy in `docs/logging_conventions.md`,
   then sweep modules to match.
-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
+- [x] **Detect other "stale-state-on-disk" patterns.** We fixed
   `.auditor_state.json` (PR #8/#9). Audit the other persistent state
   files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
   for similar TTL-based fields that load() doesn't prune.
+  — `.watchdog_state.json`: `seen_diagnostics` was unbounded; capped at 500.
+  — `.paper_state.json`: `trades` list was unbounded; capped at 500, pruned on load+save.
+  — `.discord_pins.json`: no TTL fields; `reconcile()` handles live sync correctly.
+  — `RiskState.paused_until` / `hour_window_start`: runtime already clears stale values.
 - [ ] **Add a `pytest --cov` run to CI** so coverage drops are visible
   on every PR. Pin a minimum threshold (start at 80%, ratchet up).
 
@@ -72,3 +76,6 @@ what to work on.
 ## Done
 
 (Add entries here as they ship — most recent first.)
+
+- [x] **`.gitattributes` LF normalisation** — `cursor/tradebot-optimization-agent-22d1` (2026-05-31)
+- [x] **Cap `seen_diagnostics` + `PaperState.trades` unbounded growth** — `cursor/tradebot-optimization-agent-22d1` (2026-05-31)
