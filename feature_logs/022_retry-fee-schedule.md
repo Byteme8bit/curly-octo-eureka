@@ -1,7 +1,7 @@
 # 022 — Retry fee schedule after transient failures
 
 **Requested:** 2026-05-31 04:03 PDT
-**Status:** in progress
+**Status:** complete
 
 ## Request
 Deep bug-finding automation: inspect recent commits for high-severity correctness bugs, fix only concrete critical issues, and report bug/impact, root cause, fix, and validation.
@@ -12,7 +12,8 @@ Deep bug-finding automation: inspect recent commits for high-severity correctnes
 - Added regression coverage in `tests/test_fee_engine.py` for recovery after an initial public fee-schedule outage.
 
 ## Verification
-- Pending.
+- `pytest tests/test_fee_engine.py` — 10 passed.
+- `pytest` — 260 passed.
 
 ## Notes
 - Watchdog alert delivery also has reliability risk under Discord outages, but the runtime-log file offset path needs a durable retry-queue design to fully address single-event delivery loss. The fee-schedule issue has a narrower, high-confidence fix.
