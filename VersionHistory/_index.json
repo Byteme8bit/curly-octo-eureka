@@ -179,6 +179,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "bot/fee_engine.py": [
+    {
+      "added": 23,
+      "number": 1,
+      "patch": "r001--2026-05-31_040921--retry-fee-schedule.patch",
+      "path": "bot/fee_engine.py",
+      "reason": "retry fee schedule",
+      "removed": 5,
+      "request_id": "022",
+      "timestamp": "2026-05-31 04:09:21 PDT"
+    }
+  ],
   "config.py": [
     {
       "added": 0,
@@ -293,6 +305,18 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:22 PDT"
+    }
+  ],
+  "tests/test_fee_engine.py": [
+    {
+      "added": 15,
+      "number": 1,
+      "patch": "r001--2026-05-31_040921--fee-retry-regression.patch",
+      "path": "tests/test_fee_engine.py",
+      "reason": "fee retry regression",
+      "removed": 0,
+      "request_id": "022",
+      "timestamp": "2026-05-31 04:09:21 PDT"
     }
   ],
   "tests/test_version_history.py": [

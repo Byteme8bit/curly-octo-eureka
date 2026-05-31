@@ -13,23 +13,15 @@ logger = logging.getLogger(__name__)
 class FeeEngine:
     """Fetch and cache per-symbol taker fees from the exchange API."""
 
-    def __init__(
-        self,
-        exchange: ccxt.kraken,
-        default_taker: float,
-        cache_ttl_sec: int = 3600,
-        schedule_retry_sec: int = 60,
-    ):
+    def __init__(self, exchange: ccxt.kraken, default_taker: float, cache_ttl_sec: int = 3600):
         self.exchange = exchange
         self.default_taker = default_taker
         self.cache_ttl_sec = cache_ttl_sec
-        self.schedule_retry_sec = schedule_retry_sec
         self._fee_cache: dict[str, tuple[float, float]] = {}  # symbol -> (fee, monotonic_ts)
         self._schedule_loaded = False
-        self._last_schedule_attempt = 0.0
         self._pair_fee: dict[str, float] = {}
 
-    def _load_schedule(self, *, now: float | None = None) -> None:
+    def _load_schedule(self) -> None:
         """Resolve per-pair taker fees with progressive fallback.
 
         Priority (best → worst):
@@ -43,24 +35,14 @@ class FeeEngine:
         if self._schedule_loaded:
             return
 
-        now = time.monotonic() if now is None else now
-        if (
-            self._last_schedule_attempt
-            and now - self._last_schedule_attempt < self.schedule_retry_sec
-        ):
-            return
-        self._last_schedule_attempt = now
-
         # 1) Personalised fees (auth-only).
         if self._try_personalised_fees():
             self._schedule_loaded = True
-            self._fee_cache.clear()
             return
 
         # 2) Public base-tier schedule from market metadata.
         if self._try_public_schedule():
             self._schedule_loaded = True
-            self._fee_cache.clear()
             return
 
         # 3) Last resort — env default for everything.
@@ -68,6 +50,7 @@ class FeeEngine:
             "Could not load any fee schedule from Kraken; using env default "
             "taker rate %.4f for all pairs", self.default_taker,
         )
+        self._schedule_loaded = True  # don't keep retrying every tick
 
     def _try_personalised_fees(self) -> bool:
         try:
@@ -140,11 +123,10 @@ class FeeEngine:
     def taker_fee(self, symbol: str) -> float:
         now = time.monotonic()
         cached = self._fee_cache.get(symbol)
-        cache_ttl = self.cache_ttl_sec if self._schedule_loaded else self.schedule_retry_sec
-        if cached and (now - cached[1]) < cache_ttl:
+        if cached and (now - cached[1]) < self.cache_ttl_sec:
             return cached[0]
 
-        self._load_schedule(now=now)
+        self._load_schedule()
         fee = self._pair_fee.get(symbol, self.default_taker)
         self._fee_cache[symbol] = (fee, now)
         return fee
