@@ -29,3 +29,7 @@ VersionHistory/**
 # Section is mistakenly negated above; VersionHistory IS tracked. Re-allow:
 !VersionHistory/
 !VersionHistory/**
+
+# pytest-cov artefacts
+.coverage
+htmlcov/
