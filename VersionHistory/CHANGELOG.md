@@ -390,3 +390,75 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -1
 - **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
 
+## watchdog/state.py — r001
+
+- **When:** 2026-05-31 13:17:08 PDT
+- **Reason:** add _clean_recent_errors pruning on load
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_131708--add-cleanrecenterrors-pruning-on-load.patch`
+
+## bot/paper_broker.py — r002
+
+- **When:** 2026-05-31 13:17:08 PDT
+- **Reason:** TTL pruning for paused_until and hour_window in RiskState
+- **Request:** 029
+- **Diff:** +29 / -3
+- **Patch:** `r002--2026-05-31_131708--ttl-pruning-for-pauseduntil-and-hourwind.patch`
+
+## bot/auditor/report.py — r001
+
+- **When:** 2026-05-31 13:17:12 PDT
+- **Reason:** add regime headline callout next to Forecast
+- **Request:** 030
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_131712--add-regime-headline-callout-next-to-fore.patch`
+
+## tests/test_auditor.py — r002
+
+- **When:** 2026-05-31 13:17:12 PDT
+- **Reason:** add market context regression tests
+- **Request:** 030
+- **Diff:** +126 / -0
+- **Patch:** `r002--2026-05-31_131712--add-market-context-regression-tests.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-05-31 13:17:17 PDT
+- **Reason:** add pytest-cov to dev requirements
+- **Request:** 031
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_131717--add-pytest-cov-to-dev-requirements.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-05-31 13:17:17 PDT
+- **Reason:** add cov-fail-under=47 threshold
+- **Request:** 031
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_131717--add-cov-fail-under47-threshold.patch`
+
+## .gitignore — r002
+
+- **When:** 2026-05-31 13:17:17 PDT
+- **Reason:** ignore .coverage and htmlcov artifacts
+- **Request:** 031
+- **Diff:** +13 / -0
+- **Patch:** `r002--2026-05-31_131717--ignore-coverage-and-htmlcov-artifacts.patch`
+
+## tests/test_watchdog_state.py — r001
+
+- **When:** 2026-05-31 13:17:21 PDT
+- **Reason:** add recent_errors TTL pruning regression tests
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_131721--add-recenterrors-ttl-pruning-regression.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-05-31 13:17:21 PDT
+- **Reason:** mark all three Now items done
+- **Request:** 029
+- **Diff:** +6 / -14
+- **Patch:** `r002--2026-05-31_131721--mark-all-three-now-items-done.patch`
+

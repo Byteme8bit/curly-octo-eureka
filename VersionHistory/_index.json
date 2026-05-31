@@ -21,6 +21,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_131717--add-cov-fail-under47-threshold.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "add cov-fail-under=47 threshold",
+      "removed": 0,
+      "request_id": "031",
+      "timestamp": "2026-05-31 13:17:17 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -31,6 +43,16 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    },
+    {
+      "added": 13,
+      "number": 2,
+      "patch": "r002--2026-05-31_131717--ignore-coverage-and-htmlcov-artifacts.patch",
+      "path": ".gitignore",
+      "reason": "ignore .coverage and htmlcov artifacts",
+      "removed": 0,
+      "request_id": "031",
+      "timestamp": "2026-05-31 13:17:17 PDT"
     }
   ],
   "BACKLOG.md": [
@@ -43,6 +65,16 @@
       "removed": 11,
       "request_id": "027",
       "timestamp": "2026-05-30 22:16:52 PDT"
+    },
+    {
+      "added": 6,
+      "number": 2,
+      "patch": "r002--2026-05-31_131721--mark-all-three-now-items-done.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark all three Now items done",
+      "removed": 14,
+      "request_id": "029",
+      "timestamp": "2026-05-31 13:17:21 PDT"
     }
   ],
   "automation/maintenance_prompt.md": [
@@ -123,6 +155,18 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    }
+  ],
+  "bot/auditor/report.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_131712--add-regime-headline-callout-next-to-fore.patch",
+      "path": "bot/auditor/report.py",
+      "reason": "add regime headline callout next to Forecast",
+      "removed": 0,
+      "request_id": "030",
+      "timestamp": "2026-05-31 13:17:12 PDT"
     }
   ],
   "bot/auditor/state.py": [
@@ -267,6 +311,16 @@
       "removed": 1,
       "request_id": "028",
       "timestamp": "2026-05-30 22:52:19 PDT"
+    },
+    {
+      "added": 29,
+      "number": 2,
+      "patch": "r002--2026-05-31_131708--ttl-pruning-for-pauseduntil-and-hourwind.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "TTL pruning for paused_until and hour_window in RiskState",
+      "removed": 3,
+      "request_id": "029",
+      "timestamp": "2026-05-31 13:17:08 PDT"
     }
   ],
   "bot/report.py": [
@@ -395,6 +449,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "requirements-dev.txt": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_131717--add-pytest-cov-to-dev-requirements.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov to dev requirements",
+      "removed": 0,
+      "request_id": "031",
+      "timestamp": "2026-05-31 13:17:17 PDT"
+    }
+  ],
   "scripts/version_history.py": [
     {
       "added": 0,
@@ -417,6 +483,16 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:58 PDT"
+    },
+    {
+      "added": 126,
+      "number": 2,
+      "patch": "r002--2026-05-31_131712--add-market-context-regression-tests.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "add market context regression tests",
+      "removed": 0,
+      "request_id": "030",
+      "timestamp": "2026-05-31 13:17:12 PDT"
     }
   ],
   "tests/test_auditor_chat.py": [
@@ -475,6 +551,30 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ],
+  "tests/test_watchdog_state.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_131721--add-recenterrors-ttl-pruning-regression.patch",
+      "path": "tests/test_watchdog_state.py",
+      "reason": "add recent_errors TTL pruning regression tests",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 13:17:21 PDT"
+    }
+  ],
+  "watchdog/state.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_131708--add-cleanrecenterrors-pruning-on-load.patch",
+      "path": "watchdog/state.py",
+      "reason": "add _clean_recent_errors pruning on load",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 13:17:08 PDT"
     }
   ]
 }

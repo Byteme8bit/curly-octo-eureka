@@ -1,0 +1,142 @@
+--- a/tests/test_auditor.py
++++ b/tests/test_auditor.py
+@@ -604,6 +604,30 @@
+     assert restored.last_scheduled_run_at == state.last_scheduled_run_at
+ 
+ 
++def test_state_load_drops_expired_proposals(tmp_path: Path) -> None:
++    """Regression: a restart used to inherit proposals past their TTL,
++    causing the chat tool to surface ghost proposals from days ago."""
++    state_file = tmp_path / ".auditor_state.json"
++    state = AuditorState()
++    state.add_proposal(_future_proposal())   # still valid
++    state.add_proposal(_expired_proposal())  # 6 years old
++    state.save(state_file)
++
++    restored = AuditorState.load(state_file)
++    assert "abc12345" in restored.pending_proposals
++    assert "expired1" not in restored.pending_proposals, (
++        "AuditorState.load must prune expired proposals so chat tools "
++        "don't surface ghost data after a restart"
++    )
++
++    # The cleaned state should also be persisted to disk immediately so the
++    # on-disk file reflects reality (otherwise an interrupted bot keeps the
++    # stale entries forever).
++    rehydrated = json.loads(state_file.read_text(encoding="utf-8"))
++    assert "expired1" not in rehydrated["pending_proposals"]
++    assert "abc12345" in rehydrated["pending_proposals"]
++
++
+ # ---------------------------------------------------------------------------
+ # report
+ # ---------------------------------------------------------------------------
+@@ -629,6 +653,108 @@
+     ]:
+         assert header in md, f"missing section: {header}"
+     assert "Auditor -confirm" in md  # confirm syntax surfaced
++
++
++def test_render_markdown_report_market_context_shows_eth_btc_headlines() -> None:
++    """ETH/BTC headlines must appear as a 'Market context' callout in the Forecast section."""
++    from bot.auditor.report import _select_regime_headlines
++
++    eth_head = NewsHeadline(
++        title="ETH rally continues", url="u1", published_at="2026-05-31",
++        source="CoinDesk", tickers=["ETH"], sentiment="positive",
++    )
++    sol_head = NewsHeadline(
++        title="SOL network upgrade", url="u2", published_at="2026-05-31",
++        source="Decrypt", tickers=["SOL"], sentiment="neutral",
++    )
++    btc_head = NewsHeadline(
++        title="BTC hits resistance", url="u3", published_at="2026-05-31",
++        source="Cointelegraph", tickers=["BTC"], sentiment="negative",
++    )
++
++    # _select_regime_headlines should prefer ETH/BTC
++    selected = _select_regime_headlines([sol_head, eth_head, btc_head], max_items=2)
++    assert len(selected) == 2
++    assert all(bool({"ETH", "BTC"} & set(h.tickers)) for h in selected)
++
++    # Full markdown report must contain the Market context block
++    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
++    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
++    md = render_markdown_report(
++        insights, forecast, [sol_head, eth_head, btc_head], [],
++        settings=_settings_stub(),
++    )
++    assert "Market context" in md
++    assert "ETH rally continues" in md or "BTC hits resistance" in md
++
++    # When no headlines, the Market context block should be absent
++    md_no_news = render_markdown_report(
++        insights, forecast, [], [], settings=_settings_stub(),
++    )
++    assert "Market context" not in md_no_news
++
++
++def test_render_markdown_report_market_context_falls_back_to_any_headline() -> None:
++    """When no ETH/BTC headlines exist, fall back to the first headline."""
++    sol_head = NewsHeadline(
++        title="SOL validator count surges", url="u", published_at="2026-05-31",
++        source="TheBlock", tickers=["SOL"], sentiment="positive",
++    )
++    insights = analyze_trades([], {"ETH": 1.0}, _settings_stub())
++    forecast = forecast_pnl(insights, [])
++    md = render_markdown_report(insights, forecast, [sol_head], [], settings=_settings_stub())
++    assert "Market context" in md
++    assert "SOL validator count surges" in md
++
++
++def test_render_discord_summary_uses_source_when_sentiment_unknown() -> None:
++    """RSS feeds carry source but no sentiment — we should show the publication name
++    instead of the visually-noisy `[unknown]` tag."""
++    from bot.auditor.report import _format_news_tag
++
++    rss_headline = NewsHeadline(
++        title="CFTC asks to vacate Gemini settlement",
++        url="https://coindesk.example/article",
++        published_at="2026-05-27",
++        source="CoinDesk",
++        tickers=["BTC"],
++        sentiment="unknown",
++    )
++    tagged = NewsHeadline(
++        title="ETH at all-time high",
++        url="x",
++        published_at="2026-05-27",
++        source="Cointelegraph",
++        tickers=["ETH"],
++        sentiment="positive",
++    )
++    no_source = NewsHeadline(
++        title="Market thoughts",
++        url="x",
++        published_at="2026-05-27",
++        source="",
++        tickers=[],
++        sentiment="negative",
++    )
++    bare = NewsHeadline(
++        title="Bare wire",
++        url="x",
++        published_at="",
++        source="",
++        tickers=[],
++        sentiment="unknown",
++    )
++    assert _format_news_tag(rss_headline) == "[CoinDesk]"
++    assert _format_news_tag(tagged) == "[Cointelegraph, positive]"
++    assert _format_news_tag(no_source) == "[negative]"
++    assert _format_news_tag(bare) == "[news]"
++
++    # And end-to-end: the summary should NOT contain "[unknown]" for RSS items.
++    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
++    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
++    summary = render_discord_summary(insights, forecast, [rss_headline], [])
++    assert "[unknown]" not in summary
++    assert "[CoinDesk]" in summary
+ 
+ 
+ def test_render_discord_summary_stays_under_1900_chars() -> None:
