@@ -486,3 +486,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +60 / -21
 - **Patch:** `r001--2026-06-01_075337--emit-atomic-closed-loop-prefee-gross.patch`
 
+## automation/maintenance_prompt.md — r002
+
+- **When:** 2026-06-01 15:42:50 PDT
+- **Reason:** junior+senior review loop, 5 inputs, 3 subsystems
+- **Request:** 031
+- **Diff:** +176 / -79
+- **Patch:** `r002--2026-06-01_154250--juniorsenior-review-loop-5-inputs-3-subs.patch`
+
