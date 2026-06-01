@@ -502,3 +502,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +15 / -0
 - **Patch:** `r002--2026-06-01_153519--retry-fee-schedule-after-transient-failu.patch`
 
+## automation/maintenance_prompt.md — r002
+
+- **When:** 2026-06-01 15:48:51 PDT
+- **Reason:** junior+senior review loop, 5 inputs, 3 subsystems
+- **Request:** 032
+- **Diff:** +176 / -79
+- **Patch:** `r002--2026-06-01_154851--juniorsenior-review-loop-5-inputs-3-subs.patch`
+

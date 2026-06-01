@@ -55,6 +55,16 @@
       "removed": 229,
       "request_id": "027",
       "timestamp": "2026-05-30 22:16:52 PDT"
+    },
+    {
+      "added": 176,
+      "number": 2,
+      "patch": "r002--2026-06-01_154851--juniorsenior-review-loop-5-inputs-3-subs.patch",
+      "path": "automation/maintenance_prompt.md",
+      "reason": "junior+senior review loop, 5 inputs, 3 subsystems",
+      "removed": 79,
+      "request_id": "032",
+      "timestamp": "2026-06-01 15:48:51 PDT"
     }
   ],
   "bot/adaptive.py": [
