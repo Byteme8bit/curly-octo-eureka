@@ -101,6 +101,28 @@
       "removed": 9,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    },
+    {
+      "added": 15,
+      "number": 2,
+      "patch": "r002--2026-06-01_071342--allow-drafting-pending-proposal.patch",
+      "path": "bot/auditor/chat/service.py",
+      "reason": "allow drafting pending proposal",
+      "removed": 4,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:42 PDT"
+    }
+  ],
+  "bot/auditor/chat/tools.py": [
+    {
+      "added": 81,
+      "number": 1,
+      "patch": "r001--2026-06-01_071342--createproposal-chat-tool.patch",
+      "path": "bot/auditor/chat/tools.py",
+      "reason": "create_proposal chat tool",
+      "removed": 1,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:42 PDT"
     }
   ],
   "bot/auditor/config.py": [
@@ -123,6 +145,18 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    }
+  ],
+  "bot/auditor/proposer.py": [
+    {
+      "added": 38,
+      "number": 1,
+      "patch": "r001--2026-06-01_071330--add-buildproposal-helper.patch",
+      "path": "bot/auditor/proposer.py",
+      "reason": "add build_proposal helper",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
   "bot/auditor/state.py": [
@@ -157,6 +191,16 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    },
+    {
+      "added": 81,
+      "number": 3,
+      "patch": "r003--2026-06-01_071330--createproposal-auditor-source.patch",
+      "path": "bot/auditor_service.py",
+      "reason": "create_proposal + Auditor source",
+      "removed": 4,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
   "bot/discord_bot.py": [
@@ -179,6 +223,16 @@
       "removed": 9,
       "request_id": "026",
       "timestamp": "2026-05-30 22:08:03 PDT"
+    },
+    {
+      "added": 63,
+      "number": 3,
+      "patch": "r003--2026-06-01_071330--per-source-attribution-on-posts.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "per-source attribution on posts",
+      "removed": 16,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
   "bot/engine.py": [
@@ -231,6 +285,16 @@
       "removed": 2,
       "request_id": "026",
       "timestamp": "2026-05-30 22:08:03 PDT"
+    },
+    {
+      "added": 82,
+      "number": 6,
+      "patch": "r006--2026-06-01_071330--watchdog-alerts-sourcewatchdog.patch",
+      "path": "bot/engine.py",
+      "reason": "watchdog alerts source=WatchDog",
+      "removed": 30,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -417,6 +481,16 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:58 PDT"
+    },
+    {
+      "added": 179,
+      "number": 2,
+      "patch": "r002--2026-06-01_071343--createproposal-tests.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "create_proposal tests",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:43 PDT"
     }
   ],
   "tests/test_auditor_chat.py": [
@@ -439,6 +513,28 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:22 PDT"
+    },
+    {
+      "added": 346,
+      "number": 3,
+      "patch": "r003--2026-06-01_071343--createproposal-tool-tests.patch",
+      "path": "tests/test_auditor_chat.py",
+      "reason": "create_proposal tool tests",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:43 PDT"
+    }
+  ],
+  "tests/test_discord_commands.py": [
+    {
+      "added": 113,
+      "number": 1,
+      "patch": "r001--2026-06-01_071342--attribution-tests.patch",
+      "path": "tests/test_discord_commands.py",
+      "reason": "attribution tests",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:42 PDT"
     }
   ],
   "tests/test_fee_engine.py": [

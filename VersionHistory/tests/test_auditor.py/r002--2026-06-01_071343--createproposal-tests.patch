@@ -1,0 +1,202 @@
+--- a/tests/test_auditor.py
++++ b/tests/test_auditor.py
+@@ -604,6 +604,30 @@
+     assert restored.last_scheduled_run_at == state.last_scheduled_run_at
+ 
+ 
++def test_state_load_drops_expired_proposals(tmp_path: Path) -> None:
++    """Regression: a restart used to inherit proposals past their TTL,
++    causing the chat tool to surface ghost proposals from days ago."""
++    state_file = tmp_path / ".auditor_state.json"
++    state = AuditorState()
++    state.add_proposal(_future_proposal())   # still valid
++    state.add_proposal(_expired_proposal())  # 6 years old
++    state.save(state_file)
++
++    restored = AuditorState.load(state_file)
++    assert "abc12345" in restored.pending_proposals
++    assert "expired1" not in restored.pending_proposals, (
++        "AuditorState.load must prune expired proposals so chat tools "
++        "don't surface ghost data after a restart"
++    )
++
++    # The cleaned state should also be persisted to disk immediately so the
++    # on-disk file reflects reality (otherwise an interrupted bot keeps the
++    # stale entries forever).
++    rehydrated = json.loads(state_file.read_text(encoding="utf-8"))
++    assert "expired1" not in rehydrated["pending_proposals"]
++    assert "abc12345" in rehydrated["pending_proposals"]
++
++
+ # ---------------------------------------------------------------------------
+ # report
+ # ---------------------------------------------------------------------------
+@@ -629,6 +653,56 @@
+     ]:
+         assert header in md, f"missing section: {header}"
+     assert "Auditor -confirm" in md  # confirm syntax surfaced
++
++
++def test_render_discord_summary_uses_source_when_sentiment_unknown() -> None:
++    """RSS feeds carry source but no sentiment — we should show the publication name
++    instead of the visually-noisy `[unknown]` tag."""
++    from bot.auditor.report import _format_news_tag
++
++    rss_headline = NewsHeadline(
++        title="CFTC asks to vacate Gemini settlement",
++        url="https://coindesk.example/article",
++        published_at="2026-05-27",
++        source="CoinDesk",
++        tickers=["BTC"],
++        sentiment="unknown",
++    )
++    tagged = NewsHeadline(
++        title="ETH at all-time high",
++        url="x",
++        published_at="2026-05-27",
++        source="Cointelegraph",
++        tickers=["ETH"],
++        sentiment="positive",
++    )
++    no_source = NewsHeadline(
++        title="Market thoughts",
++        url="x",
++        published_at="2026-05-27",
++        source="",
++        tickers=[],
++        sentiment="negative",
++    )
++    bare = NewsHeadline(
++        title="Bare wire",
++        url="x",
++        published_at="",
++        source="",
++        tickers=[],
++        sentiment="unknown",
++    )
++    assert _format_news_tag(rss_headline) == "[CoinDesk]"
++    assert _format_news_tag(tagged) == "[Cointelegraph, positive]"
++    assert _format_news_tag(no_source) == "[negative]"
++    assert _format_news_tag(bare) == "[news]"
++
++    # And end-to-end: the summary should NOT contain "[unknown]" for RSS items.
++    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
++    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
++    summary = render_discord_summary(insights, forecast, [rss_headline], [])
++    assert "[unknown]" not in summary
++    assert "[CoinDesk]" in summary
+ 
+ 
+ def test_render_discord_summary_stays_under_1900_chars() -> None:
+@@ -760,6 +834,111 @@
+ 
+ 
+ # ---------------------------------------------------------------------------
++# Auditor chat can CREATE proposals (Issue 2) — must stay propose->confirm safe
++# ---------------------------------------------------------------------------
++
++
++def test_create_proposal_registers_pending_and_is_confirmable(tmp_path: Path) -> None:
++    service = _make_service(tmp_path)
++    out = service.create_proposal(
++        knob="min_trade_edge",  # lower-case accepted, normalised
++        proposed_value=0.0075,
++        rationale="Fee drag too high on recent trades.",
++        severity="medium",
++    )
++    assert out["created"] is True
++    pid = out["id"]
++    assert out["knob"] == "MIN_TRADE_EDGE"
++    assert out["proposed_value"] == pytest.approx(0.0075)
++    # Lands in the SAME store surfaced by `Auditor -list`.
++    assert pid in service.state.pending_proposals
++    assert pid in service.list_pending()
++    # And the existing confirm flow applies it — propose->confirm preserved.
++    assert "Applied" in service.confirm_proposal(pid)
++    data = json.loads((tmp_path / "runtime_overrides.json").read_text(encoding="utf-8"))
++    assert data["MIN_TRADE_EDGE"] == pytest.approx(0.0075)
++
++
++def test_create_proposal_rejects_unknown_knob(tmp_path: Path) -> None:
++    service = _make_service(tmp_path)
++    out = service.create_proposal(knob="FEE_RATE", proposed_value=0.1, rationale="x")
++    assert "error" in out
++    assert not service.state.pending_proposals
++    # No override written — nothing applied.
++    assert not (tmp_path / "runtime_overrides.json").exists()
++
++
++def test_create_proposal_rejects_non_numeric_value(tmp_path: Path) -> None:
++    service = _make_service(tmp_path)
++    out = service.create_proposal(knob="MIN_TRADE_EDGE", proposed_value="abc", rationale="x")
++    assert "error" in out
++    assert not service.state.pending_proposals
++
++
++def test_create_proposal_does_not_auto_apply(tmp_path: Path) -> None:
++    """Creating a proposal must never write runtime_overrides.json by itself."""
++    service = _make_service(tmp_path)
++    service.create_proposal(knob="TRADE_SIZE_PCT", proposed_value=0.08, rationale="trim size")
++    assert service.state.pending_proposals  # pending exists
++    assert not (tmp_path / "runtime_overrides.json").exists()  # but nothing applied
++
++
++def test_chat_can_create_proposal_end_to_end(tmp_path: Path) -> None:
++    """A scripted LLM that calls create_proposal results in a real pending
++    proposal in the service store that the user can confirm."""
++    from bot.auditor.chat.backends import LLMReply, ToolCall
++    from bot.auditor.chat.service import ChatService
++    from bot.auditor.chat.tools import build_tool_registry
++
++    service = _make_service(tmp_path)
++    registry = build_tool_registry(
++        broker=service.broker,
++        settings=service.settings,
++        overrides_file=service.overrides_file,
++        audit_state_provider=lambda: service.state,
++        reports_dir=service.config.reports_dir,
++        proposal_creator=service.create_proposal,
++    )
++
++    class _Scripted:
++        available = True
++
++        def __init__(self) -> None:
++            self.n = 0
++
++        def complete(self, messages, *, tools=None, temperature=0.3, max_output_tokens=1500):
++            self.n += 1
++            if self.n == 1:
++                return LLMReply(
++                    text="",
++                    tool_calls=[
++                        ToolCall(
++                            name="create_proposal",
++                            arguments={
++                                "knob": "MIN_TRADE_EDGE",
++                                "proposed_value": 0.0075,
++                                "rationale": "Fee drag dominated last night's trades.",
++                                "severity": "high",
++                            },
++                            call_id="c1",
++                        )
++                    ],
++                    finish_reason="tool",
++                )
++            return LLMReply(
++                text="Created proposal — approve with Auditor -confirm.",
++                finish_reason="stop",
++            )
++
++    chat = ChatService(backend=_Scripted(), tools=registry, max_tool_iterations=3)
++    result = chat.ask("audit last night and make a proposal to improve strategy")
++    assert result.tool_calls_made == 1
++    assert len(service.state.pending_proposals) == 1
++    pid = next(iter(service.state.pending_proposals))
++    assert "Applied" in service.confirm_proposal(pid)
++
++
++# ---------------------------------------------------------------------------
+ # config._apply_runtime_overrides
+ # ---------------------------------------------------------------------------
+ 

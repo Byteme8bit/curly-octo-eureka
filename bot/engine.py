@@ -403,7 +403,7 @@ class TradingEngine:
 
             return
 
-        self.discord.post_important(message, pin=pin)
+        self.discord.post_important(message, pin=pin, source="WatchDog")
 
 
 

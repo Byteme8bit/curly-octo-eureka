@@ -834,6 +834,111 @@ def test_auditor_service_revert_returns_helpful_message_when_missing(tmp_path: P
 
 
 # ---------------------------------------------------------------------------
+# Auditor chat can CREATE proposals (Issue 2) — must stay propose->confirm safe
+# ---------------------------------------------------------------------------
+
+
+def test_create_proposal_registers_pending_and_is_confirmable(tmp_path: Path) -> None:
+    service = _make_service(tmp_path)
+    out = service.create_proposal(
+        knob="min_trade_edge",  # lower-case accepted, normalised
+        proposed_value=0.0075,
+        rationale="Fee drag too high on recent trades.",
+        severity="medium",
+    )
+    assert out["created"] is True
+    pid = out["id"]
+    assert out["knob"] == "MIN_TRADE_EDGE"
+    assert out["proposed_value"] == pytest.approx(0.0075)
+    # Lands in the SAME store surfaced by `Auditor -list`.
+    assert pid in service.state.pending_proposals
+    assert pid in service.list_pending()
+    # And the existing confirm flow applies it — propose->confirm preserved.
+    assert "Applied" in service.confirm_proposal(pid)
+    data = json.loads((tmp_path / "runtime_overrides.json").read_text(encoding="utf-8"))
+    assert data["MIN_TRADE_EDGE"] == pytest.approx(0.0075)
+
+
+def test_create_proposal_rejects_unknown_knob(tmp_path: Path) -> None:
+    service = _make_service(tmp_path)
+    out = service.create_proposal(knob="FEE_RATE", proposed_value=0.1, rationale="x")
+    assert "error" in out
+    assert not service.state.pending_proposals
+    # No override written — nothing applied.
+    assert not (tmp_path / "runtime_overrides.json").exists()
+
+
+def test_create_proposal_rejects_non_numeric_value(tmp_path: Path) -> None:
+    service = _make_service(tmp_path)
+    out = service.create_proposal(knob="MIN_TRADE_EDGE", proposed_value="abc", rationale="x")
+    assert "error" in out
+    assert not service.state.pending_proposals
+
+
+def test_create_proposal_does_not_auto_apply(tmp_path: Path) -> None:
+    """Creating a proposal must never write runtime_overrides.json by itself."""
+    service = _make_service(tmp_path)
+    service.create_proposal(knob="TRADE_SIZE_PCT", proposed_value=0.08, rationale="trim size")
+    assert service.state.pending_proposals  # pending exists
+    assert not (tmp_path / "runtime_overrides.json").exists()  # but nothing applied
+
+
+def test_chat_can_create_proposal_end_to_end(tmp_path: Path) -> None:
+    """A scripted LLM that calls create_proposal results in a real pending
+    proposal in the service store that the user can confirm."""
+    from bot.auditor.chat.backends import LLMReply, ToolCall
+    from bot.auditor.chat.service import ChatService
+    from bot.auditor.chat.tools import build_tool_registry
+
+    service = _make_service(tmp_path)
+    registry = build_tool_registry(
+        broker=service.broker,
+        settings=service.settings,
+        overrides_file=service.overrides_file,
+        audit_state_provider=lambda: service.state,
+        reports_dir=service.config.reports_dir,
+        proposal_creator=service.create_proposal,
+    )
+
+    class _Scripted:
+        available = True
+
+        def __init__(self) -> None:
+            self.n = 0
+
+        def complete(self, messages, *, tools=None, temperature=0.3, max_output_tokens=1500):
+            self.n += 1
+            if self.n == 1:
+                return LLMReply(
+                    text="",
+                    tool_calls=[
+                        ToolCall(
+                            name="create_proposal",
+                            arguments={
+                                "knob": "MIN_TRADE_EDGE",
+                                "proposed_value": 0.0075,
+                                "rationale": "Fee drag dominated last night's trades.",
+                                "severity": "high",
+                            },
+                            call_id="c1",
+                        )
+                    ],
+                    finish_reason="tool",
+                )
+            return LLMReply(
+                text="Created proposal — approve with Auditor -confirm.",
+                finish_reason="stop",
+            )
+
+    chat = ChatService(backend=_Scripted(), tools=registry, max_tool_iterations=3)
+    result = chat.ask("audit last night and make a proposal to improve strategy")
+    assert result.tool_calls_made == 1
+    assert len(service.state.pending_proposals) == 1
+    pid = next(iter(service.state.pending_proposals))
+    assert "Applied" in service.confirm_proposal(pid)
+
+
+# ---------------------------------------------------------------------------
 # config._apply_runtime_overrides
 # ---------------------------------------------------------------------------
 
