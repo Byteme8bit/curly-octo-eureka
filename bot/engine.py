@@ -512,7 +512,9 @@ class TradingEngine:
 
     def _execute_intent(self, intent, usd_prices: dict[str, float]) -> dict | None:
 
-        route = self.markets.find_path(intent.from_asset, intent.to_asset)
+        route = getattr(intent, "route", None) or self.markets.find_path(
+            intent.from_asset, intent.to_asset
+        )
 
         if not route:
 
@@ -662,8 +664,31 @@ class TradingEngine:
         intent.is_defensive = False
         intent.reason = (
             "Forced probe \u2014 no setup cleared the bar while idle; trading small "
-            "to stay active (paper test, edge not guaranteed)"
+            "on a candidate that still clears fees + slippage"
         )
+
+        # Break-even gate: a probe exists to keep the bot active, NOT to bleed
+        # fees. Re-check the candidate through pre-flight with LIVE fees and a
+        # zero-profit floor; if it cannot clear real fees + slippage we skip it
+        # entirely. This makes IDLE_PROBE_FORCE_MINUTES safe to leave enabled —
+        # it can only ever fire a non-losing trade.
+        probe_route = getattr(intent, "route", None) or self.markets.find_path(
+            intent.from_asset, intent.to_asset
+        )
+        if not probe_route:
+            return
+        probe_pf = self.preflight.validate(
+            intent,
+            route_symbols=probe_route.symbols,
+            hops=probe_route.hops,
+            is_defensive=False,
+            min_net_profit=0.0,
+        )
+        if not probe_pf.allowed:
+            logger.info("Forced probe skipped — would not clear fees: %s", probe_pf.reason)
+            return
+        intent.edge = probe_pf.net_return_pct
+
         trade = self._execute_intent(intent, usd_prices)
         if not trade:
             return
@@ -1368,7 +1393,9 @@ class TradingEngine:
 
                     continue
 
-                route = self.markets.find_path(intent.from_asset, intent.to_asset)
+                route = getattr(intent, "route", None) or self.markets.find_path(
+                    intent.from_asset, intent.to_asset
+                )
 
                 if not route:
 

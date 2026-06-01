@@ -34,12 +34,6 @@ class TradeIntent:
     require_leader_stable: bool = False
     strategy_name: str = ""
     gross_return_pct: float = 0.0
-    # Optional pre-computed multi-leg route. When set (e.g. a closed
-    # triangular-arbitrage loop A->B->C->A whose start == end), the engine
-    # executes THIS route atomically instead of re-deriving a single-leg path
-    # from from_asset/to_asset. This is what prevents the arb scanner from
-    # firing only leg 1 and accumulating an intermediate coin (pure fee churn).
-    route: object | None = None
 
 
 @dataclass
