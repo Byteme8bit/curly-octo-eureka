@@ -486,3 +486,75 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +60 / -21
 - **Patch:** `r001--2026-06-01_075337--emit-atomic-closed-loop-prefee-gross.patch`
 
+## watchdog/state.py — r001
+
+- **When:** 2026-06-01 13:17:56 PDT
+- **Reason:** cap seen_diagnostics at 500 on load+runtime
+- **Request:** 031
+- **Diff:** +4 / -2
+- **Patch:** `r001--2026-06-01_131756--cap-seendiagnostics-at-500-on-loadruntim.patch`
+
+## bot/paper_broker.py — r002
+
+- **When:** 2026-06-01 13:17:56 PDT
+- **Reason:** prune expired paused_until and hour_window_start
+- **Request:** 031
+- **Diff:** +40 / -1
+- **Patch:** `r002--2026-06-01_131756--prune-expired-pauseduntil-and-hourwindow.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-06-01 13:18:01 PDT
+- **Reason:** add pytest-cov for CI coverage threshold
+- **Request:** 032
+- **Diff:** +1 / -0
+- **Patch:** `r001--2026-06-01_131801--add-pytest-cov-for-ci-coverage-threshold.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-06-01 13:18:01 PDT
+- **Reason:** add --cov-fail-under=50 to CI pytest
+- **Request:** 032
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-01_131801--add-cov-fail-under50-to-ci-pytest.patch`
+
+## scripts/post_discord_alert.py — r001
+
+- **When:** 2026-06-01 13:18:06 PDT
+- **Reason:** use shared discord_webhook module
+- **Request:** 033
+- **Diff:** +9 / -20
+- **Patch:** `r001--2026-06-01_131806--use-shared-discordwebhook-module.patch`
+
+## scripts/monitor_kraken_changes.py — r001
+
+- **When:** 2026-06-01 13:18:06 PDT
+- **Reason:** use shared discord_webhook module
+- **Request:** 033
+- **Diff:** +11 / -15
+- **Patch:** `r001--2026-06-01_131806--use-shared-discordwebhook-module.patch`
+
+## bot/preflight.py — r001
+
+- **When:** 2026-06-01 13:18:11 PDT
+- **Reason:** show bps in reject messages
+- **Request:** 034
+- **Diff:** +9 / -4
+- **Patch:** `r001--2026-06-01_131811--show-bps-in-reject-messages.patch`
+
+## README.md — r001
+
+- **When:** 2026-06-01 13:18:11 PDT
+- **Reason:** add Discord commands section + table
+- **Request:** 035
+- **Diff:** +19 / -0
+- **Patch:** `r001--2026-06-01_131811--add-discord-commands-section-table.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-06-01 13:18:48 PDT
+- **Reason:** mark 031-035 done, clear Now section
+- **Request:** 035
+- **Diff:** +19 / -23
+- **Patch:** `r002--2026-06-01_131848--mark-031-035-done-clear-now-section.patch`
+

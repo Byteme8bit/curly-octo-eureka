@@ -1,0 +1,67 @@
+--- a/BACKLOG.md
++++ b/BACKLOG.md
+@@ -21,38 +21,16 @@
+ 
+ ## Now (next 1-3 runs)
+ 
+-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
+-  `.auditor_state.json` (PR #8/#9). Audit the other persistent state
+-  files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
+-  for similar TTL-based fields that `load()` doesn't prune. Add a regression
+-  test per file that loads a stale fixture and asserts the expired entries
+-  are dropped.
+-- [ ] **Surface the news review in the auditor report.** `scripts/review_news.py`
+-  now exists (read-only `NewsClient` wrapper). Wire the same headline summary
+-  into `bot/auditor/report.py` so the periodic audit cites 1–2 ETH/BTC
+-  headlines next to the regime read. Observability only — no decision changes.
+-- [ ] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
+-  CI emits coverage but doesn't fail on regressions. Add `--cov-fail-under`
+-  (start at the current measured number, ratchet up). Read the latest CI run
+-  to find the baseline first.
++_(All items shipped — see Done.)_
+ 
+ ## Soon (anytime)
+ 
+-- [ ] **Centralise the Discord webhook posting logic.** Both
+-  `scripts/monitor_kraken_changes.py` and `scripts/post_discord_alert.py`
+-  reimplement the same urllib JSON-POST. Extract to
+-  `bot/notifications/discord_webhook.py`, give both scripts a one-liner.
+ - [ ] **`bot/auditor_service.py` is 600+ lines.** Worth splitting the
+   proposal-application path from the chat path. Only do this after
+   test coverage exists for the parts you'd extract.
+ - [ ] **Add observability counters for triangular_arbitrage strategy.**
+   How many loops scanned per tick? How many rejected for which reason?
+   (Pure observability; do NOT change the strategy's decision logic.)
+-- [ ] **Improve `pre-flight reject` messages.** Currently shows raw
+-  decimals (`gross +0.0012 - fees 0.0040 - slippage 0.0005`). Could
+-  show basis points (12bps - 40bps - 5bps) which is easier to read.
+-- [ ] **Document the full Discord command set in `README.md`.** We have
+-  `DISCORD_COMMANDS.txt` but it's not linked from the README.
+ 
+ ## Later (when there's slack)
+ 
+@@ -73,6 +51,24 @@
+ 
+ (Add entries here as they ship — most recent first.)
+ 
++- [x] **Stale TTL state pruning on load** (031): `PaperBroker._prune_stale_risk_fields`
++  clears expired `paused_until` and resets the hour-window counter;
++  `WatchdogState.seen_diagnostics` capped at 500 on load and at runtime.
++  12 regression tests added. _(2026-06-01, branch `cursor/tradebot-optimization-agent-c685`)_
++- [x] **CI coverage threshold at 50%** (032): `pytest-cov` added to
++  `requirements-dev.txt`; CI now runs `--cov-fail-under=50`.
++  _(2026-06-01, branch `cursor/tradebot-optimization-agent-c685`)_
++- [x] **Centralise Discord webhook posting** (033): `bot/notifications/discord_webhook.py`
++  extracts the shared urllib POST; both `scripts/post_discord_alert.py` and
++  `scripts/monitor_kraken_changes.py` use it.
++  _(2026-06-01, branch `cursor/tradebot-optimization-agent-c685`)_
++- [x] **Pre-flight reject messages in basis points** (034): `bot/preflight.py`
++  reason strings now show `40bps` instead of `0.0040`.
++  _(2026-06-01, branch `cursor/tradebot-optimization-agent-c685`)_
++- [x] **Document Discord command set in README** (035): "Discord commands"
++  section with quick-reference table added; links to `DISCORD_COMMANDS.txt`.
++  _(2026-06-01, branch `cursor/tradebot-optimization-agent-c685`)_
++
+ - [x] **Add a `pytest --cov` run to CI + warn on silent state recovery.**
+   Shipped by the 2026-05-30 auto run (commit `469534e`). _Note: landed on an
+   `auto/…` branch; confirm it's merged to `main` before relying on it._

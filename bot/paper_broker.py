@@ -116,9 +116,48 @@ class PaperBroker:
 
         if self.state_file.exists():
             with open(self.state_file, encoding="utf-8") as f:
-                return PaperState.from_dict(json.load(f))
+                state = PaperState.from_dict(json.load(f))
+            if self._prune_stale_risk_fields(state.risk):
+                self.state = state
+                self.save()
+            return state
 
         return PaperState(balances=dict(self.initial_balances), cost_basis={})
+
+    @staticmethod
+    def _prune_stale_risk_fields(risk: "RiskState") -> bool:
+        """Clear TTL-based fields that expired while the state was on disk.
+
+        Returns True when any field was changed (so the caller can persist the
+        pruned state immediately and avoid acting on stale data).
+        """
+        now = datetime.now(timezone.utc)
+        changed = False
+
+        if risk.paused_until:
+            try:
+                paused_dt = datetime.fromisoformat(risk.paused_until)
+                if paused_dt <= now:
+                    risk.paused_until = None
+                    risk.hibernate_alert_sent = False
+                    changed = True
+            except (ValueError, TypeError):
+                risk.paused_until = None
+                changed = True
+
+        if risk.hour_window_start:
+            try:
+                window_dt = datetime.fromisoformat(risk.hour_window_start)
+                if (now - window_dt).total_seconds() >= 3600:
+                    risk.hour_window_start = None
+                    risk.trades_this_hour = 0
+                    changed = True
+            except (ValueError, TypeError):
+                risk.hour_window_start = None
+                risk.trades_this_hour = 0
+                changed = True
+
+        return changed
 
     def save(self) -> None:
         with open(self.state_file, "w", encoding="utf-8") as f:
