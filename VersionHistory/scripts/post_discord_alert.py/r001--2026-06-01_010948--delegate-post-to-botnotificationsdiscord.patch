@@ -1,0 +1,42 @@
+--- a/scripts/post_discord_alert.py
++++ b/scripts/post_discord_alert.py
+@@ -22,35 +22,17 @@
+ from __future__ import annotations
+ 
+ import argparse
+-import json
+ import os
+ import sys
+-import urllib.request
+ 
+-
+-DISCORD_HARD_LIMIT = 2000  # Discord rejects messages longer than this
+-SAFETY_HEADROOM = 100      # leave room for the "(truncated)" marker
++from bot.notifications.discord_webhook import post_webhook
+ 
+ 
+ def post(webhook: str, *, title: str, body: str, username: str) -> int:
+     content = f"**{title}**\n{body}"
+-    if len(content) > DISCORD_HARD_LIMIT - SAFETY_HEADROOM:
+-        cut = DISCORD_HARD_LIMIT - SAFETY_HEADROOM
+-        content = content[:cut] + "\n…(truncated — see PR for full detail)"
+-    payload = json.dumps({"username": username, "content": content}).encode("utf-8")
+-    req = urllib.request.Request(
+-        webhook,
+-        data=payload,
+-        headers={"Content-Type": "application/json"},
+-        method="POST",
+-    )
+-    try:
+-        with urllib.request.urlopen(req, timeout=10) as resp:
+-            if resp.status >= 300:
+-                print(f"ERROR: Discord returned HTTP {resp.status}", file=sys.stderr)
+-                return 2
+-    except Exception as exc:  # noqa: BLE001
+-        print(f"ERROR: Discord post failed: {exc}", file=sys.stderr)
++    ok = post_webhook(webhook, content, username=username)
++    if not ok:
++        print("ERROR: Discord post failed — see logs for detail", file=sys.stderr)
+         return 2
+     return 0
+ 
