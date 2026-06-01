@@ -1,0 +1,24 @@
+--- a/bot/report.py
++++ b/bot/report.py
+@@ -2,7 +2,12 @@
+ 
+ from bot.local_time import format_pacific
+ from bot.status import StatusSnapshot
+-from bot.trade_log import format_trade_route, pnl_label_for_trade, trade_narrative
++from bot.trade_log import (
++    format_trade_route,
++    pnl_label_for_trade,
++    trade_narrative,
++    trade_rationale,
++)
+ 
+ 
+ def format_holdings(holdings: dict[str, float], usd_prices: dict[str, float]) -> list[str]:
+@@ -157,6 +162,7 @@
+     lines = [
+         "**Trade executed**",
+         trade_narrative(trade),
++        trade_rationale(trade),
+         format_trade_route(trade),
+     ]
+     if size_pct is not None:

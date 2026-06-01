@@ -18,11 +18,19 @@ class FeeEngine:
         exchange: ccxt.kraken,
         default_taker: float,
         cache_ttl_sec: int = 3600,
+        force_static: bool = False,
         schedule_retry_sec: int = 60,
     ):
         self.exchange = exchange
         self.default_taker = default_taker
         self.cache_ttl_sec = cache_ttl_sec
+        # When True, ignore the live Kraken schedule and use ``default_taker``
+        # (the env FEE_RATE) for every pair. Lets the user trade against an
+        # assumed lower fee instead of Kraken's current live taker rate.
+        self.force_static = force_static
+        # How long to wait before retrying a failed schedule load. Until a real
+        # schedule resolves, fallback fees are only cached for this long so the
+        # engine recovers automatically once Kraken connectivity returns.
         self.schedule_retry_sec = schedule_retry_sec
         self._fee_cache: dict[str, tuple[float, float]] = {}  # symbol -> (fee, monotonic_ts)
         self._schedule_loaded = False
@@ -30,6 +38,14 @@ class FeeEngine:
         self._pair_fee: dict[str, float] = {}
 
     def _load_schedule(self, *, now: float | None = None) -> None:
+        if self.force_static:
+            if not self._schedule_loaded:
+                logger.warning(
+                    "Fee source: STATIC override (FEE_FORCE_STATIC=1) — using env "
+                    "FEE_RATE %.4f for all pairs", self.default_taker,
+                )
+            self._schedule_loaded = True
+            return
         """Resolve per-pair taker fees with progressive fallback.
 
         Priority (best → worst):
@@ -63,7 +79,9 @@ class FeeEngine:
             self._fee_cache.clear()
             return
 
-        # 3) Last resort — env default for everything.
+        # 3) Last resort — env default for everything. Leave the schedule
+        # unresolved so the next lookup (after schedule_retry_sec) retries
+        # rather than pinning fallback fees for the life of the process.
         logger.warning(
             "Could not load any fee schedule from Kraken; using env default "
             "taker rate %.4f for all pairs", self.default_taker,
@@ -138,8 +156,12 @@ class FeeEngine:
         return f" [{', '.join(samples)}]" if samples else ""
 
     def taker_fee(self, symbol: str) -> float:
+        if self.force_static:
+            return self.default_taker
         now = time.monotonic()
         cached = self._fee_cache.get(symbol)
+        # While the schedule is still unresolved, cache fallback fees only for
+        # the short retry window so connectivity recovery is picked up quickly.
         cache_ttl = self.cache_ttl_sec if self._schedule_loaded else self.schedule_retry_sec
         if cached and (now - cached[1]) < cache_ttl:
             return cached[0]

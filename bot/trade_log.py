@@ -86,6 +86,56 @@ def trade_narrative(trade: dict) -> str:
     return f"Traded {format_qty(from_a, from_qty)} to {format_qty(to_a, to_qty)} because {reason}"
 
 
+def classify_trade(trade: dict) -> str:
+    """Answer the user's question: was this loss-mitigation or going for growth?
+
+    Returns a short, human label describing the *intent* behind a fill, derived
+    from the flags the strategy/engine attached to the trade dict.
+    """
+    if trade.get("is_defensive"):
+        return "LOSS-MITIGATION (defensive de-risking)"
+    gain = float(trade.get("gain_loss", 0.0))
+    side = trade.get("side", "buy")
+    if side == "sell" and trade.get("to_asset") == "USD":
+        if gain > 0:
+            return "PROFIT-TAKING (locking in a gain)"
+        if gain < 0:
+            return "LOSS-MITIGATION (cutting a losing position)"
+        return "EXIT (flat)"
+    if trade.get("is_expansion"):
+        return "GROWTH (opening a new position)"
+    if trade.get("is_held_swap") or trade.get("type") in ("cross", "multi_hop"):
+        return "REBALANCE (rotating into stronger momentum)"
+    return "GROWTH (adding to a position)"
+
+
+def _edge_str(trade: dict) -> str:
+    """Format the captured edge as a percentage, preferring gross then net."""
+    edge = trade.get("gross_return_pct") or trade.get("edge")
+    if not edge:
+        return ""
+    return f"{float(edge):+.2%}"
+
+
+def trade_rationale(trade: dict) -> str:
+    """Multi-line 'why' block for Discord/terminal.
+
+    Spells out the intent class (growth vs loss-mitigation), which strategy
+    fired, the expected edge, and the underlying reason string.
+    """
+    lines = [f"Why: {classify_trade(trade)}"]
+    strat = trade.get("strategy_name") or "unknown"
+    edge = _edge_str(trade)
+    detail = f"Strategy: `{strat}`"
+    if edge:
+        detail += f"  |  Expected edge: {edge}"
+    lines.append(detail)
+    reason = trade.get("reason")
+    if reason:
+        lines.append(f"Signal: {reason}")
+    return "\n".join(lines)
+
+
 def pnl_label(gain_loss: float, side: str, trade_type: str = "") -> str:
     """Format gain/loss for display.
 

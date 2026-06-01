@@ -105,6 +105,44 @@ def _current(settings, field: str, default: float = 0.0) -> float:
     return float(getattr(settings, field, default))
 
 
+VALID_SEVERITIES: frozenset[str] = frozenset({"low", "medium", "high"})
+
+
+def build_proposal(
+    knob: str,
+    current_value: float,
+    proposed_value: float,
+    rationale: str,
+    *,
+    severity: str = "medium",
+    ttl_minutes: int = 60,
+) -> ConfigProposal:
+    """Build a single, confirmable ``ConfigProposal`` for the pending store.
+
+    Shared by the heuristic auditor and the conversational chat so a chat-made
+    proposal is structurally identical to an audit-made one — same store, same
+    ``Auditor -confirm <id>`` apply path, same TTL semantics.
+
+    Raises ``ValueError`` if ``knob`` is not in ``ALLOWED_KNOBS``.
+    """
+    knob_norm = (knob or "").strip().upper()
+    if knob_norm not in ALLOWED_KNOBS:
+        raise ValueError(
+            f"`{knob}` is not an auditor-managed knob. Allowed: {', '.join(ALLOWED_KNOBS)}."
+        )
+    sev = (severity or "medium").strip().lower()
+    if sev not in VALID_SEVERITIES:
+        sev = "medium"
+    return _proposal(
+        knob_norm,
+        float(current_value),
+        float(proposed_value),
+        rationale,
+        sev,
+        ttl_minutes,
+    )
+
+
 def _dominant_strategy(by_strategy: list[StrategyPerformance]) -> StrategyPerformance | None:
     if not by_strategy:
         return None

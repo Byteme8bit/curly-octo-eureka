@@ -193,6 +193,28 @@ def test_load_schedule_runs_only_once() -> None:
     assert ex.fetch_calls == 1
 
 
+def test_force_static_ignores_live_schedule() -> None:
+    """FEE_FORCE_STATIC=1 must use the env default for every pair and never
+    consult the exchange — this is the 'roll back the fee bump' lever."""
+    ex = _FakeExchange(
+        personalised_fees={"ETH/USD": {"taker": 0.0040}},
+        markets={"ETH/USD": {"taker": 0.0040}},
+    )
+    engine = FeeEngine(ex, default_taker=0.0026, force_static=True)
+    assert engine.taker_fee("ETH/USD") == pytest.approx(0.0026)
+    assert engine.taker_fee("BTC/USD") == pytest.approx(0.0026)
+    assert ex.fetch_calls == 0
+    assert ex.load_markets_calls == 0
+
+
+def test_force_static_compounded_cost_uses_default() -> None:
+    ex = _FakeExchange(markets={"ETH/BTC": {"taker": 0.0040}})
+    engine = FeeEngine(ex, default_taker=0.0026, force_static=True)
+    cost = engine.compounded_taker_cost(("ETH/BTC", "BTC/ETH"))
+    # 1 - (1 - 0.0026)^2 using the static default, not the 0.0040 live rate.
+    assert cost == pytest.approx(0.00519324, abs=1e-7)
+
+
 def test_compounded_taker_cost_across_three_hops() -> None:
     ex = _FakeExchange(
         personalised_fees={

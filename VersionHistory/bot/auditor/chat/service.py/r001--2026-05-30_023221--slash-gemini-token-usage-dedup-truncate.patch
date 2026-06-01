@@ -1,0 +1,102 @@
+--- a/bot/auditor/chat/service.py
++++ b/bot/auditor/chat/service.py
+@@ -42,12 +42,18 @@
+ restart the bot. Even if asked, refuse and explain that the user must use \
+ `Auditor -confirm <id>` for proposals or `TradeBot -` / `WatchDog -` commands for \
+ control actions.
+-- Use the available tools to look up current state instead of guessing. If a tool \
+-returns an error or empty data, say so plainly — do not fabricate values.
++- BE EFFICIENT WITH TOOL CALLS. The free-tier API has tight per-day caps. Plan \
++which tools you need BEFORE calling any. Call multiple tools in a single turn when \
++possible, never the same tool twice with identical arguments, and never call a tool \
++"just to double-check" — trust the first answer.
++- If the user's question is general (greetings, definitions, how-to about commands), \
++answer directly with NO tool calls.
++- Use tools only to look up live state instead of guessing. If a tool returns an \
++error or empty data, say so plainly — do not fabricate values.
+ - This is a PAPER trading bot — no real money. Don't add disclaimers about \
+ financial advice; the user knows.
+-- Keep replies concise (a few sentences plus optional bullet list). The user is \
+-reading in Discord, so prefer short paragraphs.
++- Keep replies concise: ≤ 6 short sentences or a brief bullet list. The user is \
++reading in Discord.
+ - When you cite numbers, mention the tool you got them from (e.g. \
+ "per get_portfolio_snapshot: ETH balance is 1.23"). It helps the user verify."""
+ 
+@@ -84,10 +90,11 @@
+         backend: LLMBackend,
+         tools: ToolRegistry,
+         system_prompt: str = SYSTEM_PROMPT,
+-        max_turns: int = 10,
+-        max_tool_iterations: int = 4,
++        max_turns: int = 6,
++        max_tool_iterations: int = 2,
+         temperature: float = 0.3,
+-        max_output_tokens: int = 1500,
++        max_output_tokens: int = 1000,
++        tool_result_max_chars: int = 2000,
+     ) -> None:
+         self.backend = backend
+         self.tools = tools
+@@ -96,6 +103,7 @@
+         self.max_tool_iterations = max(1, max_tool_iterations)
+         self.temperature = temperature
+         self.max_output_tokens = max_output_tokens
++        self.tool_result_max_chars = max(200, tool_result_max_chars)
+         # ``OrderedDict`` so we could LRU-evict channels later if memory grows.
+         self._channels: "OrderedDict[str, _ChannelState]" = OrderedDict()
+         self._channels_lock = threading.Lock()
+@@ -172,6 +180,11 @@
+         tool_calls_made = 0
+         last_text = ""
+         last_finish = "stop"
++        # Cache identical tool invocations within a single chat turn so the LLM
++        # asking for `get_portfolio_snapshot` three times in a row costs us
++        # only one execution AND one cached JSON blob (saved API tokens).
++        # Key: (tool_name, json-stable-args). Value: serialised JSON payload.
++        per_turn_cache: dict[tuple[str, str], str] = {}
+ 
+         for _ in range(self.max_tool_iterations):
+             iterations += 1
+@@ -215,12 +228,25 @@
+             )
+             for call in reply.tool_calls:
+                 tool_calls_made += 1
+-                payload = self._invoke_tool(call)
++                cache_key = (call.name, _stable_args_key(call.arguments))
++                cached = per_turn_cache.get(cache_key)
++                if cached is not None:
++                    logger.debug("Reusing cached result for %s", call.name)
++                    payload_json = cached
++                else:
++                    payload = self._invoke_tool(call)
++                    payload_json = json.dumps(payload, default=str)
++                    if len(payload_json) > self.tool_result_max_chars:
++                        payload_json = (
++                            payload_json[: self.tool_result_max_chars]
++                            + '..."(truncated)"'
++                        )
++                    per_turn_cache[cache_key] = payload_json
+                 messages.append(
+                     LLMMessage(
+                         role="tool",
+                         name=call.name,
+-                        content=json.dumps(payload, default=str)[:8000],
++                        content=payload_json,
+                         tool_call_id=call.call_id,
+                     )
+                 )
+@@ -243,3 +269,13 @@
+             logger.warning("LLM requested unknown tool %s", call.name)
+             return {"error": f"unknown tool {call.name}"}
+         return tool.invoke(call.arguments)
++
++
++def _stable_args_key(args) -> str:
++    """JSON-stable hash of tool arguments for per-turn caching."""
++    if not args:
++        return ""
++    try:
++        return json.dumps(args, sort_keys=True, default=str)
++    except Exception:  # noqa: BLE001
++        return repr(args)

@@ -255,19 +255,250 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +210 / -0
 - **Patch:** `r002--2026-05-30_023222--slash-gemini-token-usage-dedup-truncate.patch`
 
+## bot/trade_log.py — r001
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** add classify_trade + trade_rationale
+- **Request:** 024
+- **Diff:** +50 / -0
+- **Patch:** `r001--2026-05-30_123715--add-classifytrade-traderationale.patch`
+
+## bot/report.py — r001
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** insert trade rationale in alert
+- **Request:** 024
+- **Diff:** +7 / -1
+- **Patch:** `r001--2026-05-30_123715--insert-trade-rationale-in-alert.patch`
+
+## bot/engine.py — r004
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** carry intent context onto trade dict
+- **Request:** 024
+- **Diff:** +10 / -0
+- **Patch:** `r004--2026-05-30_123715--carry-intent-context-onto-trade-dict.patch`
+
+## config.py — r003
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** day-trader mode profile + eth reserve
+- **Request:** 024
+- **Diff:** +15 / -6
+- **Patch:** `r003--2026-05-30_123715--day-trader-mode-profile-eth-reserve.patch`
+
+## tests/test_trade_log.py — r001
+
+- **When:** 2026-05-30 12:37:15 PDT
+- **Reason:** tests for classify + rationale
+- **Request:** 024
+- **Diff:** +51 / -1
+- **Patch:** `r001--2026-05-30_123715--tests-for-classify-rationale.patch`
+
+## bot/adaptive.py — r001
+
+- **When:** 2026-05-30 13:07:54 PDT
+- **Reason:** faster idle relaxation (probe mode)
+- **Request:** 025
+- **Diff:** +13 / -3
+- **Patch:** `r001--2026-05-30_130754--faster-idle-relaxation-probe-mode.patch`
+
+## bot/risk.py — r001
+
+- **When:** 2026-05-30 13:07:54 PDT
+- **Reason:** probe-mode hunting notification
+- **Request:** 025
+- **Diff:** +7 / -5
+- **Patch:** `r001--2026-05-30_130754--probe-mode-hunting-notification.patch`
+
 ## bot/fee_engine.py — r001
 
-- **When:** 2026-05-31 04:09:21 PDT
-- **Reason:** retry fee schedule
-- **Request:** 022
-- **Diff:** +23 / -5
-- **Patch:** `r001--2026-05-31_040921--retry-fee-schedule.patch`
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** force-static fee override (rollback)
+- **Request:** 026
+- **Diff:** +21 / -1
+- **Patch:** `r001--2026-05-30_220803--force-static-fee-override-rollback.patch`
+
+## bot/engine.py — r005
+
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** forced hail-mary probe trade
+- **Request:** 026
+- **Diff:** +101 / -2
+- **Patch:** `r005--2026-05-30_220803--forced-hail-mary-probe-trade.patch`
+
+## bot/discord_bot.py — r002
+
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** quiet transient discord poll errors
+- **Request:** 026
+- **Diff:** +151 / -9
+- **Patch:** `r002--2026-05-30_220803--quiet-transient-discord-poll-errors.patch`
+
+## config.py — r004
+
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** probe + fee-static settings
+- **Request:** 026
+- **Diff:** +6 / -0
+- **Patch:** `r004--2026-05-30_220803--probe-fee-static-settings.patch`
 
 ## tests/test_fee_engine.py — r001
 
-- **When:** 2026-05-31 04:09:21 PDT
-- **Reason:** fee retry regression
-- **Request:** 022
+- **When:** 2026-05-30 22:08:03 PDT
+- **Reason:** tests for fee static override
+- **Request:** 026
+- **Diff:** +22 / -0
+- **Patch:** `r001--2026-05-30_220803--tests-for-fee-static-override.patch`
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `bot/fee_engine.py` (reason: 'force-static fee override (rollback)') - no change since r001
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `bot/engine.py` (reason: 'forced hail-mary probe trade') - no change since r005
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `bot/discord_bot.py` (reason: 'quiet transient discord poll errors') - no change since r002
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `config.py` (reason: 'probe + fee-static settings') - no change since r004
+
+
+> _2026-05-30 22:09:12 PDT_ — no-op snapshot requested for `tests/test_fee_engine.py` (reason: 'tests for fee static override') - no change since r001
+
+## automation/maintenance_prompt.md — r001
+
+- **When:** 2026-05-30 22:16:52 PDT
+- **Reason:** action-biased rewrite, 4h, news + fallback
+- **Request:** 027
+- **Diff:** +204 / -229
+- **Patch:** `r001--2026-05-30_221652--action-biased-rewrite-4h-news-fallback.patch`
+
+## BACKLOG.md — r001
+
+- **When:** 2026-05-30 22:16:52 PDT
+- **Reason:** done items + reseed for action-bias
+- **Request:** 027
+- **Diff:** +20 / -11
+- **Patch:** `r001--2026-05-30_221652--done-items-reseed-for-action-bias.patch`
+
+## bot/paper_broker.py — r001
+
+- **When:** 2026-05-30 22:52:19 PDT
+- **Reason:** fee-only PnL when base USD price missing
+- **Request:** 028
+- **Diff:** +10 / -1
+- **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
+
+## bot/discord_bot.py — r003
+
+- **When:** 2026-06-01 07:13:30 PDT
+- **Reason:** per-source attribution on posts
+- **Request:** 029
+- **Diff:** +63 / -16
+- **Patch:** `r003--2026-06-01_071330--per-source-attribution-on-posts.patch`
+
+## bot/engine.py — r006
+
+- **When:** 2026-06-01 07:13:30 PDT
+- **Reason:** watchdog alerts source=WatchDog
+- **Request:** 029
+- **Diff:** +82 / -30
+- **Patch:** `r006--2026-06-01_071330--watchdog-alerts-sourcewatchdog.patch`
+
+## bot/auditor_service.py — r003
+
+- **When:** 2026-06-01 07:13:30 PDT
+- **Reason:** create_proposal + Auditor source
+- **Request:** 029
+- **Diff:** +81 / -4
+- **Patch:** `r003--2026-06-01_071330--createproposal-auditor-source.patch`
+
+## bot/auditor/proposer.py — r001
+
+- **When:** 2026-06-01 07:13:30 PDT
+- **Reason:** add build_proposal helper
+- **Request:** 029
+- **Diff:** +38 / -0
+- **Patch:** `r001--2026-06-01_071330--add-buildproposal-helper.patch`
+
+## bot/auditor/chat/tools.py — r001
+
+- **When:** 2026-06-01 07:13:42 PDT
+- **Reason:** create_proposal chat tool
+- **Request:** 029
+- **Diff:** +81 / -1
+- **Patch:** `r001--2026-06-01_071342--createproposal-chat-tool.patch`
+
+## bot/auditor/chat/service.py — r002
+
+- **When:** 2026-06-01 07:13:42 PDT
+- **Reason:** allow drafting pending proposal
+- **Request:** 029
+- **Diff:** +15 / -4
+- **Patch:** `r002--2026-06-01_071342--allow-drafting-pending-proposal.patch`
+
+## tests/test_discord_commands.py — r001
+
+- **When:** 2026-06-01 07:13:42 PDT
+- **Reason:** attribution tests
+- **Request:** 029
+- **Diff:** +113 / -0
+- **Patch:** `r001--2026-06-01_071342--attribution-tests.patch`
+
+## tests/test_auditor.py — r002
+
+- **When:** 2026-06-01 07:13:43 PDT
+- **Reason:** create_proposal tests
+- **Request:** 029
+- **Diff:** +179 / -0
+- **Patch:** `r002--2026-06-01_071343--createproposal-tests.patch`
+
+## tests/test_auditor_chat.py — r003
+
+- **When:** 2026-06-01 07:13:43 PDT
+- **Reason:** create_proposal tool tests
+- **Request:** 029
+- **Diff:** +346 / -0
+- **Patch:** `r003--2026-06-01_071343--createproposal-tool-tests.patch`
+
+## bot/engine.py — r007
+
+- **When:** 2026-06-01 07:53:37 PDT
+- **Reason:** probe break-even gate + intent.route exec
+- **Request:** 030
+- **Diff:** +31 / -4
+- **Patch:** `r007--2026-06-01_075337--probe-break-even-gate-intentroute-exec.patch`
+
+## bot/strategies/base.py — r001
+
+- **When:** 2026-06-01 07:53:37 PDT
+- **Reason:** TradeIntent optional route field
+- **Request:** 030
+- **Diff:** +6 / -0
+- **Patch:** `r001--2026-06-01_075337--tradeintent-optional-route-field.patch`
+
+## bot/strategies/triangular_arbitrage.py — r001
+
+- **When:** 2026-06-01 07:53:37 PDT
+- **Reason:** emit atomic closed loop, prefee gross
+- **Request:** 030
+- **Diff:** +60 / -21
+- **Patch:** `r001--2026-06-01_075337--emit-atomic-closed-loop-prefee-gross.patch`
+
+## bot/fee_engine.py — r002
+
+- **When:** 2026-06-01 15:35:19 PDT
+- **Reason:** retry fee schedule after transient failure
+- **Request:** 031
+- **Diff:** +25 / -5
+- **Patch:** `r002--2026-06-01_153519--retry-fee-schedule-after-transient-failu.patch`
+
+## tests/test_fee_engine.py — r002
+
+- **When:** 2026-06-01 15:35:19 PDT
+- **Reason:** retry fee schedule after transient failure
+- **Request:** 031
 - **Diff:** +15 / -0
-- **Patch:** `r001--2026-05-31_040921--fee-retry-regression.patch`
+- **Patch:** `r002--2026-06-01_153519--retry-fee-schedule-after-transient-failu.patch`
 

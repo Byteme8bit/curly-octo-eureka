@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 DISCORD_API = "https://discord.com/api/v10"
 DISCORD_USER_AGENT = "EthTradingBot (paper-trading, 1.0)"
 
+# Default message attribution. Each subsystem (TradeBot core, WatchDog, the
+# Auditor) tags its posts with a ``source`` so Discord shows who is speaking.
+DEFAULT_SOURCE = "TradeBot"
+
 # Discord bulk-delete only accepts messages younger than 14 days.
 # Use a 5-minute safety margin so borderline messages aren't rejected.
 BULK_DELETE_MAX_AGE = timedelta(days=14) - timedelta(minutes=5)
@@ -191,6 +195,7 @@ class DiscordConfig:
     bot_token: str
     channel_id: str
     allowed_user_ids: frozenset[str]
+    webhook_username: str = DEFAULT_SOURCE
     poll_interval: float = 2.0
     error_cooldown_sec: float = 900.0
     error_pin_count: int = 3
@@ -252,8 +257,8 @@ AuditorHelpText = """**Auditor commands** (read-only review + tier-2 proposals +
 \u2022 `Auditor -confirm <id>` \u2014 apply a proposal (writes runtime_overrides.json)
 \u2022 `Auditor -revert <knob>` \u2014 remove an active runtime override
 \u2022 `Auditor -status` \u2014 service status (next scheduled run, triggers, chat config)
-\u2022 `Auditor -ask <question>` \u2014 single-turn Q&A about TradeBot/WatchDog state
-\u2022 `Auditor -chat <message>` \u2014 multi-turn conversation (keeps history per channel)
+\u2022 `Auditor -ask <question>` \u2014 single-turn Q&A; can also draft a proposal on request
+\u2022 `Auditor -chat <message>` \u2014 multi-turn conversation; can also draft a proposal on request
 \u2022 `Auditor -clearchat` \u2014 wipe the chat history for this channel
 \u2022 `Auditor -chatstatus` \u2014 backend, model, history sizes
 \u2022 `Auditor -help` \u2014 this message
@@ -354,6 +359,21 @@ def _match_prefixed(text: str) -> ParsedCommand | None:
     return ParsedCommand(action=action, deprecated=False, original=text)
 
 
+def source_for_action(action: str | None) -> str:
+    """Map an internal command token to the subsystem that owns the reply.
+
+    Used so a command reply (sent via the bot token, which cannot change its
+    username per message) is still attributed to the right subsystem via a
+    text-label prefix.
+    """
+    token = (action or "").lower()
+    if token.startswith("auditor"):
+        return "Auditor"
+    if token.startswith("watchdog") or token == "clearchat":
+        return "WatchDog"
+    return DEFAULT_SOURCE
+
+
 class DiscordBot:
     def __init__(
         self,
@@ -412,7 +432,25 @@ class DiscordBot:
         self._error_pin_occurrences[key] = recent
         return len(recent) > self._error_pin_count
 
-    def post_status(self, title: str, body: str, *, summary_key: str, force: bool = False) -> None:
+    def _webhook_username(self, source: str | None) -> str:
+        """Per-message webhook display name for ``source`` (e.g. 'TradeBot · WatchDog')."""
+        base = self.config.webhook_username or DEFAULT_SOURCE
+        src = (source or "").strip()
+        if not src or src.lower() in {base.lower(), DEFAULT_SOURCE.lower()}:
+            return base
+        return f"{base} \u00b7 {src}"
+
+    def _source_prefix(self, source: str | None) -> str:
+        """Text label prepended to bot-token messages (which can't rename per message).
+
+        Empty for the default source so TradeBot's own posts are unchanged.
+        """
+        src = (source or "").strip()
+        if not src or src.lower() == DEFAULT_SOURCE.lower():
+            return ""
+        return f"**[{src}]** "
+
+    def post_status(self, title: str, body: str, *, summary_key: str, force: bool = False, source: str = DEFAULT_SOURCE) -> None:
         # Override of base method to mirror to chat log.
         if not self.config.enabled or not self.config.can_post_status:
             return
@@ -421,7 +459,7 @@ class DiscordBot:
         self._last_status_key = summary_key
         content = f"**{title}**\n```\n{_truncate(body, 1800)}\n```"
         self.chat_log.log_outbound(content=f"{title}: {body}", kind="status")
-        self._send_message(content)
+        self._send_message(content, source=source)
 
     def post_startup_pin(self, content: str) -> None:
         """Replace the pinned startup message (unpins/deletes the previous one)."""
@@ -445,16 +483,16 @@ class DiscordBot:
                 except Exception as exc:
                     logger.warning("Discord startup pin failed: %s", _format_discord_error(exc))
 
-    def post_plain(self, content: str, *, pin: bool = False) -> None:
+    def post_plain(self, content: str, *, pin: bool = False, source: str = DEFAULT_SOURCE) -> None:
         """Post a simple line to Discord (no dedup). Used for startup/heartbeat."""
         if not self.config.enabled or not self.config.can_post_status:
             return
-        self.post_important(content, pin=pin)
+        self.post_important(content, pin=pin, source=source)
 
-    def post_important(self, content: str, *, pin: bool = False) -> None:
+    def post_important(self, content: str, *, pin: bool = False, source: str = DEFAULT_SOURCE) -> None:
         if not self.config.enabled or not self.config.can_post_status:
             return
-        message_id = self._send_message(_truncate(content, 1990))
+        message_id = self._send_message(_truncate(content, 1990), source=source)
         self.chat_log.log_outbound(content=content, pin=pin, kind="important")
         if pin and message_id:
             self._pin_message(message_id)
@@ -471,7 +509,7 @@ class DiscordBot:
         pin = self._should_pin_error(key)
         self.post_important(format_error_alert(context, exc), pin=pin)
 
-    def send_reply(self, content: str) -> None:
+    def send_reply(self, content: str, *, source: str = DEFAULT_SOURCE) -> None:
         if not self.config.enabled:
             return
         text = _truncate(content, 1990)
@@ -479,29 +517,38 @@ class DiscordBot:
         if self.config.bot_token and self.config.channel_id:
             try:
                 url = f"{DISCORD_API}/channels/{self.config.channel_id}/messages"
-                self._request("POST", url, {"content": text})
+                body = _truncate(self._source_prefix(source) + text, 2000)
+                self._request("POST", url, {"content": body})
                 return
             except Exception as exc:
                 logger.warning("Discord bot reply failed: %s", exc)
         if self.config.webhook_url:
             try:
-                self._post_json(self.config.webhook_url, {"content": text})
+                payload = {"content": text, "username": self._webhook_username(source)}
+                self._post_json(self.config.webhook_url, payload)
             except Exception as exc:
                 logger.warning("Discord webhook reply failed: %s", exc)
 
-    def _send_message(self, content: str) -> str | None:
+    def _send_message(self, content: str, *, source: str = DEFAULT_SOURCE) -> str | None:
         # Prefer bot token — webhooks cannot be pinned and may 403 if revoked.
+        # The bot token cannot change its username per message, so non-default
+        # sources are attributed with a short text-label prefix instead.
         if self.config.bot_token and self.config.channel_id:
             try:
                 url = f"{DISCORD_API}/channels/{self.config.channel_id}/messages"
-                result = self._request("POST", url, {"content": content})
+                body = _truncate(self._source_prefix(source) + content, 2000)
+                result = self._request("POST", url, {"content": body})
                 if isinstance(result, dict):
                     return str(result.get("id")) if result.get("id") else None
             except Exception as exc:
                 logger.warning("Discord bot post failed: %s", _format_discord_error(exc))
         if self.config.webhook_url:
             try:
-                result = self._post_json(self.config.webhook_url, {"content": content})
+                # Webhooks DO support a per-message username override — use it
+                # so each subsystem is attributed correctly when no bot token
+                # is configured (webhook-only deployments).
+                payload = {"content": content, "username": self._webhook_username(source)}
+                result = self._post_json(self.config.webhook_url, payload)
                 if isinstance(result, dict) and result.get("id"):
                     return str(result["id"])
             except Exception as exc:
@@ -769,14 +816,36 @@ class DiscordBot:
         )
         return True
 
+    # Transient upstream hiccups (Discord/Cloudflare) — expected occasionally and
+    # self-healing. We log these quietly and only escalate if they persist.
+    _TRANSIENT_MARKERS = (
+        "HTTP 429", "HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504",
+        "Service Unavailable", "Bad Gateway", "Gateway Time-out",
+        "connection termination", "disconnect/reset", "timed out",
+    )
+
     def _poll_loop(self) -> None:
+        consecutive_transient = 0
         while not self._stop_event.is_set():
             try:
                 self._poll_commands()
+                consecutive_transient = 0
             except Exception as exc:
-                logger.exception("Discord command poll failed")
-                if self.on_error:
-                    self.on_error("Discord command listener", exc)
+                msg = str(exc)
+                if any(m in msg for m in self._TRANSIENT_MARKERS):
+                    consecutive_transient += 1
+                    first_line = msg.splitlines()[0] if msg else repr(exc)
+                    logger.warning(
+                        "Discord poll transient error #%d (self-healing): %s",
+                        consecutive_transient, first_line,
+                    )
+                    # Only bother the user if it stays broken for a while.
+                    if consecutive_transient == 15 and self.on_error:
+                        self.on_error("Discord command listener (persistent upstream errors)", exc)
+                else:
+                    logger.exception("Discord command poll failed")
+                    if self.on_error:
+                        self.on_error("Discord command listener", exc)
             self._stop_event.wait(self.config.poll_interval)
 
     def _poll_commands(self) -> None:
@@ -848,7 +917,7 @@ class DiscordBot:
                 reply = f"Command `{action}` failed \u2014 check bot logs."
 
             if reply:
-                self.send_reply(reply)
+                self.send_reply(reply, source=source_for_action(action))
 
     def _request(self, method: str, url: str, payload: dict | None = None):
         headers = {

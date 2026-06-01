@@ -1,0 +1,167 @@
+--- a/bot/auditor_service.py
++++ b/bot/auditor_service.py
+@@ -77,6 +77,12 @@
+         self._last_scheduled_day: str | None = None
+         self._baseline_trade_count: int = self._current_trade_count()
+         self._baseline_pnl: float | None = None
++
++        # Conversational chat — built lazily on first `ask`/`chat` so a missing
++        # API key never breaks bot startup. ``_chat_init_error`` caches the
++        # reason if construction fails so subsequent calls return it quickly.
++        self._chat = None
++        self._chat_init_error: str | None = None
+ 
+     # --------------------------------------------------------------------- lifecycle
+ 
+@@ -200,6 +206,151 @@
+             f"Reverted `{knob}`. Restart the bot for the original `.env` value to take effect."
+         )
+ 
++    # ---------------------------------------------------------- chat surface
++
++    def ask(self, question: str) -> str:
++        """Single-turn Q&A. No history retained."""
++        chat = self._get_chat_service()
++        if isinstance(chat, str):
++            return chat  # init error string
++        result = chat.ask(question)
++        return self._format_chat_reply(result)
++
++    def chat(self, session_id: str, message: str) -> str:
++        """Multi-turn chat. History keyed by ``session_id`` (typically the user id)."""
++        chat = self._get_chat_service()
++        if isinstance(chat, str):
++            return chat
++        result = chat.chat(session_id, message)
++        return self._format_chat_reply(result)
++
++    def clear_chat(self, session_id: str) -> str:
++        """Wipe the chat history for one session (the calling user)."""
++        if self._chat is None:
++            return "Chat history was already empty."
++        cleared = self._chat.clear(session_id)
++        return f"Cleared {cleared} message(s) from your Auditor chat history."
++
++    def chat_status(self) -> str:
++        """Backend + model + per-session turn counts."""
++        if not self.config.chat_enabled:
++            return (
++                "**Auditor chat:** disabled.\n"
++                "Set `AUDITOR_CHAT_ENABLED=1` and `GEMINI_API_KEY=...` in `.env`, then restart."
++            )
++        chat = self._get_chat_service()
++        if isinstance(chat, str):
++            return f"**Auditor chat:** init error.\n{chat}"
++        lines = [
++            "**Auditor chat:** enabled",
++            f"• Backend: `{self.config.chat_backend}` model `{self.config.chat_model}`",
++            f"• Max turns retained per session: {self.config.chat_max_turns}",
++            f"• Max tool round-trips per question: {self.config.chat_tool_iterations}",
++            f"• Tool result truncation: {self.config.chat_tool_result_max_chars} chars",
++            f"• Reply token cap: {self.config.chat_max_tokens}",
++        ]
++        summary = chat.history_summary()
++        if summary:
++            lines.append("• Active sessions:")
++            for sid, turns in sorted(summary.items()):
++                lines.append(f"   - `{sid}`: {turns} turn(s)")
++        else:
++            lines.append("• Active sessions: none")
++        return "\n".join(lines)
++
++    def _format_chat_reply(self, result) -> str:
++        text = result.text or "(no reply)"
++        # Discord caps at 2000 chars; leave headroom for the truncation marker.
++        if len(text) > 1900:
++            text = text[:1880] + "\n…(reply truncated)"
++        return text
++
++    def _get_chat_service(self):
++        """Return a ready ChatService, or an error-string explaining why not."""
++        if not self.config.chat_enabled:
++            return (
++                "Auditor chat is disabled. Set `AUDITOR_CHAT_ENABLED=1` and "
++                "`GEMINI_API_KEY=...` in `.env`, then restart."
++            )
++        if self._chat is not None:
++            return self._chat
++        if self._chat_init_error:
++            return self._chat_init_error
++        try:
++            self._chat = self._build_chat_service()
++        except Exception as exc:  # noqa: BLE001
++            logger.exception("Failed to build ChatService")
++            self._chat_init_error = (
++                f"Failed to initialise chat backend: {exc}.\n"
++                "Check `AUDITOR_CHAT_BACKEND`, `AUDITOR_CHAT_MODEL`, and the "
++                "API key, then restart."
++            )
++            return self._chat_init_error
++        return self._chat
++
++    def _build_chat_service(self):
++        """Wire up ToolRegistry + Backend + ChatService."""
++        from bot.auditor.chat import (
++            ChatService,
++            GeminiBackend,
++            NullBackend,
++            build_tool_registry,
++        )
++
++        backend_name = (self.config.chat_backend or "gemini").lower()
++        if backend_name == "null":
++            backend = NullBackend()
++        elif backend_name == "gemini":
++            backend = GeminiBackend(api_key=self.config.chat_api_key, model=self.config.chat_model)
++            if not backend.available:
++                return (
++                    "Gemini chat needs `GEMINI_API_KEY` set in `.env` (get a free key at "
++                    "https://aistudio.google.com), then restart."
++                )
++        else:
++            return (
++                f"Unknown chat backend `{backend_name}`. Use `gemini` (or `null` for tests)."
++            )
++
++        tools = build_tool_registry(
++            broker=self.broker,
++            settings=self.settings,
++            portfolio_log=self.portfolio_log,
++            overrides_file=self.overrides_file,
++            audit_state_provider=lambda: self.state,
++            watchdog_state_provider=self.watchdog_state_provider,
++            news_client_provider=lambda: self._news_client_for_chat(),
++            reports_dir=self.config.reports_dir,
++        )
++        return ChatService(
++            backend=backend,
++            tools=tools,
++            max_turns=self.config.chat_max_turns,
++            max_tool_iterations=self.config.chat_tool_iterations,
++            temperature=self.config.chat_temperature,
++            max_output_tokens=self.config.chat_max_tokens,
++            tool_result_max_chars=self.config.chat_tool_result_max_chars,
++        )
++
++    def _news_client_for_chat(self):
++        """Return the same NewsClient used by audits, building lazily if needed."""
++        if self._news_client is not None:
++            return self._news_client
++        if not self.config.news_enabled:
++            return None
++        try:
++            from bot.auditor.news_client import parse_rss_feed_env
++
++            self._news_client = NewsClient(
++                providers=self.config.news_provider,
++                rss_feeds=parse_rss_feed_env(self.config.rss_feeds),
++                api_key=self.config.cryptopanic_api_key,
++            )
++        except Exception:  # noqa: BLE001
++            logger.exception("Failed to build news client for chat")
++            return None
++        return self._news_client
++
+     def status(self) -> str:
+         with self._lock:
+             self.state.prune_expired()

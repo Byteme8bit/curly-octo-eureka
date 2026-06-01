@@ -33,6 +33,42 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "BACKLOG.md": [
+    {
+      "added": 20,
+      "number": 1,
+      "patch": "r001--2026-05-30_221652--done-items-reseed-for-action-bias.patch",
+      "path": "BACKLOG.md",
+      "reason": "done items + reseed for action-bias",
+      "removed": 11,
+      "request_id": "027",
+      "timestamp": "2026-05-30 22:16:52 PDT"
+    }
+  ],
+  "automation/maintenance_prompt.md": [
+    {
+      "added": 204,
+      "number": 1,
+      "patch": "r001--2026-05-30_221652--action-biased-rewrite-4h-news-fallback.patch",
+      "path": "automation/maintenance_prompt.md",
+      "reason": "action-biased rewrite, 4h, news + fallback",
+      "removed": 229,
+      "request_id": "027",
+      "timestamp": "2026-05-30 22:16:52 PDT"
+    }
+  ],
+  "bot/adaptive.py": [
+    {
+      "added": 13,
+      "number": 1,
+      "patch": "r001--2026-05-30_130754--faster-idle-relaxation-probe-mode.patch",
+      "path": "bot/adaptive.py",
+      "reason": "faster idle relaxation (probe mode)",
+      "removed": 3,
+      "request_id": "025",
+      "timestamp": "2026-05-30 13:07:54 PDT"
+    }
+  ],
   "bot/auditor/chat/backends.py": [
     {
       "added": 1,
@@ -65,6 +101,28 @@
       "removed": 9,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    },
+    {
+      "added": 15,
+      "number": 2,
+      "patch": "r002--2026-06-01_071342--allow-drafting-pending-proposal.patch",
+      "path": "bot/auditor/chat/service.py",
+      "reason": "allow drafting pending proposal",
+      "removed": 4,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:42 PDT"
+    }
+  ],
+  "bot/auditor/chat/tools.py": [
+    {
+      "added": 81,
+      "number": 1,
+      "patch": "r001--2026-06-01_071342--createproposal-chat-tool.patch",
+      "path": "bot/auditor/chat/tools.py",
+      "reason": "create_proposal chat tool",
+      "removed": 1,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:42 PDT"
     }
   ],
   "bot/auditor/config.py": [
@@ -87,6 +145,18 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    }
+  ],
+  "bot/auditor/proposer.py": [
+    {
+      "added": 38,
+      "number": 1,
+      "patch": "r001--2026-06-01_071330--add-buildproposal-helper.patch",
+      "path": "bot/auditor/proposer.py",
+      "reason": "add build_proposal helper",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
   "bot/auditor/state.py": [
@@ -121,6 +191,16 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    },
+    {
+      "added": 81,
+      "number": 3,
+      "patch": "r003--2026-06-01_071330--createproposal-auditor-source.patch",
+      "path": "bot/auditor_service.py",
+      "reason": "create_proposal + Auditor source",
+      "removed": 4,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
   "bot/discord_bot.py": [
@@ -133,6 +213,26 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    },
+    {
+      "added": 151,
+      "number": 2,
+      "patch": "r002--2026-05-30_220803--quiet-transient-discord-poll-errors.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "quiet transient discord poll errors",
+      "removed": 9,
+      "request_id": "026",
+      "timestamp": "2026-05-30 22:08:03 PDT"
+    },
+    {
+      "added": 63,
+      "number": 3,
+      "patch": "r003--2026-06-01_071330--per-source-attribution-on-posts.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "per-source attribution on posts",
+      "removed": 16,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
   "bot/engine.py": [
@@ -165,6 +265,46 @@
       "removed": 3,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:22 PDT"
+    },
+    {
+      "added": 10,
+      "number": 4,
+      "patch": "r004--2026-05-30_123715--carry-intent-context-onto-trade-dict.patch",
+      "path": "bot/engine.py",
+      "reason": "carry intent context onto trade dict",
+      "removed": 0,
+      "request_id": "024",
+      "timestamp": "2026-05-30 12:37:15 PDT"
+    },
+    {
+      "added": 101,
+      "number": 5,
+      "patch": "r005--2026-05-30_220803--forced-hail-mary-probe-trade.patch",
+      "path": "bot/engine.py",
+      "reason": "forced hail-mary probe trade",
+      "removed": 2,
+      "request_id": "026",
+      "timestamp": "2026-05-30 22:08:03 PDT"
+    },
+    {
+      "added": 82,
+      "number": 6,
+      "patch": "r006--2026-06-01_071330--watchdog-alerts-sourcewatchdog.patch",
+      "path": "bot/engine.py",
+      "reason": "watchdog alerts source=WatchDog",
+      "removed": 30,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:30 PDT"
+    },
+    {
+      "added": 31,
+      "number": 7,
+      "patch": "r007--2026-06-01_075337--probe-break-even-gate-intentroute-exec.patch",
+      "path": "bot/engine.py",
+      "reason": "probe break-even gate + intent.route exec",
+      "removed": 4,
+      "request_id": "030",
+      "timestamp": "2026-06-01 07:53:37 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -181,14 +321,96 @@
   ],
   "bot/fee_engine.py": [
     {
-      "added": 23,
+      "added": 21,
       "number": 1,
-      "patch": "r001--2026-05-31_040921--retry-fee-schedule.patch",
+      "patch": "r001--2026-05-30_220803--force-static-fee-override-rollback.patch",
       "path": "bot/fee_engine.py",
-      "reason": "retry fee schedule",
+      "reason": "force-static fee override (rollback)",
+      "removed": 1,
+      "request_id": "026",
+      "timestamp": "2026-05-30 22:08:03 PDT"
+    },
+    {
+      "added": 25,
+      "number": 2,
+      "patch": "r002--2026-06-01_153519--retry-fee-schedule-after-transient-failu.patch",
+      "path": "bot/fee_engine.py",
+      "reason": "retry fee schedule after transient failure",
       "removed": 5,
-      "request_id": "022",
-      "timestamp": "2026-05-31 04:09:21 PDT"
+      "request_id": "031",
+      "timestamp": "2026-06-01 15:35:19 PDT"
+    }
+  ],
+  "bot/paper_broker.py": [
+    {
+      "added": 10,
+      "number": 1,
+      "patch": "r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "fee-only PnL when base USD price missing",
+      "removed": 1,
+      "request_id": "028",
+      "timestamp": "2026-05-30 22:52:19 PDT"
+    }
+  ],
+  "bot/report.py": [
+    {
+      "added": 7,
+      "number": 1,
+      "patch": "r001--2026-05-30_123715--insert-trade-rationale-in-alert.patch",
+      "path": "bot/report.py",
+      "reason": "insert trade rationale in alert",
+      "removed": 1,
+      "request_id": "024",
+      "timestamp": "2026-05-30 12:37:15 PDT"
+    }
+  ],
+  "bot/risk.py": [
+    {
+      "added": 7,
+      "number": 1,
+      "patch": "r001--2026-05-30_130754--probe-mode-hunting-notification.patch",
+      "path": "bot/risk.py",
+      "reason": "probe-mode hunting notification",
+      "removed": 5,
+      "request_id": "025",
+      "timestamp": "2026-05-30 13:07:54 PDT"
+    }
+  ],
+  "bot/strategies/base.py": [
+    {
+      "added": 6,
+      "number": 1,
+      "patch": "r001--2026-06-01_075337--tradeintent-optional-route-field.patch",
+      "path": "bot/strategies/base.py",
+      "reason": "TradeIntent optional route field",
+      "removed": 0,
+      "request_id": "030",
+      "timestamp": "2026-06-01 07:53:37 PDT"
+    }
+  ],
+  "bot/strategies/triangular_arbitrage.py": [
+    {
+      "added": 60,
+      "number": 1,
+      "patch": "r001--2026-06-01_075337--emit-atomic-closed-loop-prefee-gross.patch",
+      "path": "bot/strategies/triangular_arbitrage.py",
+      "reason": "emit atomic closed loop, prefee gross",
+      "removed": 21,
+      "request_id": "030",
+      "timestamp": "2026-06-01 07:53:37 PDT"
+    }
+  ],
+  "bot/trade_log.py": [
+    {
+      "added": 50,
+      "number": 1,
+      "patch": "r001--2026-05-30_123715--add-classifytrade-traderationale.patch",
+      "path": "bot/trade_log.py",
+      "reason": "add classify_trade + trade_rationale",
+      "removed": 0,
+      "request_id": "024",
+      "timestamp": "2026-05-30 12:37:15 PDT"
     }
   ],
   "config.py": [
@@ -211,6 +433,26 @@
       "removed": 1,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:22 PDT"
+    },
+    {
+      "added": 15,
+      "number": 3,
+      "patch": "r003--2026-05-30_123715--day-trader-mode-profile-eth-reserve.patch",
+      "path": "config.py",
+      "reason": "day-trader mode profile + eth reserve",
+      "removed": 6,
+      "request_id": "024",
+      "timestamp": "2026-05-30 12:37:15 PDT"
+    },
+    {
+      "added": 6,
+      "number": 4,
+      "patch": "r004--2026-05-30_220803--probe-fee-static-settings.patch",
+      "path": "config.py",
+      "reason": "probe + fee-static settings",
+      "removed": 0,
+      "request_id": "026",
+      "timestamp": "2026-05-30 22:08:03 PDT"
     }
   ],
   "docs/architecture/modules.md": [
@@ -283,6 +525,16 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:58 PDT"
+    },
+    {
+      "added": 179,
+      "number": 2,
+      "patch": "r002--2026-06-01_071343--createproposal-tests.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "create_proposal tests",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:43 PDT"
     }
   ],
   "tests/test_auditor_chat.py": [
@@ -305,18 +557,62 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:22 PDT"
+    },
+    {
+      "added": 346,
+      "number": 3,
+      "patch": "r003--2026-06-01_071343--createproposal-tool-tests.patch",
+      "path": "tests/test_auditor_chat.py",
+      "reason": "create_proposal tool tests",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:43 PDT"
+    }
+  ],
+  "tests/test_discord_commands.py": [
+    {
+      "added": 113,
+      "number": 1,
+      "patch": "r001--2026-06-01_071342--attribution-tests.patch",
+      "path": "tests/test_discord_commands.py",
+      "reason": "attribution tests",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 07:13:42 PDT"
     }
   ],
   "tests/test_fee_engine.py": [
     {
-      "added": 15,
+      "added": 22,
       "number": 1,
-      "patch": "r001--2026-05-31_040921--fee-retry-regression.patch",
+      "patch": "r001--2026-05-30_220803--tests-for-fee-static-override.patch",
       "path": "tests/test_fee_engine.py",
-      "reason": "fee retry regression",
+      "reason": "tests for fee static override",
       "removed": 0,
-      "request_id": "022",
-      "timestamp": "2026-05-31 04:09:21 PDT"
+      "request_id": "026",
+      "timestamp": "2026-05-30 22:08:03 PDT"
+    },
+    {
+      "added": 15,
+      "number": 2,
+      "patch": "r002--2026-06-01_153519--retry-fee-schedule-after-transient-failu.patch",
+      "path": "tests/test_fee_engine.py",
+      "reason": "retry fee schedule after transient failure",
+      "removed": 0,
+      "request_id": "031",
+      "timestamp": "2026-06-01 15:35:19 PDT"
+    }
+  ],
+  "tests/test_trade_log.py": [
+    {
+      "added": 51,
+      "number": 1,
+      "patch": "r001--2026-05-30_123715--tests-for-classify-rationale.patch",
+      "path": "tests/test_trade_log.py",
+      "reason": "tests for classify + rationale",
+      "removed": 1,
+      "request_id": "024",
+      "timestamp": "2026-05-30 12:37:15 PDT"
     }
   ],
   "tests/test_version_history.py": [

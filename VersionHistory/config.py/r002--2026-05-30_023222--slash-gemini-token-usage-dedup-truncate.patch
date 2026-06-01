@@ -1,0 +1,43 @@
+--- a/config.py
++++ b/config.py
+@@ -144,6 +144,15 @@
+     auditor_autoapply_min_severity: str
+     auditor_autoapply_max_per_night: int
+     auditor_autoapply_restart_enabled: bool
++    auditor_chat_enabled: bool
++    auditor_chat_backend: str
++    auditor_chat_model: str
++    auditor_chat_api_key: str
++    auditor_chat_max_turns: int
++    auditor_chat_max_tokens: int
++    auditor_chat_temperature: float
++    auditor_chat_tool_iterations: int
++    auditor_chat_tool_result_max_chars: int
+ 
+ 
+ def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
+@@ -314,7 +323,7 @@
+         diagnostic_dir=ROOT / "diagnostics",
+         idle_reeval_hours=float(os.getenv("IDLE_REEVAL_HOURS", "2")),
+         idle_reeval_max_attempts=int(os.getenv("IDLE_REEVAL_MAX_ATTEMPTS", "3")),
+-        min_eth_reserve=float(os.getenv("MIN_ETH_RESERVE", "0.25")),
++        min_eth_reserve=float(os.getenv("MIN_ETH_RESERVE", "0.5")),
+         max_alt_allocation_pct=float(os.getenv("MAX_ALT_ALLOCATION_PCT", "0.40")),
+         strategy_growth_window_hours=float(os.getenv("STRATEGY_GROWTH_WINDOW_HOURS", "4")),
+         strategy_min_growth_pct=float(os.getenv("STRATEGY_MIN_GROWTH_PCT", "0.005")),
+@@ -342,6 +351,15 @@
+         auditor_autoapply_min_severity=os.getenv("AUDITOR_AUTOAPPLY_MIN_SEVERITY", "high").lower().strip(),
+         auditor_autoapply_max_per_night=int(os.getenv("AUDITOR_AUTOAPPLY_MAX_PER_NIGHT", "1")),
+         auditor_autoapply_restart_enabled=os.getenv("AUDITOR_AUTOAPPLY_RESTART_ENABLED", "1") == "1",
++        auditor_chat_enabled=os.getenv("AUDITOR_CHAT_ENABLED", "0") == "1",
++        auditor_chat_backend=os.getenv("AUDITOR_CHAT_BACKEND", "gemini").lower().strip(),
++        auditor_chat_model=os.getenv("AUDITOR_CHAT_MODEL", "gemini-2.5-flash-lite").strip(),
++        auditor_chat_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
++        auditor_chat_max_turns=int(os.getenv("AUDITOR_CHAT_MAX_TURNS", "6")),
++        auditor_chat_max_tokens=int(os.getenv("AUDITOR_CHAT_MAX_TOKENS", "1000")),
++        auditor_chat_temperature=float(os.getenv("AUDITOR_CHAT_TEMPERATURE", "0.3")),
++        auditor_chat_tool_iterations=int(os.getenv("AUDITOR_CHAT_TOOL_ITERATIONS", "2")),
++        auditor_chat_tool_result_max_chars=int(os.getenv("AUDITOR_CHAT_TOOL_RESULT_MAX_CHARS", "2000")),
+     )
+     _apply_runtime_overrides(fields)
+     return Settings(**fields)

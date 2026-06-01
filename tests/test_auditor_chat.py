@@ -196,6 +196,43 @@ def test_get_pending_proposals_prunes_expired_before_returning(tmp_path: Path) -
     assert "expired_one" not in state.pending_proposals
 
 
+def test_create_proposal_tool_absent_without_creator(tmp_path: Path) -> None:
+    """The read-only registry must NOT expose create_proposal by default."""
+    reg = _make_registry(tmp_path)
+    assert "create_proposal" not in reg.names()
+
+
+def test_create_proposal_tool_present_and_invokes_creator(tmp_path: Path) -> None:
+    captured: dict = {}
+
+    def fake_creator(*, knob, proposed_value, rationale, severity):
+        captured.update(
+            knob=knob, proposed_value=proposed_value, rationale=rationale, severity=severity
+        )
+        return {"created": True, "id": "deadbeef", "knob": knob}
+
+    reg = build_tool_registry(
+        broker=_make_broker(),
+        settings=_settings_stub(),
+        overrides_file=tmp_path / "runtime_overrides.json",
+        audit_state_provider=lambda: SimpleNamespace(pending_proposals={}),
+        reports_dir=tmp_path / "reports",
+        proposal_creator=fake_creator,
+    )
+    assert "create_proposal" in reg.names()
+    tool = reg.find("create_proposal")
+    # enum of knobs is surfaced to the LLM so it picks a tunable one.
+    assert "MIN_TRADE_EDGE" in tool.parameters["properties"]["knob"]["enum"]
+
+    out = tool.invoke(
+        {"knob": "MIN_TRADE_EDGE", "proposed_value": 0.0075, "rationale": "fee drag high"}
+    )
+    assert out == {"created": True, "id": "deadbeef", "knob": "MIN_TRADE_EDGE"}
+    assert captured["knob"] == "MIN_TRADE_EDGE"
+    assert captured["proposed_value"] == 0.0075
+    assert captured["severity"] == "medium"  # default applied by handler
+
+
 def test_get_active_overrides_reads_runtime_file(tmp_path: Path) -> None:
     overrides = tmp_path / "runtime_overrides.json"
     overrides.write_text(json.dumps({"MIN_TRADE_EDGE": 0.012}), encoding="utf-8")

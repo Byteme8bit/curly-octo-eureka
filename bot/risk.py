@@ -314,13 +314,15 @@ class RiskManager:
 
         return (
 
-            f"**Adaptive mode** — no trades for {status.idle_hours:.1f}h "
+            f"**Probe mode — hunting a trade** 🎯 no trades for {status.idle_hours:.1f}h "
 
-            f"(threshold {self.idle_reeval_hours:.0f}h).\n"
+            f"(threshold {self.idle_reeval_hours * 60:.0f}m).\n"
 
             f"Loosening edge/net-profit hurdles toward fee break-even "
 
-            f"(relax {status.relax_factor:.0%} of normal).\n"
+            f"(relax {status.relax_factor:.0%} of normal) and will take a small "
+
+            f"probe trade on the best candidate that still clears costs.\n"
 
             f"Current: swap edge {swap:+.4f} | min net {net:+.4f} | "
 
@@ -328,7 +330,7 @@ class RiskManager:
 
             f"Up to {self.idle_reeval_max_attempts} relaxation attempts before thresholds reset.\n"
 
-            f"Trades still require positive net after fees + slippage."
+            f"Probes still require positive net after fees + slippage (no guaranteed losers)."
 
         )
 

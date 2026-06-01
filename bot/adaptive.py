@@ -16,15 +16,25 @@ class AdaptiveStatus:
     suspended: bool = False
 
 
+# How fast strictness decays once past the idle threshold, per hour of extra
+# idle. Tuned so the bot reaches its loosest (break-even) stance within ~15 min
+# of crossing the threshold — i.e. it visibly starts probing for a trade fast
+# when the market goes quiet, instead of waiting hours. (Was 0.083/hr ≈ 6h.)
+_RELAX_PER_HOUR = 2.0
+
+
 def compute_relax_factor(idle_hours: float, idle_threshold_hours: float) -> float:
     """
-    After idle_threshold_hours with no trade, relax requirements gradually.
-    Reaches ~50% of normal strictness after 6 hours beyond threshold.
+    After idle_threshold_hours with no trade, relax requirements quickly.
+
+    Reaches the ~0.5 floor (edges loosened toward fee break-even) within about
+    15 minutes past the threshold so the bot promptly attempts small probe
+    trades when it has been idle, instead of sitting silent for hours.
     """
     if idle_hours < idle_threshold_hours:
         return 1.0
     extra = idle_hours - idle_threshold_hours
-    return max(0.5, 1.0 - extra * 0.083)
+    return max(0.5, 1.0 - extra * _RELAX_PER_HOUR)
 
 
 def fee_floor_edge(fee_rate: float, hops: int, *, is_held_swap: bool = False) -> float:
