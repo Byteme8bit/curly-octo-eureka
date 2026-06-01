@@ -40,6 +40,7 @@ def _engine(*, risk_allowed: bool = True) -> TradingEngine:
     engine.settings = SimpleNamespace(
         idle_probe_force_minutes=1.0,
         idle_probe_size_pct=0.05,
+        min_eth_reserve=0.25,
         discord_enabled=False,
     )
     engine.runtime = _Runtime()
