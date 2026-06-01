@@ -337,32 +337,6 @@ def make_get_bot_settings(settings) -> Callable[..., dict]:
     return _impl
 
 
-def make_create_proposal(proposal_creator: Callable[..., Any] | None) -> Callable[..., dict]:
-    """Wrap the AuditorService proposal creator as a chat tool callable.
-
-    This is the ONE tool that is not strictly read-only — but it only creates a
-    PENDING proposal the user must still confirm with ``Auditor -confirm <id>``.
-    It NEVER applies the change itself.
-    """
-
-    def _impl(
-        knob: str,
-        proposed_value,
-        rationale: str = "",
-        severity: str = "medium",
-    ) -> dict:
-        if proposal_creator is None:
-            return {"error": "Proposal creation is not available in this context."}
-        return proposal_creator(
-            knob=knob,
-            proposed_value=proposed_value,
-            rationale=rationale,
-            severity=severity,
-        )
-
-    return _impl
-
-
 def make_get_market_prices(broker) -> Callable[..., dict]:
     def _impl() -> dict:
         prices = getattr(getattr(broker, "state", None), "mark_prices", None)
@@ -391,16 +365,8 @@ def build_tool_registry(
     watchdog_state_provider: Callable[[], Any] | None = None,
     news_client_provider: Callable[[], Any] | None = None,
     reports_dir: Path,
-    proposal_creator: Callable[..., Any] | None = None,
 ) -> ToolRegistry:
-    """Build the standard tool registry for an AuditorService instance.
-
-    All tools are read-only EXCEPT the optional ``create_proposal`` tool, which
-    is registered only when ``proposal_creator`` is supplied. That tool can
-    register a PENDING proposal (never apply one) so the chat can answer
-    "make a proposal to improve strategy".
-    """
-    from bot.auditor.proposer import ALLOWED_KNOBS
+    """Build the standard read-only tool registry for an AuditorService instance."""
 
     tools: list[Tool] = [
         Tool(
@@ -536,50 +502,4 @@ def build_tool_registry(
             handler=make_get_market_prices(broker),
         ),
     ]
-
-    if proposal_creator is not None:
-        tools.append(
-            Tool(
-                name="create_proposal",
-                description=(
-                    "Create a PENDING configuration proposal for the user to review and "
-                    "approve. Use this when the user asks you to 'make a proposal' or "
-                    "suggest a concrete improvement to strategy/behaviour. You must base "
-                    "the numbers on real data you looked up first (trades, strategy "
-                    "performance, current settings). This does NOT apply the change — it "
-                    "only drafts it; the user still runs `Auditor -confirm <id>`. Map the "
-                    "improvement to one of the tunable knobs. After calling, tell the user "
-                    "the proposal id and that they can approve it with `Auditor -confirm <id>`."
-                ),
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "knob": {
-                            "type": "string",
-                            "enum": list(ALLOWED_KNOBS),
-                            "description": "Which tunable setting to change.",
-                        },
-                        "proposed_value": {
-                            "type": "number",
-                            "description": "The new numeric value to propose for the knob.",
-                        },
-                        "rationale": {
-                            "type": "string",
-                            "description": (
-                                "Short, concrete justification citing the data you used "
-                                "(e.g. win rate, fee drag, recent trades)."
-                            ),
-                        },
-                        "severity": {
-                            "type": "string",
-                            "enum": ["low", "medium", "high"],
-                            "description": "How impactful/urgent this change is. Default medium.",
-                        },
-                    },
-                    "required": ["knob", "proposed_value", "rationale"],
-                },
-                handler=make_create_proposal(proposal_creator),
-            )
-        )
-
     return ToolRegistry(tools=tools)

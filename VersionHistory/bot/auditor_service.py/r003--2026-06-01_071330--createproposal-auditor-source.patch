@@ -1,0 +1,125 @@
+--- a/bot/auditor_service.py
++++ b/bot/auditor_service.py
+@@ -18,7 +18,12 @@
+ from bot.auditor.config import AuditorConfig
+ from bot.auditor.forecaster import forecast_pnl
+ from bot.auditor.news_client import NewsClient
+-from bot.auditor.proposer import ALLOWED_KNOBS, propose_changes
++from bot.auditor.proposer import (
++    ALLOWED_KNOBS,
++    KNOB_TO_FIELD,
++    build_proposal,
++    propose_changes,
++)
+ from bot.auditor.report import (
+     AuditReport,
+     DISCORD_MAX_LEN,
+@@ -206,6 +211,77 @@
+             f"Reverted `{knob}`. Restart the bot for the original `.env` value to take effect."
+         )
+ 
++    def create_proposal(
++        self,
++        knob: str,
++        proposed_value,
++        rationale: str = "",
++        severity: str = "medium",
++    ) -> dict:
++        """Register a PENDING proposal into the same store as audit proposals.
++
++        Used by the conversational chat so the Auditor can answer "make a
++        proposal to improve strategy" with a concrete, confirmable suggestion.
++
++        CRITICAL: this only *creates* a pending proposal — it never applies the
++        change. The user must still run ``Auditor -confirm <id>`` (which writes
++        ``runtime_overrides.json``). All existing auto-apply guardrails are
++        untouched. Returns a JSON-serialisable dict (``error`` key on failure).
++        """
++        knob_norm = (knob or "").strip().upper()
++        if knob_norm not in ALLOWED_KNOBS:
++            return {
++                "error": (
++                    f"`{knob}` is not an auditor-tunable knob. "
++                    f"Choose one of: {', '.join(ALLOWED_KNOBS)}."
++                )
++            }
++        try:
++            proposed = float(proposed_value)
++        except (TypeError, ValueError):
++            return {"error": f"proposed_value must be numeric, got {proposed_value!r}."}
++
++        field = KNOB_TO_FIELD.get(knob_norm)
++        current = float(getattr(self.settings, field, 0.0)) if field else 0.0
++        rationale = (rationale or "").strip() or "Proposed via Auditor chat."
++        try:
++            proposal = build_proposal(
++                knob_norm,
++                current,
++                proposed,
++                rationale,
++                severity=severity,
++                ttl_minutes=self.config.proposals_ttl_minutes,
++            )
++        except ValueError as exc:
++            return {"error": str(exc)}
++
++        with self._lock:
++            self.state.add_proposal(proposal)
++            self.state.prune_expired()
++            self._save_state()
++
++        logger.warning(
++            "Auditor chat created pending proposal %s (%s: %s -> %s, severity=%s)",
++            proposal.id, proposal.knob, proposal.current_value,
++            proposal.proposed_value, proposal.severity,
++        )
++        return {
++            "created": True,
++            "id": proposal.id,
++            "knob": proposal.knob,
++            "current_value": proposal.current_value,
++            "proposed_value": proposal.proposed_value,
++            "severity": proposal.severity,
++            "rationale": proposal.rationale,
++            "expires_at": proposal.expires_at,
++            "confirm_hint": (
++                f"Pending proposal `{proposal.id}` created. The user can review it "
++                f"with `Auditor -list` and apply it with `Auditor -confirm {proposal.id}`. "
++                "It is NOT applied automatically."
++            ),
++        }
++
+     # ---------------------------------------------------------- chat surface
+ 
+     def ask(self, question: str) -> str:
+@@ -321,6 +397,7 @@
+             watchdog_state_provider=self.watchdog_state_provider,
+             news_client_provider=lambda: self._news_client_for_chat(),
+             reports_dir=self.config.reports_dir,
++            proposal_creator=self.create_proposal,
+         )
+         return ChatService(
+             backend=backend,
+@@ -708,11 +785,11 @@
+             # Pin so it stays visible when the user wakes up.
+             poster = getattr(self.discord, "post_important", None)
+             if callable(poster):
+-                poster(message, pin=True)
++                poster(message, pin=True, source="Auditor")
+             else:  # extremely defensive fallback for stubs/tests
+                 fallback = getattr(self.discord, "post_plain", None)
+                 if callable(fallback):
+-                    fallback(message, pin=True)
++                    fallback(message, pin=True, source="Auditor")
+         except Exception:  # noqa: BLE001
+             logger.exception("Failed to post auto-apply Discord notice")
+ 
+@@ -749,7 +826,7 @@
+             if hasattr(self.discord, "config") and not getattr(self.discord.config, "enabled", False):
+                 return
+             text = summary[:DISCORD_MAX_LEN] if len(summary) > DISCORD_MAX_LEN else summary
+-            self.discord.post_important(text, pin=False)
++            self.discord.post_important(text, pin=False, source="Auditor")
+         except Exception:  # noqa: BLE001
+             logger.exception("Auditor failed to post summary to Discord")
+ 

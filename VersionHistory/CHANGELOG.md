@@ -390,3 +390,75 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -1
 - **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
 
+## bot/discord_bot.py — r003
+
+- **When:** 2026-06-01 07:13:30 PDT
+- **Reason:** per-source attribution on posts
+- **Request:** 029
+- **Diff:** +63 / -16
+- **Patch:** `r003--2026-06-01_071330--per-source-attribution-on-posts.patch`
+
+## bot/engine.py — r006
+
+- **When:** 2026-06-01 07:13:30 PDT
+- **Reason:** watchdog alerts source=WatchDog
+- **Request:** 029
+- **Diff:** +82 / -30
+- **Patch:** `r006--2026-06-01_071330--watchdog-alerts-sourcewatchdog.patch`
+
+## bot/auditor_service.py — r003
+
+- **When:** 2026-06-01 07:13:30 PDT
+- **Reason:** create_proposal + Auditor source
+- **Request:** 029
+- **Diff:** +81 / -4
+- **Patch:** `r003--2026-06-01_071330--createproposal-auditor-source.patch`
+
+## bot/auditor/proposer.py — r001
+
+- **When:** 2026-06-01 07:13:30 PDT
+- **Reason:** add build_proposal helper
+- **Request:** 029
+- **Diff:** +38 / -0
+- **Patch:** `r001--2026-06-01_071330--add-buildproposal-helper.patch`
+
+## bot/auditor/chat/tools.py — r001
+
+- **When:** 2026-06-01 07:13:42 PDT
+- **Reason:** create_proposal chat tool
+- **Request:** 029
+- **Diff:** +81 / -1
+- **Patch:** `r001--2026-06-01_071342--createproposal-chat-tool.patch`
+
+## bot/auditor/chat/service.py — r002
+
+- **When:** 2026-06-01 07:13:42 PDT
+- **Reason:** allow drafting pending proposal
+- **Request:** 029
+- **Diff:** +15 / -4
+- **Patch:** `r002--2026-06-01_071342--allow-drafting-pending-proposal.patch`
+
+## tests/test_discord_commands.py — r001
+
+- **When:** 2026-06-01 07:13:42 PDT
+- **Reason:** attribution tests
+- **Request:** 029
+- **Diff:** +113 / -0
+- **Patch:** `r001--2026-06-01_071342--attribution-tests.patch`
+
+## tests/test_auditor.py — r002
+
+- **When:** 2026-06-01 07:13:43 PDT
+- **Reason:** create_proposal tests
+- **Request:** 029
+- **Diff:** +179 / -0
+- **Patch:** `r002--2026-06-01_071343--createproposal-tests.patch`
+
+## tests/test_auditor_chat.py — r003
+
+- **When:** 2026-06-01 07:13:43 PDT
+- **Reason:** create_proposal tool tests
+- **Request:** 029
+- **Diff:** +346 / -0
+- **Patch:** `r003--2026-06-01_071343--createproposal-tool-tests.patch`
+

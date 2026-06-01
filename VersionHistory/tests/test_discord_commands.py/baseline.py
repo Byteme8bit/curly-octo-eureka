@@ -11,12 +11,10 @@ from unittest.mock import patch
 import pytest
 
 from bot.discord_bot import (
-    DEFAULT_SOURCE,
     DiscordBot,
     DiscordConfig,
     ParsedCommand,
     parse_command,
-    source_for_action,
 )
 
 
@@ -160,117 +158,6 @@ def test_global_command_not_marked_deprecated() -> None:
     assert result is not None
     assert result.action == "help"
     assert result.deprecated is False
-
-
-# ---------------------------------------------------------------------------
-# Source attribution (Issue 1)
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "action,expected_source",
-    [
-        ("auditor-review", "Auditor"),
-        ("auditor-ask How are we doing?", "Auditor"),
-        ("auditor-confirm abc123", "Auditor"),
-        ("watchdog", "WatchDog"),
-        ("watchdog-pause", "WatchDog"),
-        ("clearchat", "WatchDog"),
-        ("start", "TradeBot"),
-        ("portfolio", "TradeBot"),
-        ("help", "TradeBot"),
-        ("", "TradeBot"),
-        (None, "TradeBot"),
-    ],
-)
-def test_source_for_action_maps_to_owning_subsystem(action, expected_source) -> None:
-    assert source_for_action(action) == expected_source
-
-
-def _webhook_bot(tmp_path: Path) -> DiscordBot:
-    """Bot configured with ONLY a webhook (no bot token)."""
-    cfg = DiscordConfig(
-        enabled=True,
-        webhook_url="https://discord.test/webhook",
-        bot_token="",
-        channel_id="",
-        allowed_user_ids=frozenset({"42"}),
-        pin_state_file=tmp_path / "pins.json",
-        chat_log_enabled=False,
-        chat_log_file=tmp_path / "chat.log",
-    )
-    return DiscordBot(cfg, command_handler=lambda action, uid: "")
-
-
-class TestWebhookUsernameAttribution:
-    def test_default_source_uses_base_username(self, tmp_path: Path) -> None:
-        bot = _webhook_bot(tmp_path)
-        payloads: list[dict] = []
-        with patch.object(bot, "_post_json", side_effect=lambda url, p: payloads.append(p) or {"id": "1"}):
-            bot.post_important("hello")
-        assert payloads[0]["username"] == "TradeBot"
-        assert payloads[0]["content"] == "hello"
-
-    def test_watchdog_source_gets_suffixed_username(self, tmp_path: Path) -> None:
-        bot = _webhook_bot(tmp_path)
-        payloads: list[dict] = []
-        with patch.object(bot, "_post_json", side_effect=lambda url, p: payloads.append(p) or {"id": "1"}):
-            bot.post_important("watchdog alert", source="WatchDog")
-        assert payloads[0]["username"] == "TradeBot \u00b7 WatchDog"
-        # Webhook content is NOT text-prefixed — the username carries attribution.
-        assert payloads[0]["content"] == "watchdog alert"
-
-    def test_auditor_source_gets_suffixed_username(self, tmp_path: Path) -> None:
-        bot = _webhook_bot(tmp_path)
-        payloads: list[dict] = []
-        with patch.object(bot, "_post_json", side_effect=lambda url, p: payloads.append(p) or {"id": "1"}):
-            bot.send_reply("audit done", source="Auditor")
-        assert payloads[0]["username"] == "TradeBot \u00b7 Auditor"
-
-
-class TestBotTokenAttribution:
-    """With a bot token, usernames can't change per message — verify prefixing."""
-
-    def test_non_default_source_prefixes_text(self, tmp_path: Path) -> None:
-        bot = _make_bot(tmp_path)  # bot-token only, no webhook
-        sent: list[dict] = []
-
-        def fake_request(method: str, url: str, payload: dict | None = None):
-            if method == "POST" and url.endswith("/messages"):
-                sent.append(payload or {})
-            return {"id": "555"}
-
-        with patch.object(bot, "_request", side_effect=fake_request):
-            bot.post_important("watchdog paused the bot", source="WatchDog")
-        assert sent[0]["content"].startswith("**[WatchDog]** ")
-        assert "watchdog paused the bot" in sent[0]["content"]
-
-    def test_default_source_not_prefixed(self, tmp_path: Path) -> None:
-        bot = _make_bot(tmp_path)
-        sent: list[dict] = []
-
-        def fake_request(method: str, url: str, payload: dict | None = None):
-            if method == "POST" and url.endswith("/messages"):
-                sent.append(payload or {})
-            return {"id": "556"}
-
-        with patch.object(bot, "_request", side_effect=fake_request):
-            bot.post_important("trade executed", source=DEFAULT_SOURCE)
-        assert sent[0]["content"] == "trade executed"
-        assert "[" not in sent[0]["content"]
-
-    def test_command_reply_prefixed_by_source(self, tmp_path: Path) -> None:
-        bot = _make_bot(tmp_path)
-        sent: list[dict] = []
-
-        def fake_request(method: str, url: str, payload: dict | None = None):
-            if method == "POST" and url.endswith("/messages"):
-                sent.append(payload or {})
-            return {"id": "557"}
-
-        with patch.object(bot, "_request", side_effect=fake_request):
-            bot.send_reply("here is the audit", source="Auditor")
-        assert sent[0]["content"].startswith("**[Auditor]** ")
 
 
 # ---------------------------------------------------------------------------
