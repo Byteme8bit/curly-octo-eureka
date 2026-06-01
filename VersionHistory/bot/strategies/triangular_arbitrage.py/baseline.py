@@ -132,33 +132,12 @@ class TriangularArbitrageStrategy(Strategy):
             held = list(assets[:3])
 
         best: tuple[float, str, str, str] | None = None
-        n_scanned = 0
-        n_no_path = 0
-        n_below_min = 0
         for combo in itertools.permutations(assets, 3):
             if held and combo[0] not in held:
                 continue
-            n_scanned += 1
             result = self._loop_profit(combo, markets, pair_prices)
-            if result is None:
-                # _loop_profit returns None when a route leg is missing OR a
-                # required pair price is unavailable/zero.
-                n_no_path += 1
-            else:
-                if result[0] <= min_net:
-                    n_below_min += 1
-                if best is None or result[0] > best[0]:
-                    best = result
-
-        logger.debug(
-            "Triangular arb scan: %d combos evaluated, %d no-path/zero-price, "
-            "%d below-min (%.4f), best=%s",
-            n_scanned,
-            n_no_path,
-            n_below_min,
-            min_net,
-            f"{best[0]:+.4f} ({best[1]})" if best else "none",
-        )
+            if result and (best is None or result[0] > best[0]):
+                best = result
 
         intents: list[TradeIntent] = []
         opportunities: list[RotationOption] = []
