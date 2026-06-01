@@ -43,6 +43,28 @@
       "removed": 11,
       "request_id": "027",
       "timestamp": "2026-05-30 22:16:52 PDT"
+    },
+    {
+      "added": 15,
+      "number": 2,
+      "patch": "r002--2026-06-01_010953--mark-032033034-soon-items-done.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark 032/033/034 Soon items done",
+      "removed": 12,
+      "request_id": "034",
+      "timestamp": "2026-06-01 01:09:53 PDT"
+    }
+  ],
+  "README.md": [
+    {
+      "added": 28,
+      "number": 1,
+      "patch": "r001--2026-06-01_010953--add-discord-commands-section-linking-dis.patch",
+      "path": "README.md",
+      "reason": "add Discord commands section linking DISCORD_COMMANDS.txt",
+      "removed": 0,
+      "request_id": "034",
+      "timestamp": "2026-06-01 01:09:53 PDT"
     }
   ],
   "automation/maintenance_prompt.md": [
@@ -269,6 +291,18 @@
       "timestamp": "2026-05-30 22:52:19 PDT"
     }
   ],
+  "bot/preflight.py": [
+    {
+      "added": 10,
+      "number": 1,
+      "patch": "r001--2026-06-01_010953--show-reject-messages-in-basis-points.patch",
+      "path": "bot/preflight.py",
+      "reason": "show reject messages in basis points",
+      "removed": 4,
+      "request_id": "034",
+      "timestamp": "2026-06-01 01:09:53 PDT"
+    }
+  ],
   "bot/report.py": [
     {
       "added": 7,
@@ -291,6 +325,18 @@
       "removed": 5,
       "request_id": "025",
       "timestamp": "2026-05-30 13:07:54 PDT"
+    }
+  ],
+  "bot/strategies/triangular_arbitrage.py": [
+    {
+      "added": 23,
+      "number": 1,
+      "patch": "r001--2026-06-01_010953--observability-counters-scannedno-pathbel.patch",
+      "path": "bot/strategies/triangular_arbitrage.py",
+      "reason": "observability counters: scanned/no-path/below-min per tick",
+      "removed": 2,
+      "request_id": "033",
+      "timestamp": "2026-06-01 01:09:53 PDT"
     }
   ],
   "bot/trade_log.py": [
@@ -393,6 +439,30 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "scripts/monitor_kraken_changes.py": [
+    {
+      "added": 6,
+      "number": 1,
+      "patch": "r001--2026-06-01_010948--delegate-discord-post-to-botnotification.patch",
+      "path": "scripts/monitor_kraken_changes.py",
+      "reason": "delegate Discord POST to bot.notifications.discord_webhook",
+      "removed": 16,
+      "request_id": "032",
+      "timestamp": "2026-06-01 01:09:48 PDT"
+    }
+  ],
+  "scripts/post_discord_alert.py": [
+    {
+      "added": 4,
+      "number": 1,
+      "patch": "r001--2026-06-01_010948--delegate-post-to-botnotificationsdiscord.patch",
+      "path": "scripts/post_discord_alert.py",
+      "reason": "delegate POST to bot.notifications.discord_webhook",
+      "removed": 22,
+      "request_id": "032",
+      "timestamp": "2026-06-01 01:09:48 PDT"
     }
   ],
   "scripts/version_history.py": [

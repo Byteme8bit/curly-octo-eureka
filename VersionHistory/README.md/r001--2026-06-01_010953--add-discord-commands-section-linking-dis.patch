@@ -1,0 +1,37 @@
+--- a/README.md
++++ b/README.md
+@@ -58,6 +58,34 @@
+ | `MIN_TRADE_EDGE` | 0.006 | Momentum must beat fees |
+ | `CORE_ASSETS` | ETH,ADA,BTC | Protected from rotation churn |
+ 
++## Discord commands
++
++The bot listens for commands on its Discord channel.  Commands follow the form
++`<Prefix> -<action> [args]` (case-insensitive).
++
++| Prefix | Typical use |
++|---|---|
++| `TradeBot` / `TB` | Trading control: start, stop, reset, portfolio, planned |
++| `WatchDog` / `WD` | Monitoring: status, pause, clearchat |
++| `Auditor` / `Au` | Audit, proposals, Q&A chat |
++| *(none)* | `help`, `whoami` |
++
++**Quick reference:**
++
++```
++TradeBot -portfolio      Current holdings + PnL
++TradeBot -planned        What the bot is weighing
++TradeBot -reset          Fresh paper start
++WatchDog -status         Health check
++Auditor  -review         Full audit
++Auditor  -pending        Proposals waiting for approval
++Auditor  -confirm <id>   Apply a proposal (then restart)
++Auditor  -ask <question> Single-shot question
++help                     All commands at a glance
++```
++
++Full command reference: [`DISCORD_COMMANDS.txt`](DISCORD_COMMANDS.txt)
++
+ ## Documentation
+ 
+ - **Architecture, modules, tick lifecycle:** [`docs/architecture/`](docs/architecture/)

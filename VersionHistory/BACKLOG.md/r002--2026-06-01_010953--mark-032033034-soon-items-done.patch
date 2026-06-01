@@ -1,0 +1,46 @@
+--- a/BACKLOG.md
++++ b/BACKLOG.md
+@@ -38,21 +38,21 @@
+ 
+ ## Soon (anytime)
+ 
+-- [ ] **Centralise the Discord webhook posting logic.** Both
+-  `scripts/monitor_kraken_changes.py` and `scripts/post_discord_alert.py`
+-  reimplement the same urllib JSON-POST. Extract to
+-  `bot/notifications/discord_webhook.py`, give both scripts a one-liner.
+ - [ ] **`bot/auditor_service.py` is 600+ lines.** Worth splitting the
+   proposal-application path from the chat path. Only do this after
+   test coverage exists for the parts you'd extract.
+-- [ ] **Add observability counters for triangular_arbitrage strategy.**
+-  How many loops scanned per tick? How many rejected for which reason?
+-  (Pure observability; do NOT change the strategy's decision logic.)
+-- [ ] **Improve `pre-flight reject` messages.** Currently shows raw
+-  decimals (`gross +0.0012 - fees 0.0040 - slippage 0.0005`). Could
+-  show basis points (12bps - 40bps - 5bps) which is easier to read.
+-- [ ] **Document the full Discord command set in `README.md`.** We have
+-  `DISCORD_COMMANDS.txt` but it's not linked from the README.
++- [x] **Centralise the Discord webhook posting logic.**
++  Shipped 2026-06-01 (feature 032). `bot/notifications/discord_webhook.py`
++  with 8 unit tests; both scripts now delegate here.
++- [x] **Add observability counters for triangular_arbitrage strategy.**
++  Shipped 2026-06-01 (feature 033). `logger.debug()` per tick: combos
++  scanned, no-path/zero-price, below-min, best gross.
++- [x] **Improve `pre-flight reject` messages.**
++  Shipped 2026-06-01 (feature 034). `_bps()` helper in `preflight.py`;
++  messages now show e.g. `net +12bps (gross +25bps - fees 10bps - slippage 3bps)`.
++- [x] **Document the full Discord command set in `README.md`.**
++  Shipped 2026-06-01 (feature 034). New "Discord commands" section with
++  quick-reference table + link to `DISCORD_COMMANDS.txt`.
+ 
+ ## Later (when there's slack)
+ 
+@@ -73,6 +73,9 @@
+ 
+ (Add entries here as they ship — most recent first.)
+ 
++- [x] **Centralise Discord webhook, triangular-arb observability counters,
++  pre-flight bps messages, README Discord commands doc.**
++  Shipped 2026-06-01 (features 032/033/034, branch `cursor/tradebot-optimization-agent-4c5a`).
+ - [x] **Add a `pytest --cov` run to CI + warn on silent state recovery.**
+   Shipped by the 2026-05-30 auto run (commit `469534e`). _Note: landed on an
+   `auto/…` branch; confirm it's merged to `main` before relying on it._

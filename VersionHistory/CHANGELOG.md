@@ -390,3 +390,51 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -1
 - **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
 
+## scripts/post_discord_alert.py — r001
+
+- **When:** 2026-06-01 01:09:48 PDT
+- **Reason:** delegate POST to bot.notifications.discord_webhook
+- **Request:** 032
+- **Diff:** +4 / -22
+- **Patch:** `r001--2026-06-01_010948--delegate-post-to-botnotificationsdiscord.patch`
+
+## scripts/monitor_kraken_changes.py — r001
+
+- **When:** 2026-06-01 01:09:48 PDT
+- **Reason:** delegate Discord POST to bot.notifications.discord_webhook
+- **Request:** 032
+- **Diff:** +6 / -16
+- **Patch:** `r001--2026-06-01_010948--delegate-discord-post-to-botnotification.patch`
+
+## bot/strategies/triangular_arbitrage.py — r001
+
+- **When:** 2026-06-01 01:09:53 PDT
+- **Reason:** observability counters: scanned/no-path/below-min per tick
+- **Request:** 033
+- **Diff:** +23 / -2
+- **Patch:** `r001--2026-06-01_010953--observability-counters-scannedno-pathbel.patch`
+
+## bot/preflight.py — r001
+
+- **When:** 2026-06-01 01:09:53 PDT
+- **Reason:** show reject messages in basis points
+- **Request:** 034
+- **Diff:** +10 / -4
+- **Patch:** `r001--2026-06-01_010953--show-reject-messages-in-basis-points.patch`
+
+## README.md — r001
+
+- **When:** 2026-06-01 01:09:53 PDT
+- **Reason:** add Discord commands section linking DISCORD_COMMANDS.txt
+- **Request:** 034
+- **Diff:** +28 / -0
+- **Patch:** `r001--2026-06-01_010953--add-discord-commands-section-linking-dis.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-06-01 01:09:53 PDT
+- **Reason:** mark 032/033/034 Soon items done
+- **Request:** 034
+- **Diff:** +15 / -12
+- **Patch:** `r002--2026-06-01_010953--mark-032033034-soon-items-done.patch`
+

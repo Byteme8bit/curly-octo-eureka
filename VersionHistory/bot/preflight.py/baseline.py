@@ -8,12 +8,6 @@ from bot.fee_engine import FeeEngine
 from bot.strategies.base import TradeIntent
 
 
-def _bps(pct: float) -> str:
-    """Format a fractional percentage value as basis points, e.g. 0.0012 → '+12bps'."""
-    sign = "+" if pct >= 0 else ""
-    return f"{sign}{round(pct * 10_000)}bps"
-
-
 @dataclass(frozen=True)
 class PreFlightResult:
     allowed: bool
@@ -73,9 +67,9 @@ class PreFlightValidator:
                 slippage_pct=slippage_pct,
                 net_return_pct=net,
                 reason=(
-                    f"Pre-flight reject: net {_bps(net)} "
-                    f"(gross {_bps(gross)} - fees {_bps(fee_pct)} - slippage {_bps(slippage_pct)}) "
-                    f"<= min {_bps(threshold)}"
+                    f"Pre-flight reject: net {net:+.4f} "
+                    f"(gross {gross:+.4f} - fees {fee_pct:.4f} - slippage {slippage_pct:.4f}) "
+                    f"<= min {threshold:.4f}"
                 ),
             )
 
@@ -85,5 +79,5 @@ class PreFlightValidator:
             fee_pct=fee_pct,
             slippage_pct=slippage_pct,
             net_return_pct=net,
-            reason=f"Pre-flight OK: net {_bps(net)}",
+            reason=f"Pre-flight OK: net {net:+.4f}",
         )
