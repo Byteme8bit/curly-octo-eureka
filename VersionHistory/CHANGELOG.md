@@ -390,3 +390,67 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -1
 - **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
 
+## watchdog/state.py — r001
+
+- **When:** 2026-05-31 21:16:11 PDT
+- **Reason:** recent_errors TTL pruning _ts stamp
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_211611--recenterrors-ttl-pruning-ts-stamp.patch`
+
+## bot/paper_broker.py — r002
+
+- **When:** 2026-05-31 21:16:11 PDT
+- **Reason:** RiskState.from_dict prunes stale paused_until hws
+- **Request:** 029
+- **Diff:** +40 / -3
+- **Patch:** `r002--2026-05-31_211611--riskstatefromdict-prunes-stale-pausedunt.patch`
+
+## bot/auditor/report.py — r001
+
+- **When:** 2026-05-31 21:16:11 PDT
+- **Reason:** ETH/BTC market context callout in Forecast
+- **Request:** 030
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_211611--ethbtc-market-context-callout-in-forecas.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-05-31 21:16:11 PDT
+- **Reason:** add pytest-cov dev dependency
+- **Request:** 031
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_211611--add-pytest-cov-dev-dependency.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-05-31 21:16:11 PDT
+- **Reason:** add cov-fail-under 55 to CI
+- **Request:** 031
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_211611--add-cov-fail-under-55-to-ci.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-05-31 21:16:11 PDT
+- **Reason:** mark 029-031 done
+- **Request:** 031
+- **Diff:** +12 / -15
+- **Patch:** `r002--2026-05-31_211611--mark-029-031-done.patch`
+
+## tests/test_watchdog_state.py — r001
+
+- **When:** 2026-05-31 21:16:11 PDT
+- **Reason:** 4 new TTL pruning regression tests
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_211611--4-new-ttl-pruning-regression-tests.patch`
+
+## tests/test_auditor.py — r002
+
+- **When:** 2026-05-31 21:16:11 PDT
+- **Reason:** 3 new market context callout tests
+- **Request:** 030
+- **Diff:** +113 / -0
+- **Patch:** `r002--2026-05-31_211611--3-new-market-context-callout-tests.patch`
+

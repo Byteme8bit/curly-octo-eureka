@@ -1,0 +1,67 @@
+--- a/bot/paper_broker.py
++++ b/bot/paper_broker.py
+@@ -1,7 +1,10 @@
+ import json
++import logging
+ from dataclasses import asdict, dataclass, field
+ from datetime import datetime, timezone
+ from pathlib import Path
++
++logger = logging.getLogger(__name__)
+ 
+ from bot.markets import PairInfo, TradeRoute
+ from bot.strategies.base import Signal
+@@ -38,16 +41,50 @@
+     def from_dict(cls, data: dict | None) -> "RiskState":
+         if not data:
+             return cls()
++
++        now = datetime.now(timezone.utc)
++
++        # Prune stale paused_until: if the pause has already expired, discard it
++        # so the bot never loads in an artificially paused state.
++        raw_paused = data.get("paused_until")
++        paused_until: str | None = raw_paused
++        if raw_paused:
++            try:
++                until_dt = datetime.fromisoformat(raw_paused)
++                if now >= until_dt:
++                    logger.info("RiskState.from_dict: pruning expired paused_until=%s", raw_paused)
++                    paused_until = None
++            except (TypeError, ValueError):
++                paused_until = None
++
++        # Prune stale hour_window_start: if > 1 hour old, the per-hour trade
++        # counter is meaningless for the current hour.
++        raw_hws = data.get("hour_window_start")
++        hour_window_start: str | None = raw_hws
++        trades_this_hour: int = int(data.get("trades_this_hour", 0))
++        if raw_hws:
++            try:
++                hws_dt = datetime.fromisoformat(raw_hws)
++                if (now - hws_dt).total_seconds() >= 3600:
++                    logger.info(
++                        "RiskState.from_dict: pruning stale hour_window_start=%s", raw_hws
++                    )
++                    hour_window_start = None
++                    trades_this_hour = 0
++            except (TypeError, ValueError):
++                hour_window_start = None
++                trades_this_hour = 0
++
+         return cls(
+             peak_portfolio=float(data.get("peak_portfolio", 0.0)),
+             baseline_portfolio=float(data.get("baseline_portfolio", 0.0)),
+-            paused_until=data.get("paused_until"),
++            paused_until=paused_until,
+             hibernate_alert_sent=bool(data.get("hibernate_alert_sent", False)),
+             last_trade_at=data.get("last_trade_at"),
+             leader_symbol=data.get("leader_symbol"),
+             leader_since=data.get("leader_since"),
+-            trades_this_hour=int(data.get("trades_this_hour", 0)),
+-            hour_window_start=data.get("hour_window_start"),
++            trades_this_hour=trades_this_hour,
++            hour_window_start=hour_window_start,
+             reevaluation_mode=bool(data.get("reevaluation_mode", False)),
+             circuit_breaker_at=data.get("circuit_breaker_at"),
+             session_started_at=data.get("session_started_at"),
