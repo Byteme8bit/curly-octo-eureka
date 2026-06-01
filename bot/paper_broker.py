@@ -38,16 +38,43 @@ class RiskState:
     def from_dict(cls, data: dict | None) -> "RiskState":
         if not data:
             return cls()
+        now = datetime.now(timezone.utc)
+
+        # Prune paused_until if the hibernate window has already elapsed.
+        paused_until_raw: str | None = data.get("paused_until")
+        hibernate_alert_sent_raw = bool(data.get("hibernate_alert_sent", False))
+        if paused_until_raw:
+            try:
+                if datetime.fromisoformat(paused_until_raw) <= now:
+                    paused_until_raw = None
+                    hibernate_alert_sent_raw = False
+            except (TypeError, ValueError):
+                paused_until_raw = None
+                hibernate_alert_sent_raw = False
+
+        # Prune hour_window_start when the window has already rolled over.
+        hour_window_start_raw: str | None = data.get("hour_window_start")
+        trades_this_hour_raw = int(data.get("trades_this_hour", 0))
+        if hour_window_start_raw:
+            try:
+                window_dt = datetime.fromisoformat(hour_window_start_raw)
+                if (now - window_dt).total_seconds() >= 3600:
+                    hour_window_start_raw = None
+                    trades_this_hour_raw = 0
+            except (TypeError, ValueError):
+                hour_window_start_raw = None
+                trades_this_hour_raw = 0
+
         return cls(
             peak_portfolio=float(data.get("peak_portfolio", 0.0)),
             baseline_portfolio=float(data.get("baseline_portfolio", 0.0)),
-            paused_until=data.get("paused_until"),
-            hibernate_alert_sent=bool(data.get("hibernate_alert_sent", False)),
+            paused_until=paused_until_raw,
+            hibernate_alert_sent=hibernate_alert_sent_raw,
             last_trade_at=data.get("last_trade_at"),
             leader_symbol=data.get("leader_symbol"),
             leader_since=data.get("leader_since"),
-            trades_this_hour=int(data.get("trades_this_hour", 0)),
-            hour_window_start=data.get("hour_window_start"),
+            trades_this_hour=trades_this_hour_raw,
+            hour_window_start=hour_window_start_raw,
             reevaluation_mode=bool(data.get("reevaluation_mode", False)),
             circuit_breaker_at=data.get("circuit_breaker_at"),
             session_started_at=data.get("session_started_at"),

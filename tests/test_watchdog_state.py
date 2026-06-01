@@ -123,3 +123,57 @@ def test_reset_process_session_counters_clears_trades_not_errors():
     assert len(state.watchdog_error_timestamps) == 1
     assert "err-A" in state.seen_error_keys
     assert state.last_pnl_band == 5
+
+
+def test_append_error_stamps_ts():
+    """append_error() must inject a ``_ts`` unix-timestamp into every record."""
+    state = WatchdogState()
+    state.append_error({"at": "2026-06-01 00:00:00 PDT", "level": "ERROR", "message": "boom"})
+    assert len(state.recent_errors) == 1
+    record = state.recent_errors[0]
+    assert "_ts" in record
+    assert record["_ts"] > WALL_CLOCK_MIN
+    assert abs(record["_ts"] - time.time()) < 5
+
+
+def test_append_error_preserves_existing_ts():
+    """If the caller already provided ``_ts``, it must not be overwritten."""
+    state = WatchdogState()
+    explicit_ts = time.time() - 100
+    state.append_error({"at": "old", "level": "ERROR", "message": "x", "_ts": explicit_ts})
+    assert abs(state.recent_errors[0]["_ts"] - explicit_ts) < 1e-6
+
+
+def test_load_prunes_stale_recent_errors(tmp_path):
+    """WatchdogState.load() must drop recent_errors entries older than 24 hours."""
+    path = tmp_path / ".watchdog_state.json"
+    old_ts = time.time() - 90000  # 25 hours ago
+    fresh_ts = time.time() - 60   # 1 minute ago
+    path.write_text(
+        json.dumps({
+            "recent_errors": [
+                {"at": "stale", "level": "ERROR", "message": "old-error", "_ts": old_ts},
+                {"at": "fresh", "level": "ERROR", "message": "new-error", "_ts": fresh_ts},
+            ]
+        }),
+        encoding="utf-8",
+    )
+    state = WatchdogState.load(path)
+    assert len(state.recent_errors) == 1
+    assert state.recent_errors[0]["message"] == "new-error"
+
+
+def test_load_keeps_recent_errors_without_ts(tmp_path):
+    """Records from older builds (no ``_ts``) are kept for backward compatibility."""
+    path = tmp_path / ".watchdog_state.json"
+    path.write_text(
+        json.dumps({
+            "recent_errors": [
+                {"at": "legacy", "level": "ERROR", "message": "no-ts-entry"},
+            ]
+        }),
+        encoding="utf-8",
+    )
+    state = WatchdogState.load(path)
+    assert len(state.recent_errors) == 1
+    assert state.recent_errors[0]["message"] == "no-ts-entry"
