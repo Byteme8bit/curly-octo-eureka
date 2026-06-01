@@ -486,3 +486,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +60 / -21
 - **Patch:** `r001--2026-06-01_075337--emit-atomic-closed-loop-prefee-gross.patch`
 
+## bot/fee_engine.py — r002
+
+- **When:** 2026-06-01 15:35:19 PDT
+- **Reason:** retry fee schedule after transient failure
+- **Request:** 031
+- **Diff:** +25 / -5
+- **Patch:** `r002--2026-06-01_153519--retry-fee-schedule-after-transient-failu.patch`
+
+## tests/test_fee_engine.py — r002
+
+- **When:** 2026-06-01 15:35:19 PDT
+- **Reason:** retry fee schedule after transient failure
+- **Request:** 031
+- **Diff:** +15 / -0
+- **Patch:** `r002--2026-06-01_153519--retry-fee-schedule-after-transient-failu.patch`
+
