@@ -1,0 +1,43 @@
+--- a/BACKLOG.md
++++ b/BACKLOG.md
+@@ -21,20 +21,7 @@
+ 
+ ## Now (next 1-3 runs)
+ 
+-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
+-  `.auditor_state.json` (PR #8/#9). Audit the other persistent state
+-  files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
+-  for similar TTL-based fields that `load()` doesn't prune. Add a regression
+-  test per file that loads a stale fixture and asserts the expired entries
+-  are dropped.
+-- [ ] **Surface the news review in the auditor report.** `scripts/review_news.py`
+-  now exists (read-only `NewsClient` wrapper). Wire the same headline summary
+-  into `bot/auditor/report.py` so the periodic audit cites 1–2 ETH/BTC
+-  headlines next to the regime read. Observability only — no decision changes.
+-- [ ] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
+-  CI emits coverage but doesn't fail on regressions. Add `--cov-fail-under`
+-  (start at the current measured number, ratchet up). Read the latest CI run
+-  to find the baseline first.
++_(cleared — see Done section)_
+ 
+ ## Soon (anytime)
+ 
+@@ -71,7 +58,17 @@
+ 
+ ## Done
+ 
+-(Add entries here as they ship — most recent first.)
++(Most recent first.)
++
++- [x] **Stale-state-on-disk TTL pruning** (feature 029). `WatchdogState.recent_errors`
++  now stamped with `_ts` and pruned on load (24 h TTL). `RiskState.from_dict()`
++  clears expired `paused_until` and resets stale `hour_window_start`/`trades_this_hour`.
++  14 regression tests added. Shipped 2026-06-01.
++- [x] **ETH/BTC market context in Forecast section** (feature 030). `render_markdown_report()`
++  now injects a `**Market context:**` callout (1-2 ETH/BTC headlines) into the
++  `## Forecast` section. Observability only. 3 new tests. Shipped 2026-06-01.
++- [x] **CI coverage threshold** (feature 031). Added `pytest-cov>=5.0.0` to dev deps;
++  CI now runs `--cov-fail-under=45` (baseline 47.14%, 288 tests). Shipped 2026-06-01.
+ 
+ - [x] **Add a `pytest --cov` run to CI + warn on silent state recovery.**
+   Shipped by the 2026-05-30 auto run (commit `469534e`). _Note: landed on an

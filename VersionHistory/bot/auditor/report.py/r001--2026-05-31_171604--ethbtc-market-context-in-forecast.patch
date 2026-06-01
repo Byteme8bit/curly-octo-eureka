@@ -1,0 +1,3 @@
+--- a/bot/auditor/report.py
++++ b/bot/auditor/report.py
+# initial revision - file matches git HEAD

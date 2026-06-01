@@ -390,3 +390,51 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -1
 - **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
 
+## watchdog/state.py — r001
+
+- **When:** 2026-05-31 17:16:00 PDT
+- **Reason:** TTL prune recent_errors on load
+- **Request:** 029
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_171600--ttl-prune-recenterrors-on-load.patch`
+
+## bot/paper_broker.py — r002
+
+- **When:** 2026-05-31 17:16:00 PDT
+- **Reason:** prune stale paused_until hour_window
+- **Request:** 029
+- **Diff:** +31 / -4
+- **Patch:** `r002--2026-05-31_171600--prune-stale-pauseduntil-hourwindow.patch`
+
+## bot/auditor/report.py — r001
+
+- **When:** 2026-05-31 17:16:04 PDT
+- **Reason:** ETH/BTC market context in forecast
+- **Request:** 030
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_171604--ethbtc-market-context-in-forecast.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-05-31 17:16:09 PDT
+- **Reason:** add pytest-cov to dev deps
+- **Request:** 031
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_171609--add-pytest-cov-to-dev-deps.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-05-31 17:16:09 PDT
+- **Reason:** cov-fail-under 45 baseline
+- **Request:** 031
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-05-31_171609--cov-fail-under-45-baseline.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-05-31 17:16:09 PDT
+- **Reason:** mark 029-031 done
+- **Request:** 031
+- **Diff:** +12 / -15
+- **Patch:** `r002--2026-05-31_171609--mark-029-031-done.patch`
+

@@ -21,6 +21,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_171609--cov-fail-under-45-baseline.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "cov-fail-under 45 baseline",
+      "removed": 0,
+      "request_id": "031",
+      "timestamp": "2026-05-31 17:16:09 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -43,6 +55,16 @@
       "removed": 11,
       "request_id": "027",
       "timestamp": "2026-05-30 22:16:52 PDT"
+    },
+    {
+      "added": 12,
+      "number": 2,
+      "patch": "r002--2026-05-31_171609--mark-029-031-done.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark 029-031 done",
+      "removed": 15,
+      "request_id": "031",
+      "timestamp": "2026-05-31 17:16:09 PDT"
     }
   ],
   "automation/maintenance_prompt.md": [
@@ -123,6 +145,18 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    }
+  ],
+  "bot/auditor/report.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_171604--ethbtc-market-context-in-forecast.patch",
+      "path": "bot/auditor/report.py",
+      "reason": "ETH/BTC market context in forecast",
+      "removed": 0,
+      "request_id": "030",
+      "timestamp": "2026-05-31 17:16:04 PDT"
     }
   ],
   "bot/auditor/state.py": [
@@ -267,6 +301,16 @@
       "removed": 1,
       "request_id": "028",
       "timestamp": "2026-05-30 22:52:19 PDT"
+    },
+    {
+      "added": 31,
+      "number": 2,
+      "patch": "r002--2026-05-31_171600--prune-stale-pauseduntil-hourwindow.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "prune stale paused_until hour_window",
+      "removed": 4,
+      "request_id": "029",
+      "timestamp": "2026-05-31 17:16:00 PDT"
     }
   ],
   "bot/report.py": [
@@ -395,6 +439,18 @@
       "timestamp": "2026-05-25 15:22:47 PDT"
     }
   ],
+  "requirements-dev.txt": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_171609--add-pytest-cov-to-dev-deps.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov to dev deps",
+      "removed": 0,
+      "request_id": "031",
+      "timestamp": "2026-05-31 17:16:09 PDT"
+    }
+  ],
   "scripts/version_history.py": [
     {
       "added": 0,
@@ -475,6 +531,18 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:59 PDT"
+    }
+  ],
+  "watchdog/state.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-05-31_171600--ttl-prune-recenterrors-on-load.patch",
+      "path": "watchdog/state.py",
+      "reason": "TTL prune recent_errors on load",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-05-31 17:16:00 PDT"
     }
   ]
 }
