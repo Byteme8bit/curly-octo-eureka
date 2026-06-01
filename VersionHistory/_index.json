@@ -231,6 +231,16 @@
       "removed": 2,
       "request_id": "026",
       "timestamp": "2026-05-30 22:08:03 PDT"
+    },
+    {
+      "added": 100,
+      "number": 6,
+      "patch": "r006--2026-06-01_040646--guard-forced-probes.patch",
+      "path": "bot/engine.py",
+      "reason": "guard forced probes",
+      "removed": 29,
+      "request_id": "029",
+      "timestamp": "2026-06-01 04:06:46 PDT"
     }
   ],
   "bot/fatal_error_log.py": [

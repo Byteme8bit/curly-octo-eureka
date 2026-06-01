@@ -647,6 +647,9 @@ class TradingEngine:
         minutes = self.settings.idle_probe_force_minutes
         if minutes <= 0 or not self.runtime.is_trading_active():
             return
+        gate = self.risk.can_trade_now()
+        if not gate.allowed:
+            return
         if self.risk.idle_hours() * 60.0 < minutes:
             return
         import time as _t
@@ -660,10 +663,26 @@ class TradingEngine:
             return
         intent.size_pct = min(intent.size_pct or 1.0, max(0.01, self.settings.idle_probe_size_pct))
         intent.is_defensive = False
+        intent.is_expansion = False
+        intent.require_leader_stable = False
+        intent.strategy_name = "probe"
         intent.reason = (
             "Forced probe \u2014 no setup cleared the bar while idle; trading small "
             "to stay active (paper test, edge not guaranteed)"
         )
+        route = self.markets.find_path(intent.from_asset, intent.to_asset)
+        if not route:
+            return
+        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+        constraint = self.constraints.validate_intent(
+            intent,
+            holdings,
+            usd_prices,
+            required_edge=required_edge,
+        )
+        if not constraint.allowed:
+            return
+        intent.size_pct = constraint.size_pct
         trade = self._execute_intent(intent, usd_prices)
         if not trade:
             return

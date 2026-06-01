@@ -390,3 +390,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -1
 - **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
 
+## bot/engine.py — r006
+
+- **When:** 2026-06-01 04:06:46 PDT
+- **Reason:** guard forced probes
+- **Request:** 029
+- **Diff:** +100 / -29
+- **Patch:** `r006--2026-06-01_040646--guard-forced-probes.patch`
+
