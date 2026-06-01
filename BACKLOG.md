@@ -21,20 +21,21 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
+- [x] **Detect other "stale-state-on-disk" patterns.** We fixed
   `.auditor_state.json` (PR #8/#9). Audit the other persistent state
   files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
   for similar TTL-based fields that `load()` doesn't prune. Add a regression
   test per file that loads a stale fixture and asserts the expired entries
-  are dropped.
-- [ ] **Surface the news review in the auditor report.** `scripts/review_news.py`
+  are dropped. _(Shipped: feature 029, branch `cursor/tradebot-optimization-agent-546a`)_
+- [x] **Surface the news review in the auditor report.** `scripts/review_news.py`
   now exists (read-only `NewsClient` wrapper). Wire the same headline summary
   into `bot/auditor/report.py` so the periodic audit cites 1–2 ETH/BTC
   headlines next to the regime read. Observability only — no decision changes.
-- [ ] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
+  _(Shipped: feature 029, branch `cursor/tradebot-optimization-agent-546a`)_
+- [x] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
   CI emits coverage but doesn't fail on regressions. Add `--cov-fail-under`
   (start at the current measured number, ratchet up). Read the latest CI run
-  to find the baseline first.
+  to find the baseline first. _(Shipped at 45 %; feature 029)_
 
 ## Soon (anytime)
 
@@ -72,6 +73,12 @@ what to work on.
 ## Done
 
 (Add entries here as they ship — most recent first.)
+
+- [x] **Stale-state audit + news snippet + coverage gate.**
+  `RiskState._prune_stale()` clears expired `paused_until` and stale
+  `hour_window_start`/`trades_this_hour` at load time. 1–2 ETH/BTC headlines
+  now appear in the auditor "Headline numbers" section. CI now fails under 45 %
+  coverage. 15 new regression tests. Feature 029.
 
 - [x] **Add a `pytest --cov` run to CI + warn on silent state recovery.**
   Shipped by the 2026-05-30 auto run (commit `469534e`). _Note: landed on an

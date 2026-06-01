@@ -21,6 +21,18 @@
       "timestamp": "2026-05-30 02:32:22 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-01_051455--add-cov-cov-fail-under45-to-ci.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "add cov + cov-fail-under=45 to CI",
+      "removed": 1,
+      "request_id": "029",
+      "timestamp": "2026-06-01 05:14:55 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -43,6 +55,16 @@
       "removed": 11,
       "request_id": "027",
       "timestamp": "2026-05-30 22:16:52 PDT"
+    },
+    {
+      "added": 12,
+      "number": 2,
+      "patch": "r002--2026-06-01_051455--mark-3-backlog-items-done.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark 3 BACKLOG items done",
+      "removed": 5,
+      "request_id": "029",
+      "timestamp": "2026-06-01 05:14:55 PDT"
     }
   ],
   "automation/maintenance_prompt.md": [
@@ -123,6 +145,18 @@
       "removed": 0,
       "request_id": "023",
       "timestamp": "2026-05-30 02:32:21 PDT"
+    }
+  ],
+  "bot/auditor/report.py": [
+    {
+      "added": 12,
+      "number": 1,
+      "patch": "r001--2026-06-01_051455--add-ethbtc-news-snippet-to-headline-numb.patch",
+      "path": "bot/auditor/report.py",
+      "reason": "add ETH/BTC news snippet to headline numbers",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 05:14:55 PDT"
     }
   ],
   "bot/auditor/state.py": [
@@ -267,6 +301,16 @@
       "removed": 1,
       "request_id": "028",
       "timestamp": "2026-05-30 22:52:19 PDT"
+    },
+    {
+      "added": 59,
+      "number": 2,
+      "patch": "r002--2026-06-01_051455--riskstate-prune-stale-pauseduntil-hourwi.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "RiskState prune stale paused_until + hour_window",
+      "removed": 1,
+      "request_id": "029",
+      "timestamp": "2026-06-01 05:14:55 PDT"
     }
   ],
   "bot/report.py": [
@@ -393,6 +437,18 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:47 PDT"
+    }
+  ],
+  "requirements-dev.txt": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-01_051455--add-pytest-cov-dep.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov dep",
+      "removed": 0,
+      "request_id": "029",
+      "timestamp": "2026-06-01 05:14:55 PDT"
     }
   ],
   "scripts/version_history.py": [

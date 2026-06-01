@@ -1,10 +1,13 @@
 import json
+import logging
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 from bot.markets import PairInfo, TradeRoute
 from bot.strategies.base import Signal
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -34,11 +37,64 @@ class RiskState:
     def to_dict(self) -> dict:
         return asdict(self)
 
+    @staticmethod
+    def _prune_stale(state: "RiskState") -> None:
+        """Clear TTL-based fields that have expired since this state was last saved.
+
+        Mirrors the auditor-state pattern: expired entries are removed eagerly at
+        load time so callers don't have to check them before every gate decision.
+        Logs a WARNING for each pruned field so operators know the bot resumed
+        from a stale pause/window.
+        """
+        now = datetime.now(timezone.utc)
+
+        # Prune an expired hibernation pause.
+        if state.paused_until:
+            try:
+                until = datetime.fromisoformat(state.paused_until)
+                if now >= until:
+                    logger.warning(
+                        "paper_state load: paused_until %s is in the past — clearing",
+                        state.paused_until,
+                    )
+                    state.paused_until = None
+                    state.hibernate_alert_sent = False
+            except (ValueError, TypeError):
+                logger.warning(
+                    "paper_state load: unparseable paused_until %r — clearing",
+                    state.paused_until,
+                )
+                state.paused_until = None
+                state.hibernate_alert_sent = False
+
+        # Prune an expired hourly trade-count window so a stale counter from a
+        # previous session cannot block trading on restart.
+        if state.hour_window_start:
+            try:
+                window_start = datetime.fromisoformat(state.hour_window_start)
+                age_sec = (now - window_start).total_seconds()
+                if age_sec >= 3600:
+                    logger.warning(
+                        "paper_state load: hour_window_start is %.0fs old — "
+                        "resetting trades_this_hour %d → 0",
+                        age_sec,
+                        state.trades_this_hour,
+                    )
+                    state.trades_this_hour = 0
+                    state.hour_window_start = None
+            except (ValueError, TypeError):
+                logger.warning(
+                    "paper_state load: unparseable hour_window_start %r — resetting",
+                    state.hour_window_start,
+                )
+                state.trades_this_hour = 0
+                state.hour_window_start = None
+
     @classmethod
     def from_dict(cls, data: dict | None) -> "RiskState":
         if not data:
             return cls()
-        return cls(
+        state = cls(
             peak_portfolio=float(data.get("peak_portfolio", 0.0)),
             baseline_portfolio=float(data.get("baseline_portfolio", 0.0)),
             paused_until=data.get("paused_until"),
@@ -61,6 +117,8 @@ class RiskState:
             strategy_stats=dict(data.get("strategy_stats") or {}),
             total_trades=int(data.get("total_trades", 0)),
         )
+        cls._prune_stale(state)
+        return state
 
 
 @dataclass

@@ -390,3 +390,43 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -1
 - **Patch:** `r001--2026-05-30_225219--fee-only-pnl-when-base-usd-price-missing.patch`
 
+## bot/paper_broker.py — r002
+
+- **When:** 2026-06-01 05:14:55 PDT
+- **Reason:** RiskState prune stale paused_until + hour_window
+- **Request:** 029
+- **Diff:** +59 / -1
+- **Patch:** `r002--2026-06-01_051455--riskstate-prune-stale-pauseduntil-hourwi.patch`
+
+## bot/auditor/report.py — r001
+
+- **When:** 2026-06-01 05:14:55 PDT
+- **Reason:** add ETH/BTC news snippet to headline numbers
+- **Request:** 029
+- **Diff:** +12 / -0
+- **Patch:** `r001--2026-06-01_051455--add-ethbtc-news-snippet-to-headline-numb.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-06-01 05:14:55 PDT
+- **Reason:** add pytest-cov dep
+- **Request:** 029
+- **Diff:** +1 / -0
+- **Patch:** `r001--2026-06-01_051455--add-pytest-cov-dep.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-06-01 05:14:55 PDT
+- **Reason:** add cov + cov-fail-under=45 to CI
+- **Request:** 029
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-01_051455--add-cov-cov-fail-under45-to-ci.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-06-01 05:14:55 PDT
+- **Reason:** mark 3 BACKLOG items done
+- **Request:** 029
+- **Diff:** +12 / -5
+- **Patch:** `r002--2026-06-01_051455--mark-3-backlog-items-done.patch`
+

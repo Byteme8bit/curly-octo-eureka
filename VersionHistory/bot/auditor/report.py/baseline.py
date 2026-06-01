@@ -106,18 +106,6 @@ def render_markdown_report(
     lines.append(f"- **Win rate:** {insights.win_rate:.1%}")
     lines.append(f"- **Max drawdown (equity-curve):** {_money(insights.drawdown_max)}")
     lines.append(f"- **Defensive / circuit-breaker trades:** {insights.recent_circuit_breaker_events}")
-
-    # Inline 1-2 ETH/BTC headlines so the regime section has immediate market context.
-    regime_headlines = [
-        h for h in headlines
-        if any(t in ("ETH", "BTC") for t in (h.tickers or []))
-    ][:2]
-    if regime_headlines:
-        lines.append("")
-        lines.append("**Recent ETH/BTC news:**")
-        for h in regime_headlines:
-            title = h.title if len(h.title) <= 120 else h.title[:117] + "…"
-            lines.append(f"- {_format_news_tag(h)} [{title}]({h.url})")
     lines.append("")
 
     # 3) Strategy attribution

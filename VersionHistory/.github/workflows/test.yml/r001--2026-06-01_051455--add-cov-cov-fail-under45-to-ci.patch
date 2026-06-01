@@ -1,0 +1,8 @@
+--- a/.github/workflows/test.yml
++++ b/.github/workflows/test.yml
+@@ -50,4 +50,4 @@
+           DISCORD_CHANNEL_ID: ""
+           GEMINI_API_KEY: ""
+           AUDITOR_CHAT_ENABLED: "0"
+-        run: pytest -v --tb=short --color=yes
++        run: pytest -v --tb=short --color=yes --cov=bot --cov=watchdog --cov-report=term-missing --cov-fail-under=45
