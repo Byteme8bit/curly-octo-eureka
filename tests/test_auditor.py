@@ -726,6 +726,45 @@ def test_render_discord_summary_stays_under_1900_chars() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Market context callout in Forecast section (feature 030)
+# ---------------------------------------------------------------------------
+
+
+def test_market_context_callout_appears_in_forecast_for_eth_btc_headlines() -> None:
+    """ETH/BTC headlines must produce a context callout inside the Forecast section."""
+    from bot.auditor.report import _market_context_callout
+
+    eth = NewsHeadline(title="ETH surges past $4k", url="u1", published_at="", source="CoinDesk", tickers=["ETH"], sentiment="positive")
+    btc = NewsHeadline(title="BTC dominance hits 60%", url="u2", published_at="", source="Decrypt", tickers=["BTC"], sentiment="neutral")
+    result = _market_context_callout([eth, btc])
+    assert "ETH/BTC" in result
+    assert "ETH surges" in result
+    assert "BTC dominance" in result
+
+
+def test_market_context_callout_empty_when_no_eth_btc() -> None:
+    """Headlines without ETH/BTC tickers must produce no callout."""
+    from bot.auditor.report import _market_context_callout
+
+    sol = NewsHeadline(title="SOL ecosystem grows", url="u", published_at="", source="src", tickers=["SOL"], sentiment="unknown")
+    assert _market_context_callout([sol]) == ""
+    assert _market_context_callout([]) == ""
+
+
+def test_render_markdown_report_includes_market_context_in_forecast() -> None:
+    """The market context callout must appear in the Forecast section of the report."""
+    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
+    eth_headline = NewsHeadline(title="ETH 2.0 upgrade live", url="u", published_at="2026-06-01", source="CoinDesk", tickers=["ETH"], sentiment="positive")
+    md = render_markdown_report(insights, forecast, [eth_headline], [], settings=_settings_stub())
+    # The callout must be present in the Forecast section, before the News section
+    forecast_idx = md.index("## Forecast")
+    news_idx = md.index("## News headlines")
+    callout_idx = md.index("_Market context (ETH/BTC):_")
+    assert forecast_idx < callout_idx < news_idx
+
+
+# ---------------------------------------------------------------------------
 # AuditorService
 # ---------------------------------------------------------------------------
 

@@ -42,6 +42,28 @@ def _pct(v: float) -> str:
     return f"{v * 100:.2f}%"
 
 
+def _market_context_callout(headlines: list[NewsHeadline], *, max_items: int = 2) -> str:
+    """Return a compact market-context string citing up to *max_items* ETH/BTC headlines.
+
+    Used in the Forecast section to annotate the regime the bot is operating in.
+    Returns an empty string when no relevant headlines are available.
+    """
+    core_assets = {"ETH", "BTC"}
+    relevant = [
+        h for h in headlines
+        if h.tickers and core_assets.intersection(h.tickers)
+    ]
+    if not relevant:
+        return ""
+    items = relevant[:max_items]
+    bullets = []
+    for h in items:
+        tag = _format_news_tag(h)
+        title = h.title if len(h.title) <= 100 else h.title[:97] + "…"
+        bullets.append(f"  - {tag} {title}")
+    return "\n".join(["_Market context (ETH/BTC):_"] + bullets)
+
+
 def _format_news_tag(headline) -> str:
     """Render the leading `[tag]` for a news bullet.
 
@@ -169,6 +191,10 @@ def render_markdown_report(
         lines.append("_No forecast produced._")
     lines.append("")
     lines.append("_Confidence is heuristic only; bands are not investment advice._")
+    callout = _market_context_callout(headlines)
+    if callout:
+        lines.append("")
+        lines.append(callout)
     lines.append("")
 
     # 6) News
