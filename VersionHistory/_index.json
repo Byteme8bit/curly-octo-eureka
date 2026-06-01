@@ -295,6 +295,16 @@
       "removed": 30,
       "request_id": "029",
       "timestamp": "2026-06-01 07:13:30 PDT"
+    },
+    {
+      "added": 31,
+      "number": 7,
+      "patch": "r007--2026-06-01_075337--probe-break-even-gate-intentroute-exec.patch",
+      "path": "bot/engine.py",
+      "reason": "probe break-even gate + intent.route exec",
+      "removed": 4,
+      "request_id": "030",
+      "timestamp": "2026-06-01 07:53:37 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -355,6 +365,30 @@
       "removed": 5,
       "request_id": "025",
       "timestamp": "2026-05-30 13:07:54 PDT"
+    }
+  ],
+  "bot/strategies/base.py": [
+    {
+      "added": 6,
+      "number": 1,
+      "patch": "r001--2026-06-01_075337--tradeintent-optional-route-field.patch",
+      "path": "bot/strategies/base.py",
+      "reason": "TradeIntent optional route field",
+      "removed": 0,
+      "request_id": "030",
+      "timestamp": "2026-06-01 07:53:37 PDT"
+    }
+  ],
+  "bot/strategies/triangular_arbitrage.py": [
+    {
+      "added": 60,
+      "number": 1,
+      "patch": "r001--2026-06-01_075337--emit-atomic-closed-loop-prefee-gross.patch",
+      "path": "bot/strategies/triangular_arbitrage.py",
+      "reason": "emit atomic closed loop, prefee gross",
+      "removed": 21,
+      "request_id": "030",
+      "timestamp": "2026-06-01 07:53:37 PDT"
     }
   ],
   "bot/trade_log.py": [

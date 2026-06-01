@@ -462,3 +462,27 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +346 / -0
 - **Patch:** `r003--2026-06-01_071343--createproposal-tool-tests.patch`
 
+## bot/engine.py — r007
+
+- **When:** 2026-06-01 07:53:37 PDT
+- **Reason:** probe break-even gate + intent.route exec
+- **Request:** 030
+- **Diff:** +31 / -4
+- **Patch:** `r007--2026-06-01_075337--probe-break-even-gate-intentroute-exec.patch`
+
+## bot/strategies/base.py — r001
+
+- **When:** 2026-06-01 07:53:37 PDT
+- **Reason:** TradeIntent optional route field
+- **Request:** 030
+- **Diff:** +6 / -0
+- **Patch:** `r001--2026-06-01_075337--tradeintent-optional-route-field.patch`
+
+## bot/strategies/triangular_arbitrage.py — r001
+
+- **When:** 2026-06-01 07:53:37 PDT
+- **Reason:** emit atomic closed loop, prefee gross
+- **Request:** 030
+- **Diff:** +60 / -21
+- **Patch:** `r001--2026-06-01_075337--emit-atomic-closed-loop-prefee-gross.patch`
+

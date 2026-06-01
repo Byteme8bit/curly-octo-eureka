@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import itertools
 import logging
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from bot.markets import TradeRoute
 from bot.strategies.base import Signal, Strategy, StrategyContext, StrategyResult, TradeIntent, RotationOption
 from config import Settings
 
@@ -16,17 +14,6 @@ if TYPE_CHECKING:
     from bot.risk import RiskManager
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class LoopResult:
-    """A scored, fully-closed triangular loop ready to execute atomically."""
-
-    net_est: float          # net loop return after static fee_rate (emit gate)
-    gross_prefee: float     # pre-fee loop return (handed to pre-flight)
-    path: str               # human-readable A->B->C->A
-    start_asset: str        # the asset the loop starts and ends on
-    route: TradeRoute       # the concatenated multi-leg route
 
 
 class TriangularArbitrageStrategy(Strategy):
@@ -75,7 +62,7 @@ class TriangularArbitrageStrategy(Strategy):
         assets: tuple[str, str, str],
         markets: MarketRegistry,
         pair_prices: dict[str, float],
-    ) -> "LoopResult | None":
+    ) -> tuple[float, str, str, str] | None:
         a, b, c = assets
         route_ab = markets.find_path(a, b)
         route_bc = markets.find_path(b, c)
@@ -87,31 +74,13 @@ class TriangularArbitrageStrategy(Strategy):
         if any(pair_prices.get(s, 0.0) <= 0 for s in symbols):
             return None
 
-        # The full closed loop as a single atomic route (A->B->C->A). The
-        # engine executes exactly this, so the loop either completes in one
-        # shot or does not fire — never just leg 1.
-        loop = TradeRoute(legs=route_ab.legs + route_bc.legs + route_ca.legs)
-        if loop.legs[0].from_asset != a or loop.legs[-1].to_asset != a:
-            return None  # not a genuine closed loop; refuse to trade
-
         start = 1.0
-        # Net-of-fee estimate (using the strategy's static fee_rate) only
-        # decides whether the opportunity is worth emitting; the engine's
-        # pre-flight re-checks net against LIVE fees before any fill.
-        net_amt = self._simulate_route(start, loop, pair_prices, self.fee_rate)
-        net_est = net_amt - start
-        # Pre-fee gross loop return — this is what we hand to pre-flight as
-        # gross_return_pct so it can subtract the *real* compounded fees.
-        gross_amt = self._simulate_route(start, loop, pair_prices, 0.0)
-        gross_prefee = gross_amt - start
+        amt = self._simulate_route(start, route_ab, pair_prices, self.fee_rate)
+        amt = self._simulate_route(amt, route_bc, pair_prices, self.fee_rate)
+        amt = self._simulate_route(amt, route_ca, pair_prices, self.fee_rate)
+        gross = amt - start
         path = f"{a}->{b}->{c}->{a}"
-        return LoopResult(
-            net_est=net_est,
-            gross_prefee=gross_prefee,
-            path=path,
-            start_asset=a,
-            route=loop,
-        )
+        return gross, path, a, b
 
     def evaluate(
         self,
@@ -162,54 +131,46 @@ class TriangularArbitrageStrategy(Strategy):
         if not held:
             held = list(assets[:3])
 
-        best: LoopResult | None = None
+        best: tuple[float, str, str, str] | None = None
         for combo in itertools.permutations(assets, 3):
             if held and combo[0] not in held:
                 continue
             result = self._loop_profit(combo, markets, pair_prices)
-            if result and (best is None or result.net_est > best.net_est):
+            if result and (best is None or result[0] > best[0]):
                 best = result
 
         intents: list[TradeIntent] = []
         opportunities: list[RotationOption] = []
         blocked: list[str] = []
 
-        if best and best.net_est > min_net:
-            # Emit the WHOLE closed loop as one atomic intent. from_asset ==
-            # to_asset == start_asset, and the pre-built route carries all three
-            # legs so the engine completes the loop in a single execution rather
-            # than firing leg 1 and stranding an intermediate coin.
+        if best and best[0] > min_net:
+            gross, path, from_a, to_b = best
             intents.append(
                 TradeIntent(
-                    from_asset=best.start_asset,
-                    to_asset=best.start_asset,
-                    reason=(
-                        f"triangular arb loop {best.path} — "
-                        f"gross {best.gross_prefee:+.4f}, est net {best.net_est:+.4f}"
-                    ),
+                    from_asset=from_a,
+                    to_asset=to_b,
+                    reason=f"triangular arb leg 1/3 — loop {path} gross {gross:+.4f}",
                     size_pct=self.trade_size_pct,
-                    edge=best.net_est,
-                    gross_return_pct=best.gross_prefee,
+                    edge=gross,
+                    gross_return_pct=gross,
                     is_held_swap=True,
                     strategy_name=self.name,
-                    route=best.route,
                 )
             )
             opportunities.append(
                 RotationOption(
-                    from_asset=best.start_asset,
-                    to_asset=best.start_asset,
-                    edge=best.net_est,
+                    from_asset=from_a,
+                    to_asset=to_b,
+                    edge=gross,
                     required_edge=min_net,
                     category="triangular_arb",
-                    path=best.path,
-                    hops=best.route.hops,
+                    path=path,
+                    hops=3,
                 )
             )
         elif best:
             blocked.append(
-                f"Triangular best loop {best.path} est net {best.net_est:+.4f} "
-                f"below min net {min_net:+.4f}"
+                f"Triangular best loop {best[1]} gross {best[0]:+.4f} below min net {min_net:+.4f}"
             )
 
         return StrategyResult(
