@@ -58,6 +58,25 @@ That initializes git, stages all source files (never `.env`), commits, and pushe
 | `MIN_TRADE_EDGE` | 0.006 | Momentum must beat fees |
 | `CORE_ASSETS` | ETH,ADA,BTC | Protected from rotation churn |
 
+## Discord commands
+
+Full command reference: [`DISCORD_COMMANDS.txt`](DISCORD_COMMANDS.txt)
+
+Quick reference — prefix every command with `TradeBot` or `WatchDog`:
+
+| Command | What it does |
+|---|---|
+| `TradeBot -status` | Current portfolio snapshot |
+| `TradeBot -portfolio` | Detailed holdings + PnL |
+| `TradeBot -trades` | Recent trade history |
+| `TradeBot -reset` | Reset paper state and error counts |
+| `TradeBot -resume-trading` | Exit hibernation / re-evaluation mode |
+| `WatchDog -status` | Watchdog health score |
+| `WatchDog -clearchat` | Prune pinned messages |
+| `Auditor -report` | Trigger an on-demand audit |
+| `Auditor -pending` | List pending config proposals |
+| `Auditor -confirm <id>` | Apply a config proposal |
+
 ## Documentation
 
 - **Architecture, modules, tick lifecycle:** [`docs/architecture/`](docs/architecture/)
