@@ -1,4 +1,4 @@
-# 031 — Maintenance automation: junior+senior review loop
+# 032 — Maintenance automation: junior+senior review loop
 
 **Requested:** 2026-06-01
 **Status:** awaiting verification — pytest passing locally (305); PR opened as a
@@ -57,7 +57,7 @@ draft for senior (human/parent) review, not merged.
 ## Files changed
 - **Modified** `automation/maintenance_prompt.md` — junior+senior dual-role
   refinement.
-- **New** `feature_logs/031_maintenance-junior-senior-review-loop.md` — this file.
+- **New** `feature_logs/032_maintenance-junior-senior-review-loop.md` — this file.
 
 ## Verification
 ```powershell
