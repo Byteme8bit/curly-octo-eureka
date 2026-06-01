@@ -1,7 +1,7 @@
 # 029 — Forced probe hard-risk guard fix
 
 **Requested:** 2026-06-01 04:00 PDT
-**Status:** awaiting verification - pytest pending
+**Status:** complete
 
 ## Request
 > You are a deep bug-finding automation focused on high-severity issues.
@@ -27,11 +27,12 @@
   blocking before execution.
 
 ## Verification
-Pending:
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests/test_forced_probe_guards.py -q
 .\.venv\Scripts\python.exe -m pytest -q
 ```
+
+Both commands passed with `python3` in the Linux automation environment.
 
 ## Notes
 - The probe still provides guaranteed paper activity when the bot is active,
