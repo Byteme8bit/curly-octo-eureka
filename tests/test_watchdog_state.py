@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import time
 
-from watchdog.state import WALL_CLOCK_MIN, WatchdogState
+from watchdog.state import WALL_CLOCK_MIN, WatchdogState, _clean_recent_errors
 
 
 def test_record_error_bot_vs_watchdog():
@@ -123,3 +123,61 @@ def test_reset_process_session_counters_clears_trades_not_errors():
     assert len(state.watchdog_error_timestamps) == 1
     assert "err-A" in state.seen_error_keys
     assert state.last_pnl_band == 5
+
+
+# ---------------------------------------------------------------------------
+# recent_errors TTL pruning (feature 029)
+# ---------------------------------------------------------------------------
+
+def test_append_error_stamps_ts():
+    """append_error should inject a _ts unix timestamp into each record."""
+    state = WatchdogState()
+    before = time.time()
+    state.append_error({"at": "2026-06-01 12:00:00 UTC", "level": "ERROR", "message": "boom"})
+    after = time.time()
+    rec = state.recent_errors[-1]
+    assert "_ts" in rec
+    assert before <= rec["_ts"] <= after
+
+
+def test_append_error_does_not_overwrite_existing_ts():
+    """If caller already sets _ts (future test fixture), it must be preserved."""
+    state = WatchdogState()
+    fixed_ts = 1_700_000_000.0
+    state.append_error({"at": "...", "_ts": fixed_ts})
+    assert state.recent_errors[-1]["_ts"] == fixed_ts
+
+
+def test_clean_recent_errors_drops_old_records():
+    now = time.time()
+    records = [
+        {"at": "old", "_ts": now - 8 * 86400},   # 8 days old — should be dropped
+        {"at": "recent", "_ts": now - 60},        # 1 minute old — keep
+        {"at": "no_ts"},                           # no _ts — keep (backward compat)
+    ]
+    cleaned = _clean_recent_errors(records, max_age_sec=7 * 86400)
+    assert len(cleaned) == 2
+    assert cleaned[0]["at"] == "recent"
+    assert cleaned[1]["at"] == "no_ts"
+
+
+def test_load_prunes_stale_recent_errors(tmp_path):
+    """Regression: stale recent_errors records must be dropped on WatchdogState.load()."""
+    path = tmp_path / ".watchdog_state.json"
+    now = time.time()
+    path.write_text(
+        json.dumps({
+            "recent_errors": [
+                {"at": "ancient", "_ts": now - 10 * 86400},  # 10 days old
+                {"at": "fresh", "_ts": now - 3600},           # 1 hour old
+                {"at": "legacy"},                              # no _ts — kept
+            ]
+        }),
+        encoding="utf-8",
+    )
+    state = WatchdogState.load(path)
+    assert len(state.recent_errors) == 2
+    ats = [r["at"] for r in state.recent_errors]
+    assert "fresh" in ats
+    assert "legacy" in ats
+    assert "ancient" not in ats

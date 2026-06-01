@@ -33,6 +33,21 @@ def _clean_wallmap(
     }
 
 
+def _clean_recent_errors(
+    records: list[dict], *, max_age_sec: float = 7 * 86400.0
+) -> list[dict]:
+    """Drop recent_error records whose ``_ts`` stamp is older than *max_age_sec*.
+
+    Records without ``_ts`` (written by older code) are kept intact so we
+    never silently lose error history during an upgrade.
+    """
+    cutoff = time.time() - max_age_sec
+    return [
+        r for r in records
+        if not isinstance(r.get("_ts"), (int, float)) or float(r["_ts"]) >= cutoff
+    ]
+
+
 @dataclass
 class WatchdogState:
     file_offsets: dict[str, int] = field(default_factory=dict)
@@ -107,7 +122,7 @@ class WatchdogState:
                 session_started_at=data.get("session_started_at"),
                 running=bool(data.get("running", False)),
                 last_heartbeat_at=last_heartbeat,
-                recent_errors=list(data.get("recent_errors", [])),
+                recent_errors=_clean_recent_errors(list(data.get("recent_errors", []))),
                 error_pin_windows=error_pin_windows,
             )
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
@@ -204,7 +219,9 @@ class WatchdogState:
         self.last_watchdog_pause_at = None
 
     def append_error(self, record: dict, max_retain: int = 30) -> None:
-        self.recent_errors.append(record)
+        stamped = dict(record)
+        stamped.setdefault("_ts", time.time())
+        self.recent_errors.append(stamped)
         if len(self.recent_errors) > max_retain:
             self.recent_errors = self.recent_errors[-max_retain:]
 
