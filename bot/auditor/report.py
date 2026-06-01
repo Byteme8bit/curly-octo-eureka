@@ -65,6 +65,29 @@ def _format_news_tag(headline) -> str:
     return "[news]"
 
 
+def _market_context_line(headlines: list[NewsHeadline]) -> str | None:
+    """Return a compact market-context callout citing 1-2 ETH/BTC headlines.
+
+    Only headlines tagged with ETH or BTC are considered. Returns None when no
+    relevant headline exists so callers can skip the line entirely.
+    """
+    key_assets = {"ETH", "BTC"}
+    picked: list[NewsHeadline] = []
+    for h in headlines:
+        if set(h.tickers or []) & key_assets:
+            picked.append(h)
+        if len(picked) >= 2:
+            break
+    if not picked:
+        return None
+    parts = []
+    for h in picked:
+        tag = _format_news_tag(h)
+        title = h.title if len(h.title) <= 80 else h.title[:77] + "…"
+        parts.append(f"{tag} {title}")
+    return "**Market context:** " + " · ".join(parts)
+
+
 def _strategy_row(p: StrategyPerformance) -> str:
     pairs = ", ".join(p.pairs_used[:3]) + ("…" if len(p.pairs_used) > 3 else "")
     drag = f"{p.fee_drag_ratio:.2f}x" if p.fee_drag_ratio != float("inf") else "∞"
@@ -168,6 +191,10 @@ def render_markdown_report(
     else:
         lines.append("_No forecast produced._")
     lines.append("")
+    context = _market_context_line(headlines)
+    if context:
+        lines.append(context)
+        lines.append("")
     lines.append("_Confidence is heuristic only; bands are not investment advice._")
     lines.append("")
 

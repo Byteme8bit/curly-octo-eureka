@@ -655,6 +655,53 @@ def test_render_markdown_report_contains_all_sections() -> None:
     assert "Auditor -confirm" in md  # confirm syntax surfaced
 
 
+def test_render_markdown_report_forecast_includes_eth_btc_market_context() -> None:
+    """ETH/BTC headlines must appear as a **Market context:** line inside the Forecast section."""
+    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
+    headlines = [
+        NewsHeadline(title="ETH breaks $4k", url="u1", published_at="2026-06-01", source="CoinDesk", tickers=["ETH"], sentiment="positive"),
+        NewsHeadline(title="BTC chops sideways", url="u2", published_at="2026-06-01", source="Cointelegraph", tickers=["BTC"], sentiment="neutral"),
+        NewsHeadline(title="SOL staking grows", url="u3", published_at="2026-06-01", source="Decrypt", tickers=["SOL"], sentiment="unknown"),
+    ]
+    md = render_markdown_report(insights, forecast, headlines, [], settings=_settings_stub())
+    # Market context callout must be present and inside the Forecast section
+    assert "**Market context:**" in md
+    # Must cite ETH and BTC headlines (first two are key assets)
+    assert "ETH breaks $4k" in md or "ETH breaks" in md
+    # Non-key-asset headline (SOL only) must not appear in the context line
+    forecast_section_start = md.index("## Forecast")
+    news_section_start = md.index("## News headlines")
+    forecast_block = md[forecast_section_start:news_section_start]
+    assert "**Market context:**" in forecast_block
+    assert "SOL staking" not in forecast_block
+
+
+def test_render_markdown_report_forecast_no_context_when_no_eth_btc_headlines() -> None:
+    """When no ETH/BTC headlines exist the **Market context:** line is omitted."""
+    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
+    headlines = [
+        NewsHeadline(title="SOL dominates", url="u1", published_at="2026-06-01", source="Decrypt", tickers=["SOL"], sentiment="unknown"),
+    ]
+    md = render_markdown_report(insights, forecast, headlines, [], settings=_settings_stub())
+    forecast_section_start = md.index("## Forecast")
+    news_section_start = md.index("## News headlines")
+    forecast_block = md[forecast_section_start:news_section_start]
+    assert "**Market context:**" not in forecast_block
+
+
+def test_render_markdown_report_forecast_no_context_when_no_headlines() -> None:
+    """When the headlines list is empty the **Market context:** line is omitted."""
+    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
+    md = render_markdown_report(insights, forecast, [], [], settings=_settings_stub())
+    forecast_section_start = md.index("## Forecast")
+    news_section_start = md.index("## News headlines")
+    forecast_block = md[forecast_section_start:news_section_start]
+    assert "**Market context:**" not in forecast_block
+
+
 def test_render_discord_summary_uses_source_when_sentiment_unknown() -> None:
     """RSS feeds carry source but no sentiment — we should show the publication name
     instead of the visually-noisy `[unknown]` tag."""
