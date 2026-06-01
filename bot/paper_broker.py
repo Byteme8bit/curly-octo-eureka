@@ -1,10 +1,13 @@
 import json
+import logging
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 from bot.markets import PairInfo, TradeRoute
 from bot.strategies.base import Signal
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -95,6 +98,45 @@ class PaperState:
         return cls(balances=balances, cost_basis={}, trades=list(data.get("trades", [])), risk=RiskState())
 
 
+def _prune_stale_risk_fields(risk: "RiskState") -> int:
+    """Clear expired TTL fields from a freshly loaded RiskState.
+
+    Mirrors the pruning that ``AuditorState.load()`` does for proposal TTLs.
+    Returns the count of fields pruned so the caller can emit a WARNING.
+
+    Fields checked:
+    * ``paused_until`` — hibernate expiry; cleared if already past.
+    * ``hour_window_start`` — 1-hour trade-rate window; reset if older than 1 h.
+    """
+    pruned = 0
+    now = datetime.now(timezone.utc)
+
+    if risk.paused_until:
+        try:
+            until = datetime.fromisoformat(risk.paused_until)
+            if now >= until:
+                risk.paused_until = None
+                risk.hibernate_alert_sent = False
+                pruned += 1
+        except (ValueError, TypeError):
+            risk.paused_until = None
+            pruned += 1
+
+    if risk.hour_window_start:
+        try:
+            window_start = datetime.fromisoformat(risk.hour_window_start)
+            if (now - window_start).total_seconds() > 3600:
+                risk.hour_window_start = None
+                risk.trades_this_hour = 0
+                pruned += 1
+        except (ValueError, TypeError):
+            risk.hour_window_start = None
+            risk.trades_this_hour = 0
+            pruned += 1
+
+    return pruned
+
+
 class PaperBroker:
     def __init__(
         self,
@@ -116,7 +158,20 @@ class PaperBroker:
 
         if self.state_file.exists():
             with open(self.state_file, encoding="utf-8") as f:
-                return PaperState.from_dict(json.load(f))
+                state = PaperState.from_dict(json.load(f))
+            pruned = _prune_stale_risk_fields(state.risk)
+            if pruned:
+                logger.warning(
+                    "Paper state load: cleared %d expired risk field(s) from %s",
+                    pruned,
+                    self.state_file,
+                )
+                try:
+                    with open(self.state_file, "w", encoding="utf-8") as f:
+                        json.dump(state.to_dict(), f, indent=2)
+                except OSError as exc:
+                    logger.warning("Could not persist pruned paper state: %s", exc)
+            return state
 
         return PaperState(balances=dict(self.initial_balances), cost_basis={})
 

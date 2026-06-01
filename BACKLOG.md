@@ -21,17 +21,20 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
+- [x] **Detect other "stale-state-on-disk" patterns.** We fixed
   `.auditor_state.json` (PR #8/#9). Audit the other persistent state
   files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
   for similar TTL-based fields that `load()` doesn't prune. Add a regression
   test per file that loads a stale fixture and asserts the expired entries
   are dropped.
-- [ ] **Surface the news review in the auditor report.** `scripts/review_news.py`
+- [x] **Surface the news review in the auditor report.** `scripts/review_news.py`
   now exists (read-only `NewsClient` wrapper). Wire the same headline summary
   into `bot/auditor/report.py` so the periodic audit cites 1–2 ETH/BTC
   headlines next to the regime read. Observability only — no decision changes.
-- [ ] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
+  _(Already fully implemented — `render_markdown_report` § "News headlines" +
+  `render_discord_summary` both included headlines; `AuditorService.run_audit()`
+  fetches via `NewsClient`. Marking done.)_
+- [x] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
   CI emits coverage but doesn't fail on regressions. Add `--cov-fail-under`
   (start at the current measured number, ratchet up). Read the latest CI run
   to find the baseline first.
@@ -81,3 +84,13 @@ what to work on.
   merge to `main`._
 - [x] **Add `.gitattributes` to normalise line endings.** Shipped 2026-05-30
   (commit `ae6c8fa`, `* text=auto eol=lf`). _Pending merge to `main`._
+- [x] **Detect stale TTL fields in .paper_state.json / .watchdog_state.json /
+  .discord_pins.json.** `bot/paper_broker.py` prunes expired `paused_until` and
+  stale `hour_window_start` on load; `watchdog/state.py` caps `seen_diagnostics`
+  at 500; regression tests in `tests/test_stale_state.py` (feature log 031).
+- [x] **Pin coverage threshold at 50% in CI.** Added `--cov=bot --cov=watchdog
+  --cov-fail-under=50` to `.github/workflows/test.yml`; `pytest-cov>=5.0.0`
+  added to `requirements-dev.txt` (feature log 032).
+- [x] **News headlines in auditor report.** Already implemented — both
+  `render_markdown_report` and `render_discord_summary` emit a news section;
+  `AuditorService.run_audit()` fetches via `NewsClient` (marked done 2026-06-01).
