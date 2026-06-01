@@ -486,3 +486,43 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +60 / -21
 - **Patch:** `r001--2026-06-01_075337--emit-atomic-closed-loop-prefee-gross.patch`
 
+## bot/paper_broker.py — r002
+
+- **When:** 2026-06-01 09:18:01 PDT
+- **Reason:** prune stale paused_until and hour_window_start on load
+- **Request:** 031
+- **Diff:** +56 / -1
+- **Patch:** `r002--2026-06-01_091801--prune-stale-pauseduntil-and-hourwindowst.patch`
+
+## watchdog/state.py — r001
+
+- **When:** 2026-06-01 09:18:01 PDT
+- **Reason:** cap seen_diagnostics at 500 on load and at runtime
+- **Request:** 031
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-01_091801--cap-seendiagnostics-at-500-on-load-and-a.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-06-01 09:18:10 PDT
+- **Reason:** add cov-fail-under=50 and cov reporting
+- **Request:** 032
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-01_091810--add-cov-fail-under50-and-cov-reporting.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-06-01 09:18:10 PDT
+- **Reason:** add pytest-cov dependency
+- **Request:** 032
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-01_091810--add-pytest-cov-dependency.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-06-01 09:18:10 PDT
+- **Reason:** mark all Now items done, note news-report already wired
+- **Request:** 032
+- **Diff:** +16 / -3
+- **Patch:** `r002--2026-06-01_091810--mark-all-now-items-done-note-news-report.patch`
+
