@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 from colorama import Fore, Style, init
 
@@ -13,7 +14,21 @@ from bot.ui_tokens import (
     pnl_color,
 )
 
-init(autoreset=True)
+if sys.stdout is not None and hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
+    init(autoreset=True)
+
+_stdout_ok = True
+
+
+def _safe_print(*args, **kwargs) -> None:
+    """Print to the console; disable further output after a broken stdout."""
+    global _stdout_ok
+    if not _stdout_ok:
+        return
+    try:
+        print(*args, **kwargs)
+    except OSError:
+        _stdout_ok = False
 
 
 def _asset(name: str) -> str:
@@ -32,14 +47,14 @@ class TerminalDisplay:
         self._status_since: str | None = None
 
     def _rule(self, char: str = "-") -> None:
-        print(_c(char * self.WIDTH, Fore.LIGHTBLACK_EX))
+        _safe_print(_c(char * self.WIDTH, Fore.LIGHTBLACK_EX))
 
     def _header(self, title: str) -> None:
         now = format_pacific()
-        print()
+        _safe_print()
         self._rule("=")
-        print(_c(f"  {title}", Fore.WHITE + Style.BRIGHT))
-        print(_c(f"  {now}", Fore.LIGHTBLACK_EX))
+        _safe_print(_c(f"  {title}", Fore.WHITE + Style.BRIGHT))
+        _safe_print(_c(f"  {now}", Fore.LIGHTBLACK_EX))
         self._rule("=")
 
     def _print_holdings(
@@ -47,10 +62,10 @@ class TerminalDisplay:
         holdings: dict[str, float],
         usd_prices: dict[str, float],
     ) -> None:
-        print(_c("  Holdings", Fore.WHITE + Style.BRIGHT))
+        _safe_print(_c("  Holdings", Fore.WHITE + Style.BRIGHT))
         usd = holdings.get("USD", 0.0)
         if usd > 0:
-            print(f"    {_asset('USD'):8}  {_money(usd):>12}  (cash)")
+            _safe_print(f"    {_asset('USD'):8}  {_money(usd):>12}  (cash)")
         has_crypto = False
         for asset, qty in sorted(holdings.items()):
             if asset == "USD" or qty <= 0:
@@ -58,24 +73,24 @@ class TerminalDisplay:
             has_crypto = True
             price = usd_prices.get(asset, 0.0)
             value = qty * price
-            print(
+            _safe_print(
                 f"    {_asset(asset):8}  {qty:>12,.4f}  @ {_money(price):>10}  "
                 f"= {_money(value):>10}"
             )
         if not has_crypto and usd <= 0:
-            print(_c("    (empty)", Fore.LIGHTBLACK_EX))
-        print()
+            _safe_print(_c("    (empty)", Fore.LIGHTBLACK_EX))
+        _safe_print()
 
     def _print_considering(self, status: StatusSnapshot) -> None:
-        print(_c("  Considering", Fore.WHITE + Style.BRIGHT))
+        _safe_print(_c("  Considering", Fore.WHITE + Style.BRIGHT))
         if status.considering:
             for line in status.considering[:5]:
-                print(f"    {_c(line, Fore.LIGHTBLACK_EX)}")
+                _safe_print(f"    {_c(line, Fore.LIGHTBLACK_EX)}")
         elif status.idle_reason:
-            print(f"    {_c(status.idle_reason, Fore.YELLOW)}")
+            _safe_print(f"    {_c(status.idle_reason, Fore.YELLOW)}")
         else:
-            print(_c("    (nothing queued)", Fore.LIGHTBLACK_EX))
-        print()
+            _safe_print(_c("    (nothing queued)", Fore.LIGHTBLACK_EX))
+        _safe_print()
 
     def startup(
         self,
@@ -94,25 +109,25 @@ class TerminalDisplay:
         portfolio_file: Path | None = None,
     ) -> None:
         self._header("PAPER TRADING BOT")
-        print(f"  Strategy   {_c(strategy, Fore.CYAN)}")
-        print(f"  Timeframe  {timeframe}  |  Poll every {interval}s")
-        print(f"  Markets    {usd_pairs} USD pairs + {cross_pairs} cross pairs")
+        _safe_print(f"  Strategy   {_c(strategy, Fore.CYAN)}")
+        _safe_print(f"  Timeframe  {timeframe}  |  Poll every {interval}s")
+        _safe_print(f"  Markets    {usd_pairs} USD pairs + {cross_pairs} cross pairs")
         shown = {asset: qty for asset, qty in sorted(balances.items()) if qty > 0}
-        print(f"  Portfolio  {shown}")
+        _safe_print(f"  Portfolio  {shown}")
         if portfolio_summary:
-            print(f"             {_c(portfolio_summary, Fore.LIGHTBLACK_EX)}")
+            _safe_print(f"             {_c(portfolio_summary, Fore.LIGHTBLACK_EX)}")
         if portfolio_file:
-            print(f"  Portfolio file  {_c(str(portfolio_file), Fore.LIGHTBLACK_EX)}")
+            _safe_print(f"  Portfolio file  {_c(str(portfolio_file), Fore.LIGHTBLACK_EX)}")
         if risk_note:
-            print(f"  Risk       {_c(risk_note, Fore.LIGHTBLACK_EX)}")
+            _safe_print(f"  Risk       {_c(risk_note, Fore.LIGHTBLACK_EX)}")
         if log_dir:
-            print(f"  Logs       {_c(str(log_dir) + f' ({log_rotate_hours}-hour files)', Fore.LIGHTBLACK_EX)}")
+            _safe_print(f"  Logs       {_c(str(log_dir) + f' ({log_rotate_hours}-hour files)', Fore.LIGHTBLACK_EX)}")
             if log_file:
-                print(f"  Current    {_c(log_file.name, Fore.LIGHTBLACK_EX)}")
+                _safe_print(f"  Current    {_c(log_file.name, Fore.LIGHTBLACK_EX)}")
         if receipts_dir:
-            print(f"  Receipts   {_c(str(receipts_dir) + '/', Fore.LIGHTBLACK_EX)}")
+            _safe_print(f"  Receipts   {_c(str(receipts_dir) + '/', Fore.LIGHTBLACK_EX)}")
         self._rule("=")
-        print()
+        _safe_print()
 
     def tick(
         self,
@@ -136,48 +151,48 @@ class TerminalDisplay:
 
         if trades or status_changed or self._last_status_key is None:
             self._header("PORTFOLIO" if not trades else "TRADE")
-            print(f"  {timing}")
-            print(f"  Total      {_money(portfolio)}  ", end="")
-            print(_c(f"(PnL {baseline_pnl:+.2f} | drawdown {drawdown:.2%})", pnl_color(baseline_pnl)))
+            _safe_print(f"  {timing}")
+            _safe_print(f"  Total      {_money(portfolio)}  ", end="")
+            _safe_print(_c(f"(PnL {baseline_pnl:+.2f} | drawdown {drawdown:.2%})", pnl_color(baseline_pnl)))
             if risk and risk.is_paused():
-                print(f"  {_c(risk.pause_status(), Fore.RED + Style.BRIGHT)}")
-            print()
+                _safe_print(f"  {_c(risk.pause_status(), Fore.RED + Style.BRIGHT)}")
+            _safe_print()
             self._print_holdings(holdings, usd_prices)
 
             if trades:
-                print(_c("  TRADE EXECUTED", Fore.GREEN + Style.BRIGHT))
+                _safe_print(_c("  TRADE EXECUTED", Fore.GREEN + Style.BRIGHT))
                 for trade in trades:
-                    print(f"    {_c(trade_narrative(trade), Fore.WHITE)}")
-                    print(f"      {_c(format_trade_route(trade), Fore.LIGHTBLACK_EX)}")
-                    print(
+                    _safe_print(f"    {_c(trade_narrative(trade), Fore.WHITE)}")
+                    _safe_print(f"      {_c(format_trade_route(trade), Fore.LIGHTBLACK_EX)}")
+                    _safe_print(
                         f"      Fee: {_money(trade.get('fee_usd', 0))}  |  "
                         f"Gain/Loss: {pnl_label_for_trade(trade)}"
                     )
                     if trade.get("receipt_file"):
-                        print(f"      Receipt: {_c(trade['receipt_file'], Fore.LIGHTBLACK_EX)}")
-                print()
+                        _safe_print(f"      Receipt: {_c(trade['receipt_file'], Fore.LIGHTBLACK_EX)}")
+                _safe_print()
             elif status.mode in ("hold", "paused"):
                 self._print_considering(status)
                 if status.idle_reason and status.considering:
-                    print(f"  Status     {_c(status.idle_reason, Fore.YELLOW)}")
-                    print()
+                    _safe_print(f"  Status     {_c(status.idle_reason, Fore.YELLOW)}")
+                    _safe_print()
 
             self._rule("=")
         else:
             since = status_since or format_pacific()
-            print()
-            print(
+            _safe_print()
+            _safe_print(
                 f"  {_c('Holding pattern', Fore.YELLOW)} — "
                 f"{_c(f'no changes since {since}', Fore.LIGHTBLACK_EX)}"
             )
-            print(f"  {timing}  |  Total {_money(portfolio)}  ", end="")
-            print(_c(f"(PnL {baseline_pnl:+.2f})", pnl_color(baseline_pnl)))
+            _safe_print(f"  {timing}  |  Total {_money(portfolio)}  ", end="")
+            _safe_print(_c(f"(PnL {baseline_pnl:+.2f})", pnl_color(baseline_pnl)))
             if risk and risk.is_paused():
-                print(f"  {_c(risk.pause_status(), Fore.RED + Style.BRIGHT)}")
+                _safe_print(f"  {_c(risk.pause_status(), Fore.RED + Style.BRIGHT)}")
             if status.considering:
                 preview = status.considering[0]
                 if len(status.considering) > 1:
                     preview += f" (+{len(status.considering) - 1} more)"
-                print(f"  Still watching: {_c(preview, Fore.LIGHTBLACK_EX)}")
+                _safe_print(f"  Still watching: {_c(preview, Fore.LIGHTBLACK_EX)}")
 
         self._last_status_key = status.summary_key
