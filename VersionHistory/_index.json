@@ -245,6 +245,18 @@
       "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
+  "bot/display.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-02_105514--safe-print-broken-stdout.patch",
+      "path": "bot/display.py",
+      "reason": "safe print broken stdout",
+      "removed": 0,
+      "request_id": "033",
+      "timestamp": "2026-06-02 10:55:14 PDT"
+    }
+  ],
   "bot/engine.py": [
     {
       "added": 0,
@@ -611,6 +623,18 @@
       "removed": 0,
       "request_id": "031",
       "timestamp": "2026-06-01 15:35:19 PDT"
+    }
+  ],
+  "tests/test_startup_display.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-02_105515--broken-stdout-tick-test.patch",
+      "path": "tests/test_startup_display.py",
+      "reason": "broken stdout tick test",
+      "removed": 0,
+      "request_id": "033",
+      "timestamp": "2026-06-02 10:55:15 PDT"
     }
   ],
   "tests/test_trade_log.py": [
