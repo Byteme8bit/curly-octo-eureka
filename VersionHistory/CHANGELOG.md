@@ -510,3 +510,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +176 / -79
 - **Patch:** `r002--2026-06-01_154851--juniorsenior-review-loop-5-inputs-3-subs.patch`
 
+## bot/display.py — r001
+
+- **When:** 2026-06-02 10:55:14 PDT
+- **Reason:** safe print broken stdout
+- **Request:** 033
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-02_105514--safe-print-broken-stdout.patch`
+
+## tests/test_startup_display.py — r001
+
+- **When:** 2026-06-02 10:55:15 PDT
+- **Reason:** broken stdout tick test
+- **Request:** 033
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-02_105515--broken-stdout-tick-test.patch`
+
