@@ -3,13 +3,6 @@
 - **Trigger:** `scheduled`
 - **Net PnL:** $-119.05
 
-## Forecast
-
-| Horizon | Method | Expected | 10th %ile | 90th %ile | Confidence |
-|---|---|---:|---:|---:|---:|
-| 24h | trade_rate_extrapolation | $-12.50 | $-25.00 | $0.00 | 0.45 |
-| 7d | trade_rate_extrapolation | $-87.50 | $-175.00 | $0.00 | 0.12 |
-
 ## News headlines
 
 - **[unknown]** [Bitcoin faces crisis](https://example.com)  _CoinDesk · 2026-06-02_

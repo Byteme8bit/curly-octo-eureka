@@ -10,8 +10,6 @@ from fastapi.staticfiles import StaticFiles
 
 from dashboard.config import load_settings
 from dashboard.parsers import build_auditor_view, build_tradebot_view, build_watchdog_view
-from dashboard.parsers.series import build_forecasts, build_portfolio_history, build_trades_series
-from dashboard.parsers.timeline import build_timeline
 from dashboard.service import build_overview
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -21,8 +19,8 @@ def create_app() -> FastAPI:
     settings = load_settings()
     app = FastAPI(
         title="TradeBot Local Dashboard",
-        description="Read-only trader cockpit for TradeBot, Watchdog, and Auditor.",
-        version="0.2.0",
+        description="Read-only view of TradeBot, Watchdog, and Auditor activity.",
+        version="0.1.0",
     )
 
     @app.get("/api/meta")
@@ -37,22 +35,6 @@ def create_app() -> FastAPI:
     @app.get("/api/overview")
     def api_overview() -> dict:
         return build_overview(settings)
-
-    @app.get("/api/portfolio/history")
-    def api_portfolio_history() -> dict:
-        return build_portfolio_history(settings)
-
-    @app.get("/api/trades/series")
-    def api_trades_series() -> dict:
-        return build_trades_series(settings)
-
-    @app.get("/api/forecasts")
-    def api_forecasts() -> dict:
-        return build_forecasts(settings)
-
-    @app.get("/api/timeline")
-    def api_timeline() -> dict:
-        return build_timeline(settings)
 
     @app.get("/api/tradebot")
     def api_tradebot() -> dict:

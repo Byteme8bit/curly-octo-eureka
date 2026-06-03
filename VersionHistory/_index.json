@@ -487,6 +487,102 @@
       "timestamp": "2026-05-30 22:08:03 PDT"
     }
   ],
+  "dashboard/app.py": [
+    {
+      "added": 20,
+      "number": 1,
+      "patch": "r001--2026-06-02_212131--trader-v2-api-endpoints.patch",
+      "path": "dashboard/app.py",
+      "reason": "trader v2 API endpoints",
+      "removed": 2,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:31 PDT"
+    }
+  ],
+  "dashboard/parsers/__init__.py": [
+    {
+      "added": 11,
+      "number": 1,
+      "patch": "r001--2026-06-02_212132--export-series-timeline.patch",
+      "path": "dashboard/parsers/__init__.py",
+      "reason": "export series timeline",
+      "removed": 1,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:32 PDT"
+    }
+  ],
+  "dashboard/parsers/auditor.py": [
+    {
+      "added": 3,
+      "number": 1,
+      "patch": "r001--2026-06-02_212132--forecast-bands-on-reports.patch",
+      "path": "dashboard/parsers/auditor.py",
+      "reason": "forecast bands on reports",
+      "removed": 0,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:32 PDT"
+    }
+  ],
+  "dashboard/parsers/tradebot.py": [
+    {
+      "added": 36,
+      "number": 1,
+      "patch": "r001--2026-06-02_212131--gain-loss-cash-pct.patch",
+      "path": "dashboard/parsers/tradebot.py",
+      "reason": "gain loss cash pct",
+      "removed": 1,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:31 PDT"
+    }
+  ],
+  "dashboard/service.py": [
+    {
+      "added": 26,
+      "number": 1,
+      "patch": "r001--2026-06-02_212131--summary-strip-overview.patch",
+      "path": "dashboard/service.py",
+      "reason": "summary strip overview",
+      "removed": 0,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:31 PDT"
+    }
+  ],
+  "dashboard/static/app.js": [
+    {
+      "added": 342,
+      "number": 1,
+      "patch": "r001--2026-06-02_212132--charts-timeline-panels.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "charts timeline panels",
+      "removed": 145,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:32 PDT"
+    }
+  ],
+  "dashboard/static/index.html": [
+    {
+      "added": 65,
+      "number": 1,
+      "patch": "r001--2026-06-02_212132--command-center-layout.patch",
+      "path": "dashboard/static/index.html",
+      "reason": "command center layout",
+      "removed": 12,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:32 PDT"
+    }
+  ],
+  "dashboard/static/styles.css": [
+    {
+      "added": 307,
+      "number": 1,
+      "patch": "r001--2026-06-02_212132--dark-trader-theme-v2.patch",
+      "path": "dashboard/static/styles.css",
+      "reason": "dark trader theme v2",
+      "removed": 94,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:32 PDT"
+    }
+  ],
   "docs/architecture/modules.md": [
     {
       "added": 0,
@@ -571,6 +667,18 @@
       "timestamp": "2026-05-27 03:51:59 PDT"
     }
   ],
+  "tests/fixtures/dashboard/sample_audit.md": [
+    {
+      "added": 7,
+      "number": 1,
+      "patch": "r001--2026-06-02_212133--forecast-table-fixture.patch",
+      "path": "tests/fixtures/dashboard/sample_audit.md",
+      "reason": "forecast table fixture",
+      "removed": 0,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:33 PDT"
+    }
+  ],
   "tests/test_auditor.py": [
     {
       "added": 0,
@@ -623,6 +731,18 @@
       "removed": 0,
       "request_id": "029",
       "timestamp": "2026-06-01 07:13:43 PDT"
+    }
+  ],
+  "tests/test_dashboard.py": [
+    {
+      "added": 101,
+      "number": 1,
+      "patch": "r001--2026-06-02_212132--v2-api-parser-tests.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "v2 API parser tests",
+      "removed": 22,
+      "request_id": "035",
+      "timestamp": "2026-06-02 21:21:32 PDT"
     }
   ],
   "tests/test_discord_commands.py": [

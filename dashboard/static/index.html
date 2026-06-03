@@ -3,25 +3,78 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TradeBot Dashboard</title>
+  <title>TradeBot Command Center</title>
   <link rel="stylesheet" href="/static/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 </head>
 <body>
   <header class="top-bar">
-    <h1>TradeBot Local Dashboard</h1>
-    <p class="meta" id="meta-line">Loading…</p>
+    <div class="top-bar-inner">
+      <h1>TradeBot Command Center</h1>
+      <p class="meta" id="meta-line">Loading…</p>
+    </div>
+    <nav class="section-nav" aria-label="Jump to section">
+      <a href="#overview">Overview</a>
+      <a href="#charts">Charts</a>
+      <a href="#forecasts">Forecasts</a>
+      <a href="#watchdog">WatchDog</a>
+      <a href="#auditor">Auditor</a>
+      <a href="#activity">Activity</a>
+    </nav>
   </header>
 
-  <nav class="tabs" role="tablist">
-    <button type="button" class="tab active" data-tab="tradebot" role="tab">TradeBot</button>
-    <button type="button" class="tab" data-tab="watchdog" role="tab">WatchDog</button>
-    <button type="button" class="tab" data-tab="auditor" role="tab">Auditor</button>
-  </nav>
+  <section id="overview" class="strip-section">
+    <div class="metric-strip" id="metric-strip"></div>
+  </section>
 
-  <main>
-    <section id="panel-tradebot" class="panel active" role="tabpanel"></section>
-    <section id="panel-watchdog" class="panel" role="tabpanel" hidden></section>
-    <section id="panel-auditor" class="panel" role="tabpanel" hidden></section>
+  <main class="dashboard-main">
+    <section id="charts" class="panel-section">
+      <h2 class="section-heading">Portfolio &amp; PnL</h2>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>Portfolio value</h3>
+          <canvas id="chart-portfolio"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>PnL deltas (ticks)</h3>
+          <canvas id="chart-pnl-bars"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Holdings allocation</h3>
+          <canvas id="chart-allocation"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Daily trades &amp; net PnL</h3>
+          <canvas id="chart-trades"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section id="forecasts" class="panel-section">
+      <h2 class="section-heading">Forecasts</h2>
+      <div id="forecasts-panel"></div>
+    </section>
+
+    <div class="dual-panels">
+      <section id="watchdog" class="panel-section">
+        <h2 class="section-heading">WatchDog</h2>
+        <div id="watchdog-panel"></div>
+      </section>
+      <section id="auditor" class="panel-section">
+        <h2 class="section-heading">Auditor</h2>
+        <div id="auditor-panel"></div>
+      </section>
+    </div>
+
+    <section id="activity" class="panel-section">
+      <h2 class="section-heading">Recent activity</h2>
+      <div id="timeline-panel"></div>
+    </section>
+
+    <section id="details" class="panel-section">
+      <h2 class="section-heading">TradeBot detail</h2>
+      <div id="tradebot-detail"></div>
+    </section>
   </main>
 
   <aside class="sidebar" id="backlog-sidebar">
