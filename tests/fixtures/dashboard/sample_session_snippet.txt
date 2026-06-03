@@ -1,0 +1,17 @@
+
+==================================================
+MARKET CHECK - 2026-06-02 20:00:11 PDT
+==================================================
+Portfolio:  $1,908.73  (PnL -124.83 | drawdown 7.05%)
+
+Decision: HOLD
+  cross_momentum: Best held_swap
+
+Considering:
+  Pending: ETH -> ETH
+
+Risk gate:
+  [cross_momentum] Best held_swap: ADA -> OP (edge +0.0051, need +0.0115 to cover fees)
+
+Rotation options:
+  Diversify: ETH -> OP  (edge +0.0048, need +0.0115, below fee hurdle) via ETH -> USD -> OP (2 hops)

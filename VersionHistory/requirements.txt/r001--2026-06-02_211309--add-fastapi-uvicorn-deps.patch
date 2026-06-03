@@ -1,0 +1,9 @@
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -6,3 +6,6 @@
+ # Optional — only required if AUDITOR_CHAT_ENABLED=1. Lazy-imported in
+ # bot/auditor/chat/backends.py so the bot still starts without it.
+ google-genai>=0.3.0
++# Local read-only dashboard (python -m dashboard)
++fastapi>=0.115.0
++uvicorn[standard]>=0.32.0

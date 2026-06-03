@@ -526,3 +526,27 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +0 / -0
 - **Patch:** `r001--2026-06-02_105515--broken-stdout-tick-test.patch`
 
+## requirements.txt — r001
+
+- **When:** 2026-06-02 21:13:09 PDT
+- **Reason:** add fastapi uvicorn deps
+- **Request:** 034
+- **Diff:** +3 / -0
+- **Patch:** `r001--2026-06-02_211309--add-fastapi-uvicorn-deps.patch`
+
+## requirements-dev.txt — r001
+
+- **When:** 2026-06-02 21:13:09 PDT
+- **Reason:** add httpx for TestClient
+- **Request:** 034
+- **Diff:** +1 / -0
+- **Patch:** `r001--2026-06-02_211309--add-httpx-for-testclient.patch`
+
+## .env.example — r003
+
+- **When:** 2026-06-02 21:13:09 PDT
+- **Reason:** dashboard host port env
+- **Request:** 034
+- **Diff:** +7 / -0
+- **Patch:** `r003--2026-06-02_211309--dashboard-host-port-env.patch`
+
