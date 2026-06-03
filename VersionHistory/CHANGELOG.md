@@ -550,3 +550,83 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +7 / -0
 - **Patch:** `r003--2026-06-02_211309--dashboard-host-port-env.patch`
 
+## dashboard/app.py — r001
+
+- **When:** 2026-06-02 21:21:31 PDT
+- **Reason:** trader v2 API endpoints
+- **Request:** 035
+- **Diff:** +20 / -2
+- **Patch:** `r001--2026-06-02_212131--trader-v2-api-endpoints.patch`
+
+## dashboard/service.py — r001
+
+- **When:** 2026-06-02 21:21:31 PDT
+- **Reason:** summary strip overview
+- **Request:** 035
+- **Diff:** +26 / -0
+- **Patch:** `r001--2026-06-02_212131--summary-strip-overview.patch`
+
+## dashboard/parsers/tradebot.py — r001
+
+- **When:** 2026-06-02 21:21:31 PDT
+- **Reason:** gain loss cash pct
+- **Request:** 035
+- **Diff:** +36 / -1
+- **Patch:** `r001--2026-06-02_212131--gain-loss-cash-pct.patch`
+
+## dashboard/parsers/auditor.py — r001
+
+- **When:** 2026-06-02 21:21:32 PDT
+- **Reason:** forecast bands on reports
+- **Request:** 035
+- **Diff:** +3 / -0
+- **Patch:** `r001--2026-06-02_212132--forecast-bands-on-reports.patch`
+
+## dashboard/parsers/__init__.py — r001
+
+- **When:** 2026-06-02 21:21:32 PDT
+- **Reason:** export series timeline
+- **Request:** 035
+- **Diff:** +11 / -1
+- **Patch:** `r001--2026-06-02_212132--export-series-timeline.patch`
+
+## dashboard/static/index.html — r001
+
+- **When:** 2026-06-02 21:21:32 PDT
+- **Reason:** command center layout
+- **Request:** 035
+- **Diff:** +65 / -12
+- **Patch:** `r001--2026-06-02_212132--command-center-layout.patch`
+
+## dashboard/static/app.js — r001
+
+- **When:** 2026-06-02 21:21:32 PDT
+- **Reason:** charts timeline panels
+- **Request:** 035
+- **Diff:** +342 / -145
+- **Patch:** `r001--2026-06-02_212132--charts-timeline-panels.patch`
+
+## dashboard/static/styles.css — r001
+
+- **When:** 2026-06-02 21:21:32 PDT
+- **Reason:** dark trader theme v2
+- **Request:** 035
+- **Diff:** +307 / -94
+- **Patch:** `r001--2026-06-02_212132--dark-trader-theme-v2.patch`
+
+## tests/test_dashboard.py — r001
+
+- **When:** 2026-06-02 21:21:32 PDT
+- **Reason:** v2 API parser tests
+- **Request:** 035
+- **Diff:** +101 / -22
+- **Patch:** `r001--2026-06-02_212132--v2-api-parser-tests.patch`
+
+## tests/fixtures/dashboard/sample_audit.md — r001
+
+- **When:** 2026-06-02 21:21:33 PDT
+- **Reason:** forecast table fixture
+- **Request:** 035
+- **Diff:** +7 / -0
+- **Patch:** `r001--2026-06-02_212133--forecast-table-fixture.patch`
+

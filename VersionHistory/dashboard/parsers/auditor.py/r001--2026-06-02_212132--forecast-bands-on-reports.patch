@@ -1,0 +1,26 @@
+--- a/dashboard/parsers/auditor.py
++++ b/dashboard/parsers/auditor.py
+@@ -11,6 +11,7 @@
+ 
+ from dashboard.config import DashboardSettings
+ from dashboard.io_util import newest_files, read_text, tail_lines
++from dashboard.parsers.series import parse_forecast_table
+ 
+ _AUDITOR_CHAT = re.compile(r"Auditor|auditor", re.IGNORECASE)
+ _REPORT_HEAD = re.compile(r"^# Auditor report — (.+)$", re.MULTILINE)
+@@ -41,6 +42,7 @@
+         for line in news_m.group(1).splitlines():
+             if line.strip().startswith("- **"):
+                 news.append(line.strip()[:200])
++    forecast_bands = parse_forecast_table(raw)
+     return {
+         "file": path.name,
+         "title": title,
+@@ -48,6 +50,7 @@
+         "net_pnl": net_pnl,
+         "proposal_count": proposals,
+         "news_headlines": news[:8],
++        "forecast_bands": forecast_bands,
+     }
+ 
+ 

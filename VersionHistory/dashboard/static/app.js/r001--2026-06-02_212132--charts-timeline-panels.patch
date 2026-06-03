@@ -1,0 +1,535 @@
+--- a/dashboard/static/app.js
++++ b/dashboard/static/app.js
+@@ -1,8 +1,18 @@
+ const $ = (sel) => document.querySelector(sel);
+-const $$ = (sel) => document.querySelectorAll(sel);
+ 
+ let refreshMs = 15000;
+ let timer = null;
++const charts = {};
++
++const CHART_COLORS = {
++  line: "#3d8bfd",
++  lineFill: "rgba(61, 139, 253, 0.12)",
++  good: "#3dd68c",
++  bad: "#f56565",
++  warn: "#f5a623",
++  muted: "#5a6a85",
++  palette: ["#3d8bfd", "#3dd68c", "#f5a623", "#a78bfa", "#f56565", "#38bdf8", "#fb7185"],
++};
+ 
+ function esc(s) {
+   const d = document.createElement("div");
+@@ -16,154 +26,357 @@
+   return "score-bad";
+ }
+ 
++function pnlClass(n) {
++  if (n == null || Number.isNaN(n)) return "";
++  return n >= 0 ? "score-good" : "score-bad";
++}
++
+ function fmtUsd(n) {
+   if (n == null || Number.isNaN(n)) return "—";
+-  return "$" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+-}
+-
+-function fmtPct(n) {
+-  if (n == null) return "—";
+   const v = Number(n);
+-  if (v <= 1 && v >= -1) return (v * 100).toFixed(2) + "%";
++  const sign = v >= 0 ? "" : "-";
++  return sign + "$" + Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
++}
++
++function fmtPct(n, asRatio) {
++  if (n == null || Number.isNaN(n)) return "—";
++  const v = Number(n);
++  if (asRatio || (v <= 1 && v >= -1)) return (v * 100).toFixed(2) + "%";
+   return v.toFixed(2) + "%";
+ }
+ 
+-function renderCards(cards) {
+-  return `<div class="cards">${cards.map((c) => `
+-    <div class="card">
+-      <div class="label">${esc(c.label)}</div>
+-      <div class="value ${c.cls || ""}">${esc(c.value)}</div>
+-      ${c.sub ? `<div class="sub">${esc(c.sub)}</div>` : ""}
+-    </div>`).join("")}</div>`;
+-}
+-
+-function renderTable(headers, rows) {
+-  if (!rows.length) return `<p class="empty">No data</p>`;
+-  return `<table><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>
+-    <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+-}
+-
+-function renderTradebot(tb) {
+-  const p = tb.portfolio || {};
+-  const tick = tb.latest_tick || {};
+-  const cards = [
+-    { label: "Portfolio", value: fmtUsd(p.portfolio_usd), sub: p.updated_at || "" },
+-    { label: "PnL", value: (p.baseline_pnl != null ? (p.baseline_pnl >= 0 ? "+" : "") + p.baseline_pnl : "—"), cls: p.baseline_pnl < 0 ? "score-bad" : "score-good" },
+-    { label: "Drawdown", value: fmtPct(p.drawdown_pct), sub: tick.decision ? "Last: " + tick.decision : "" },
+-    { label: "Strategy focus", value: (tb.strategy_focus || "—").slice(0, 80), sub: tick.time || "" },
++function fmtPnl(n) {
++  if (n == null || Number.isNaN(n)) return "—";
++  const v = Number(n);
++  return (v >= 0 ? "+" : "") + v.toFixed(2);
++}
++
++function shortTime(ts) {
++  if (!ts) return "";
++  const parts = ts.split(" ");
++  if (parts.length >= 2) return parts[1].slice(0, 5);
++  return ts.slice(0, 16);
++}
++
++function destroyChart(id) {
++  if (charts[id]) {
++    charts[id].destroy();
++    delete charts[id];
++  }
++}
++
++function defaultChartOptions(extra = {}) {
++  return {
++    responsive: true,
++    maintainAspectRatio: false,
++    plugins: { legend: { display: false } },
++    scales: {
++      x: {
++        ticks: { color: "#8b9bb4", font: { family: "Consolas, monospace", size: 10 }, maxRotation: 45 },
++        grid: { color: "rgba(45, 58, 79, 0.5)" },
++      },
++      y: {
++        ticks: { color: "#8b9bb4", font: { family: "Consolas, monospace", size: 10 } },
++        grid: { color: "rgba(45, 58, 79, 0.5)" },
++      },
++    },
++    ...extra,
++  };
++}
++
++function renderMetricStrip(summary) {
++  const s = summary || {};
++  const metrics = [
++    { label: "Portfolio", value: fmtUsd(s.portfolio_usd), cls: "mono" },
++    { label: "Session PnL", value: fmtPnl(s.baseline_pnl), cls: `mono ${pnlClass(s.baseline_pnl)}` },
++    { label: "Drawdown", value: fmtPct(s.drawdown_pct, true), cls: `mono ${s.drawdown_pct > 0.05 ? "score-bad" : ""}` },
++    { label: "Cash", value: fmtPct(s.cash_pct, true), cls: "mono" },
++    { label: "Trades", value: String(s.trade_count ?? 0), cls: "mono" },
++    { label: "Health", value: s.health_score != null ? `${s.health_score}/100` : "—", cls: `mono ${scoreClass(s.health_score || 0)}` },
+   ];
+-
+-  const holdings = (p.holdings || []).map((h) => [
+-    esc(h.asset),
+-    esc(h.qty),
+-    esc(fmtUsd(h.usd_value)),
+-  ]);
+-
+-  const trades = (tb.recent_trades || []).map((t) => [
+-    esc(t.time),
+-    esc(t.summary),
+-    esc(t.gain_loss),
+-  ]);
+-
+-  const blocked = (tb.blocked_opportunities || []).map((b) => `<li>${esc(b)}</li>`).join("") || "<li class='empty'>None in latest tick</li>";
+-
+-  const trend = (tb.pnl_trend || []).slice(-12).map((t) => `${t.time}: ${fmtUsd(t.portfolio_usd)} (PnL ${t.baseline_pnl})`).join("\n");
+-
++  return metrics.map((m) => `
++    <div class="metric">
++      <span class="metric-label">${esc(m.label)}</span>
++      <span class="metric-value ${m.cls || ""}">${esc(m.value)}</span>
++    </div>`).join("");
++}
++
++function updatePortfolioChart(points) {
++  const ctx = document.getElementById("chart-portfolio");
++  if (!ctx) return;
++  destroyChart("portfolio");
++  const labels = (points || []).map((p) => shortTime(p.time));
++  const data = (points || []).map((p) => p.portfolio_usd);
++  charts.portfolio = new Chart(ctx, {
++    type: "line",
++    data: {
++      labels,
++      datasets: [{
++        data,
++        borderColor: CHART_COLORS.line,
++        backgroundColor: CHART_COLORS.lineFill,
++        fill: true,
++        tension: 0.25,
++        pointRadius: data.length > 40 ? 0 : 2,
++        borderWidth: 2,
++      }],
++    },
++    options: defaultChartOptions(),
++  });
++}
++
++function updatePnlBarChart(deltas) {
++  const ctx = document.getElementById("chart-pnl-bars");
++  if (!ctx) return;
++  destroyChart("pnlBars");
++  const slice = (deltas || []).slice(-24);
++  const labels = slice.map((d) => shortTime(d.time));
++  const data = slice.map((d) => d.delta_pnl);
++  charts.pnlBars = new Chart(ctx, {
++    type: "bar",
++    data: {
++      labels,
++      datasets: [{
++        data,
++        backgroundColor: data.map((v) => (v >= 0 ? CHART_COLORS.good : CHART_COLORS.bad)),
++        borderWidth: 0,
++      }],
++    },
++    options: defaultChartOptions(),
++  });
++}
++
++function updateAllocationChart(holdings) {
++  const ctx = document.getElementById("chart-allocation");
++  if (!ctx) return;
++  destroyChart("allocation");
++  const rows = (holdings || []).filter((h) => h.usd_value > 0);
++  if (!rows.length) {
++    charts.allocation = new Chart(ctx, {
++      type: "doughnut",
++      data: { labels: ["—"], datasets: [{ data: [1], backgroundColor: [CHART_COLORS.muted] }] },
++      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#8b9bb4" } } } },
++    });
++    return;
++  }
++  charts.allocation = new Chart(ctx, {
++    type: "doughnut",
++    data: {
++      labels: rows.map((h) => h.asset),
++      datasets: [{
++        data: rows.map((h) => h.usd_value),
++        backgroundColor: rows.map((_, i) => CHART_COLORS.palette[i % CHART_COLORS.palette.length]),
++        borderWidth: 0,
++      }],
++    },
++    options: {
++      responsive: true,
++      maintainAspectRatio: false,
++      plugins: { legend: { position: "right", labels: { color: "#8b9bb4", font: { size: 11 } } } },
++    },
++  });
++}
++
++function updateTradesChart(buckets) {
++  const ctx = document.getElementById("chart-trades");
++  if (!ctx) return;
++  destroyChart("trades");
++  const slice = (buckets || []).slice(-14);
++  const labels = slice.map((b) => b.bucket.slice(5));
++  charts.trades = new Chart(ctx, {
++    type: "bar",
++    data: {
++      labels,
++      datasets: [
++        {
++          label: "Net PnL",
++          data: slice.map((b) => b.net_pnl),
++          backgroundColor: slice.map((b) => (b.net_pnl >= 0 ? CHART_COLORS.good : CHART_COLORS.bad)),
++          yAxisID: "y",
++        },
++        {
++          label: "Trades",
++          data: slice.map((b) => b.trade_count),
++          type: "line",
++          borderColor: CHART_COLORS.warn,
++          backgroundColor: "transparent",
++          yAxisID: "y1",
++          tension: 0.3,
++          pointRadius: 3,
++        },
++      ],
++    },
++    options: defaultChartOptions({
++      plugins: { legend: { display: true, labels: { color: "#8b9bb4", boxWidth: 12 } } },
++      scales: {
++        x: { ticks: { color: "#8b9bb4", font: { size: 10 } }, grid: { color: "rgba(45, 58, 79, 0.5)" } },
++        y: { position: "left", ticks: { color: "#8b9bb4" }, grid: { color: "rgba(45, 58, 79, 0.5)" } },
++        y1: { position: "right", grid: { drawOnChartArea: false }, ticks: { color: CHART_COLORS.warn } },
++      },
++    }),
++  });
++}
++
++function renderForecasts(fc) {
++  const bands = fc?.bands || [];
++  if (!bands.length) {
++    return `<p class="empty">No forecast bands in latest audit report.${fc?.source ? ` <span class="muted">(${esc(fc.source)})</span>` : ""}</p>`;
++  }
++  const rows = bands.map((b) => `
++    <tr>
++      <td class="mono">${esc(b.horizon)}</td>
++      <td><span class="badge badge-muted">${esc(b.method)}</span></td>
++      <td class="mono ${pnlClass(b.expected_pnl)}">${esc(fmtUsd(b.expected_pnl))}</td>
++      <td class="mono">${esc(fmtUsd(b.lower_band))}</td>
++      <td class="mono">${esc(fmtUsd(b.upper_band))}</td>
++      <td class="mono">${b.confidence != null ? (b.confidence * 100).toFixed(0) + "%" : "—"}</td>
++    </tr>`).join("");
+   return `
+-    ${renderCards(cards)}
+-    <h2 class="section-title">Holdings</h2>
+-    ${renderTable(["Asset", "Qty", "USD"], holdings)}
+-    <h2 class="section-title">Recent trades (receipts)</h2>
+-    ${renderTable(["Time", "Trade", "Gain/Loss"], trades)}
+-    <h2 class="section-title">Blocked / below hurdle</h2>
+-    <ul>${blocked}</ul>
+-    <h2 class="section-title">PnL trend (recent ticks)</h2>
+-    <pre class="log-block">${esc(trend || "No tick data in window logs")}</pre>
+-    <h2 class="section-title">Runtime log (tail)</h2>
+-    <pre class="log-block">${esc((tb.runtime_log_tail || []).join("\n"))}</pre>
+-  `;
++    <p class="forecast-source">From audit <strong>${esc(fc.report_title)}</strong></p>
++    <table class="forecast-table">
++      <thead><tr><th>Horizon</th><th>Method</th><th>Expected</th><th>10th</th><th>90th</th><th>Conf.</th></tr></thead>
++      <tbody>${rows}</tbody>
++    </table>
++    <p class="disclaimer">${esc(fc.disclaimer || "")}</p>`;
+ }
+ 
+ function renderWatchdog(wd) {
+   const h = wd.health || {};
+   const s = wd.session || {};
+-  const cards = [
+-    { label: "Health score", value: `${h.score}/100`, cls: scoreClass(h.score), sub: h.label },
+-    { label: "Session trades", value: String(s.trades_session ?? 0), sub: s.session_started_at || "" },
+-    { label: "Pauses", value: String(s.watchdog_pause_count ?? 0), sub: s.last_watchdog_pause_at || "—" },
+-    { label: "Errors (1h)", value: String(h.errors_last_hour ?? 0), sub: `burst ${h.errors_last_window ?? 0}` },
+-  ];
+-
+-  const factors = (h.factors || []).map((f) => `<li>${esc(f)}</li>`).join("");
+-  const errors = (wd.recent_errors || []).map((e) => [
+-    esc(e.timestamp || e.time || ""),
+-    esc(e.message || e.summary || JSON.stringify(e).slice(0, 120)),
++  const score = h.score ?? 0;
++  const factorBars = (h.factors || []).map((f, i) => {
++    const width = Math.max(15, 100 - i * 12);
++    return `<div class="factor-row"><span class="factor-text">${esc(f)}</span><div class="mini-bar"><div class="mini-bar-fill ${scoreClass(score)}" style="width:${width}%"></div></div></div>`;
++  }).join("") || `<p class="empty">No factor breakdown</p>`;
++
++  return `
++    <div class="health-gauge">
++      <div class="gauge-label">Health ${esc(h.label || "")}</div>
++      <div class="gauge-track"><div class="gauge-fill ${scoreClass(score)}" style="width:${Math.min(100, Math.max(0, score))}%"></div></div>
++      <div class="gauge-score mono ${scoreClass(score)}">${score}/100</div>
++    </div>
++    <div class="mini-stats">
++      <div><span class="muted">Session trades</span><span class="mono">${s.trades_session ?? 0}</span></div>
++      <div><span class="muted">Pauses</span><span class="mono">${s.watchdog_pause_count ?? 0}</span></div>
++      <div><span class="muted">Errors (1h)</span><span class="mono ${(h.errors_last_hour || 0) > 0 ? "score-bad" : ""}">${h.errors_last_hour ?? 0}</span></div>
++      <div><span class="muted">Heartbeat</span><span class="mono">${s.heartbeat_age_sec != null ? s.heartbeat_age_sec + "s" : "—"}</span></div>
++    </div>
++    <h3 class="sub-heading">Score factors</h3>
++    ${factorBars}
++    <h3 class="sub-heading">Recent errors</h3>
++    ${renderCompactTable(["Time", "Message"], (wd.recent_errors || []).slice(0, 6).map((e) => [
++      esc(e.timestamp || e.time || ""),
++      esc((e.message || e.summary || "").slice(0, 80)),
++    ]))}`;
++}
++
++function severityBadge(sev) {
++  const s = String(sev || "info").toLowerCase();
++  const cls = s === "high" ? "badge-bad" : s === "medium" ? "badge-warn" : "badge-muted";
++  return `<span class="badge ${cls}">${esc(sev)}</span>`;
++}
++
++function renderAuditor(au) {
++  const pending = au.pending_proposals || [];
++  const pipeline = `
++    <div class="pipeline">
++      <div class="pipe-step"><span class="pipe-num mono">${pending.length}</span><span>Pending</span></div>
++      <div class="pipe-step"><span class="pipe-num mono">${Object.keys(au.override_history?.active || {}).length}</span><span>Active overrides</span></div>
++      <div class="pipe-step"><span class="pipe-num mono">${(au.recent_reports || []).length}</span><span>Reports</span></div>
++    </div>`;
++
++  const proposals = pending.map((p) => `
++    <div class="proposal-card">
++      <div class="proposal-head"><code>${esc(p.knob)}</code> ${severityBadge(p.severity)}</div>
++      <div class="mono">${esc(p.current_value)} → ${esc(p.proposed_value)}</div>
++      <div class="muted small">${esc(p.expires_at || p.created_at || "")}</div>
++    </div>`).join("") || `<p class="empty">No pending proposals</p>`;
++
++  const timeline = (au.recent_reports || []).slice(0, 5).map((r) => `
++    <div class="audit-timeline-item">
++      <div class="timeline-dot"></div>
++      <div>
++        <div class="mono">${esc(r.title)}</div>
++        <div class="muted small">${esc(r.trigger)} · ${esc(r.net_pnl)} · ${r.proposal_count} proposals</div>
++      </div>
++    </div>`).join("") || `<p class="empty">No audit reports</p>`;
++
++  return `
++    ${pipeline}
++    <h3 class="sub-heading">Pending proposals</h3>
++    <div class="proposal-list">${proposals}</div>
++    <h3 class="sub-heading">Recent audits</h3>
++    <div class="audit-timeline">${timeline}</div>`;
++}
++
++function renderTimeline(events) {
++  if (!events?.length) return `<p class="empty">No recent events</p>`;
++  return `<ul class="activity-feed">${events.map((e) => `
++    <li class="feed-item feed-${esc(e.type)} sev-${esc(e.severity || "info")}">
++      <span class="feed-time mono">${esc(e.time ? e.time.slice(0, 19) : "")}</span>
++      <span class="feed-type badge badge-muted">${esc(e.type)}</span>
++      <span class="feed-title">${esc(e.title)}</span>
++      <span class="feed-detail muted">${esc(e.detail)}</span>
++    </li>`).join("")}</ul>`;
++}
++
++function renderCompactTable(headers, rows) {
++  if (!rows.length) return `<p class="empty">No data</p>`;
++  return `<table class="compact"><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>
++    <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
++}
++
++function renderTradebotDetail(tb) {
++  const holdings = (tb.portfolio?.holdings || []).map((h) => [
++    esc(h.asset), `<span class="mono">${esc(h.qty)}</span>`, `<span class="mono">${esc(fmtUsd(h.usd_value))}</span>`,
+   ]);
+-
++  const trades = (tb.recent_trades || []).slice(0, 8).map((t) => [
++    esc(t.time), esc(t.summary), `<span class="mono ${pnlClass(t.gain_loss_usd)}">${esc(t.gain_loss)}</span>`,
++  ]);
++  const blocked = (tb.blocked_opportunities || []).map((b) => `<li>${esc(b)}</li>`).join("") || "<li class='empty'>None</li>";
+   return `
+-    ${renderCards(cards)}
+-    <h2 class="section-title">Health factors</h2>
+-    <ul>${factors || "<li class='empty'>—</li>"}</ul>
+-    <h2 class="section-title">Recent errors (state)</h2>
+-    ${renderTable(["Time", "Message"], errors)}
+-    <h2 class="section-title">Watchdog-related log lines</h2>
+-    <pre class="log-block">${esc((wd.alert_lines || []).join("\n"))}</pre>
+-  `;
+-}
+-
+-function renderAuditor(au) {
+-  const oh = au.override_history || {};
+-  const cards = [
+-    { label: "Pending proposals", value: String((au.pending_proposals || []).length), sub: au.run_markers?.last_scheduled_run_at || "" },
+-    { label: "Last event run", value: au.run_markers?.last_event_run_at || "—", sub: `trades @ event: ${au.run_markers?.last_trade_count_at_event ?? "—"}` },
+-    { label: "Active overrides", value: String(Object.keys(oh.active || {}).length), sub: oh.last_auto_apply_at || "no auto-apply" },
+-    { label: "Reports indexed", value: String((au.recent_reports || []).length), sub: "" },
+-  ];
+-
+-  const proposals = (au.pending_proposals || []).map((p) => [
+-    esc(p.id),
+-    esc(p.knob),
+-    esc(`${p.current_value} → ${p.proposed_value}`),
+-    esc(p.severity),
+-    esc(p.expires_at),
++    <h3 class="sub-heading">Holdings</h3>
++    ${renderCompactTable(["Asset", "Qty", "USD"], holdings)}
++    <h3 class="sub-heading">Recent trades</h3>
++    ${renderCompactTable(["Time", "Trade", "Gain/Loss"], trades)}
++    <h3 class="sub-heading">Blocked / below hurdle</h3>
++    <ul class="blocked-list">${blocked}</ul>`;
++}
++
++async function loadChartData() {
++  const [histRes, tradesRes] = await Promise.all([
++    fetch("/api/portfolio/history"),
++    fetch("/api/trades/series"),
+   ]);
+-
+-  const reports = (au.recent_reports || []).map((r) => [
+-    esc(r.title),
+-    esc(r.trigger),
+-    esc(r.net_pnl),
+-    esc(String(r.proposal_count)),
+-  ]);
+-
+-  const overrides = Object.entries(oh.active || {}).map(([k, v]) => `<li><code>${esc(k)}</code> = ${esc(v)}</li>`).join("") || "<li class='empty'>None</li>";
+-
+-  const news = (au.news_headlines || []).map((n) => `<li>${esc(n)}</li>`).join("") || "<li class='empty'>—</li>";
+-
+-  return `
+-    ${renderCards(cards)}
+-    <h2 class="section-title">Pending proposals</h2>
+-    ${renderTable(["ID", "Knob", "Change", "Severity", "Expires"], proposals)}
+-    <h2 class="section-title">Runtime overrides</h2>
+-    <ul>${overrides}</ul>
+-    <h2 class="section-title">Recent audit reports</h2>
+-    ${renderTable(["When", "Trigger", "Net PnL", "Proposals"], reports)}
+-    <h2 class="section-title">News (latest report)</h2>
+-    <ul>${news}</ul>
+-    <h2 class="section-title">Auditor chat activity</h2>
+-    <pre class="log-block">${esc((au.chat_activity || []).join("\n"))}</pre>
+-  `;
++  const hist = histRes.ok ? await histRes.json() : { points: [], pnl_deltas: [] };
++  const trades = tradesRes.ok ? await tradesRes.json() : { buckets: [] };
++  return { hist, trades };
+ }
+ 
+ async function refresh() {
+   try {
+-    const res = await fetch("/api/overview");
+-    if (!res.ok) throw new Error(res.statusText);
+-    const data = await res.json();
++    const [overviewRes, chartData] = await Promise.all([
++      fetch("/api/overview"),
++      loadChartData(),
++    ]);
++    if (!overviewRes.ok) throw new Error(overviewRes.statusText);
++    const data = await overviewRes.json();
+     refreshMs = (data.refresh_seconds || 15) * 1000;
+-    $("#meta-line").textContent = `Root: ${data.root} · auto-refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
+-    $("#panel-tradebot").innerHTML = renderTradebot(data.tradebot || {});
+-    $("#panel-watchdog").innerHTML = renderWatchdog(data.watchdog || {});
+-    $("#panel-auditor").innerHTML = renderAuditor(data.auditor || {});
++
++    $("#meta-line").textContent = `Root: ${data.root} · refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
++    $("#metric-strip").innerHTML = renderMetricStrip(data.summary);
++
++    updatePortfolioChart(chartData.hist.points);
++    updatePnlBarChart(chartData.hist.pnl_deltas);
++    updateAllocationChart(data.tradebot?.portfolio?.holdings);
++    updateTradesChart(chartData.trades.buckets);
++
++    $("#forecasts-panel").innerHTML = renderForecasts(data.forecasts);
++    $("#watchdog-panel").innerHTML = renderWatchdog(data.watchdog || {});
++    $("#auditor-panel").innerHTML = renderAuditor(data.auditor || {});
++    $("#timeline-panel").innerHTML = renderTimeline(data.timeline?.events);
++    $("#tradebot-detail").innerHTML = renderTradebotDetail(data.tradebot || {});
++
+     const bl = data.backlog || [];
+     $("#backlog-list").innerHTML = bl.map((l) => `<li>${esc(l)}</li>`).join("") || "<li class='empty'>—</li>";
+   } catch (err) {
+@@ -171,26 +384,10 @@
+   }
+ }
+ 
+-function setupTabs() {
+-  $$(".tab").forEach((btn) => {
+-    btn.addEventListener("click", () => {
+-      $$(".tab").forEach((b) => b.classList.remove("active"));
+-      btn.classList.add("active");
+-      const id = btn.dataset.tab;
+-      $$(".panel").forEach((p) => {
+-        const on = p.id === `panel-${id}`;
+-        p.classList.toggle("active", on);
+-        p.hidden = !on;
+-      });
+-    });
+-  });
+-}
+-
+ function startPolling() {
+   refresh();
+   if (timer) clearInterval(timer);
+   timer = setInterval(refresh, refreshMs);
+ }
+ 
+-setupTabs();
+-startPolling();
++document.addEventListener("DOMContentLoaded", startPolling);

@@ -1,0 +1,69 @@
+--- a/dashboard/parsers/tradebot.py
++++ b/dashboard/parsers/tradebot.py
+@@ -22,6 +22,21 @@
+ _RECEIPT_TIME = re.compile(r"^Time:\s+(.+)$", re.MULTILINE)
+ _TRADED_LINE = re.compile(r"^Traded (.+)$", re.MULTILINE)
+ _GAIN_LOSS = re.compile(r"^Gain/Loss:\s+(.+)$", re.MULTILINE)
++_FEE_USD = re.compile(r"^Fee:\s+\$?([\d,.]+)", re.MULTILINE)
++_GAIN_NUM = re.compile(r"([+-]?)\$?([\d,.]+)")
++
++
++def _parse_gain_loss_usd(raw: str) -> float | None:
++    if not raw:
++        return None
++    m = _GAIN_NUM.search(raw.replace(",", ""))
++    if not m:
++        return None
++    sign = -1.0 if m.group(1) == "-" or raw.strip().startswith("-") else 1.0
++    try:
++        return sign * float(m.group(2))
++    except ValueError:
++        return None
+ 
+ 
+ def _parse_receipt(path: Path) -> dict | None:
+@@ -31,11 +46,21 @@
+     time_m = _RECEIPT_TIME.search(raw)
+     traded_m = _TRADED_LINE.search(raw)
+     gl_m = _GAIN_LOSS.search(raw)
++    fee_m = _FEE_USD.search(raw)
++    gain_raw = gl_m.group(1).strip() if gl_m else ""
++    fee_usd = None
++    if fee_m:
++        try:
++            fee_usd = float(fee_m.group(1).replace(",", ""))
++        except ValueError:
++            fee_usd = None
+     return {
+         "file": path.name,
+         "time": time_m.group(1).strip() if time_m else "",
+         "summary": traded_m.group(1).strip() if traded_m else "",
+-        "gain_loss": gl_m.group(1).strip() if gl_m else "",
++        "gain_loss": gain_raw,
++        "gain_loss_usd": _parse_gain_loss_usd(gain_raw),
++        "fee_usd": fee_usd,
+     }
+ 
+ 
+@@ -154,11 +179,21 @@
+ 
+     portfolio = None
+     if snap:
++        cash_usd = sum(
++            row["usd_value"]
++            for asset, row in snap.holdings.items()
++            if asset == "USD"
++        )
++        total = snap.portfolio_usd or 0.0
++        cash_pct = round(cash_usd / total, 4) if total > 0 else None
+         portfolio = {
+             "updated_at": snap.updated_at,
+             "portfolio_usd": snap.portfolio_usd,
+             "baseline_pnl": snap.baseline_pnl,
+             "drawdown_pct": snap.drawdown_pct,
++            "cash_usd": round(cash_usd, 2),
++            "cash_pct": cash_pct,
++            "trade_count": len(receipts),
+             "holdings": [
+                 {
+                     "asset": asset,

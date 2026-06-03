@@ -11,7 +11,6 @@ from bot.auditor.state import AuditorState
 
 from dashboard.config import DashboardSettings
 from dashboard.io_util import newest_files, read_text, tail_lines
-from dashboard.parsers.series import parse_forecast_table
 
 _AUDITOR_CHAT = re.compile(r"Auditor|auditor", re.IGNORECASE)
 _REPORT_HEAD = re.compile(r"^# Auditor report — (.+)$", re.MULTILINE)
@@ -42,7 +41,6 @@ def _parse_report_summary(path: Path) -> dict | None:
         for line in news_m.group(1).splitlines():
             if line.strip().startswith("- **"):
                 news.append(line.strip()[:200])
-    forecast_bands = parse_forecast_table(raw)
     return {
         "file": path.name,
         "title": title,
@@ -50,7 +48,6 @@ def _parse_report_summary(path: Path) -> dict | None:
         "net_pnl": net_pnl,
         "proposal_count": proposals,
         "news_headlines": news[:8],
-        "forecast_bands": forecast_bands,
     }
 
 
