@@ -16,7 +16,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures" / "dashboard"
 
 
 def test_extract_ticks_from_log():
-    text = (FIXTURES / "sample_tick.log").read_text(encoding="utf-8")
+    text = (FIXTURES / "sample_session_snippet.txt").read_text(encoding="utf-8")
     ticks = _extract_ticks_from_log(text)
     assert len(ticks) == 1
     t = ticks[0]
