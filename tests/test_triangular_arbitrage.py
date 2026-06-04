@@ -7,6 +7,7 @@ completes (start asset == end asset) or does not fire.
 """
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -127,3 +128,48 @@ def test_route_executes_atomically_and_returns_to_start():
         assert broker.balance("AAVE") == pytest.approx(0.0, abs=1e-9)
         # The profitable synthetic loop leaves us with MORE ETH than we started.
         assert broker.balance("ETH") > 1.0
+
+
+def test_failed_route_rolls_back_partial_leg_before_later_save():
+    """A failed later leg must not leave in-memory balances to be persisted."""
+    strat = _strategy()
+    ctx = StrategyContext(pair_prices=_profitable_prices())
+    result = strat.evaluate(
+        candles={}, prices={"ETH": 2000.0, "UNI": 10.0, "AAVE": 100.0},
+        holdings={"ETH": 1.0}, risk=None, markets=FakeMarkets(), context=ctx,
+    )
+    intent = result.intents[0]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        state_file = Path(tmp) / "state.json"
+        broker = PaperBroker(
+            initial_balances={"ETH": 1.0},
+            fee_rate=0.004,
+            state_file=state_file,
+            min_usd_trade=1.0,
+            reset=True,
+        )
+        usd_prices = {"ETH": 2000.0, "UNI": 10.0, "AAVE": 100.0}
+        prices = {"UNI/ETH": 0.9, "AAVE/UNI": 0.0, "ETH/AAVE": 0.9}
+
+        trade = broker.execute_path(
+            route=intent.route,
+            prices=prices,
+            usd_prices=usd_prices,
+            reason=intent.reason,
+            size_pct=1.0,
+            strategy_name=intent.strategy_name,
+        )
+
+        assert trade is None
+        assert broker.balance("ETH") == pytest.approx(1.0)
+        assert broker.balance("UNI") == pytest.approx(0.0)
+        assert broker.balance("AAVE") == pytest.approx(0.0)
+        assert broker.state.cost_basis == {}
+        assert broker.state.trades == []
+
+        broker.save()
+        persisted = json.loads(state_file.read_text(encoding="utf-8"))
+        assert persisted["balances"] == {"ETH": 1.0}
+        assert persisted["cost_basis"] == {}
+        assert persisted["trades"] == []
