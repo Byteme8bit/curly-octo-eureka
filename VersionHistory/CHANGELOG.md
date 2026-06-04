@@ -630,3 +630,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +7 / -0
 - **Patch:** `r001--2026-06-02_212133--forecast-table-fixture.patch`
 
+## bot/portfolio_constraints.py — r001
+
+- **When:** 2026-06-03 22:26:20 PDT
+- **Reason:** closed-loop ETH exemption from reserve check
+- **Request:** 036
+- **Diff:** +9 / -3
+- **Patch:** `r001--2026-06-03_222620--closed-loop-eth-exemption-from-reserve-c.patch`
+
+## bot/strategies/stat_arb.py — r001
+
+- **When:** 2026-06-03 22:26:20 PDT
+- **Reason:** replace edge proxy with z*sigma_ratio formula
+- **Request:** 036
+- **Diff:** +5 / -1
+- **Patch:** `r001--2026-06-03_222620--replace-edge-proxy-with-zsigmaratio-form.patch`
+

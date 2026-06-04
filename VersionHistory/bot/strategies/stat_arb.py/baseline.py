@@ -116,11 +116,7 @@ class StatArbStrategy(Strategy):
                 )
                 continue
 
-            # Expected gross return: if the ratio is z standard deviations from its
-            # mean, a full reversion to mean is a move of z × σ_ratio.  We cap at
-            # 5 % to avoid implausibly large estimates on thin/illiquid pairs.
-            sigma_ratio = float(ratio.std()) if len(ratio) >= 10 else 0.0
-            gross = min(abs(z) * sigma_ratio, 0.05)
+            gross = abs(z) * 0.001  # expected reversion edge proxy
             label = f"{base}/{quote} z={z:+.2f}"
             if best_signal is None or gross > best_signal[0]:
                 best_signal = (gross, from_asset, to_asset, z, label)

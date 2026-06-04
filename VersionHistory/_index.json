@@ -385,6 +385,18 @@
       "timestamp": "2026-05-30 22:52:19 PDT"
     }
   ],
+  "bot/portfolio_constraints.py": [
+    {
+      "added": 9,
+      "number": 1,
+      "patch": "r001--2026-06-03_222620--closed-loop-eth-exemption-from-reserve-c.patch",
+      "path": "bot/portfolio_constraints.py",
+      "reason": "closed-loop ETH exemption from reserve check",
+      "removed": 3,
+      "request_id": "036",
+      "timestamp": "2026-06-03 22:26:20 PDT"
+    }
+  ],
   "bot/report.py": [
     {
       "added": 7,
@@ -419,6 +431,18 @@
       "removed": 0,
       "request_id": "030",
       "timestamp": "2026-06-01 07:53:37 PDT"
+    }
+  ],
+  "bot/strategies/stat_arb.py": [
+    {
+      "added": 5,
+      "number": 1,
+      "patch": "r001--2026-06-03_222620--replace-edge-proxy-with-zsigmaratio-form.patch",
+      "path": "bot/strategies/stat_arb.py",
+      "reason": "replace edge proxy with z*sigma_ratio formula",
+      "removed": 1,
+      "request_id": "036",
+      "timestamp": "2026-06-03 22:26:20 PDT"
     }
   ],
   "bot/strategies/triangular_arbitrage.py": [
