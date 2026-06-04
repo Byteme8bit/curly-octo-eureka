@@ -92,6 +92,41 @@ def test_alt_overweight_allowed_with_stat_arb_exception(constraints, prices):
     assert result.allowed, result.reason
 
 
+def test_closed_loop_eth_exempted_from_reserve_check(constraints):
+    """ETH→X→Y→ETH closed loop: ETH is only an intermediate; reserve must NOT block it."""
+    # ETH balance equals the reserve — an open sell would be blocked, but a closed loop
+    # returns ETH atomically so the net holding is unchanged.
+    holdings = {"ETH": 0.25, "USD": 0.0}
+    prices = {"ETH": 2000.0}
+    intent = TradeIntent(
+        from_asset="ETH",
+        to_asset="ETH",  # closed loop
+        reason="triangular arb loop ETH->UNI->AAVE->ETH",
+        size_pct=0.10,
+        edge=0.005,
+        strategy_name="triangular_arbitrage",
+    )
+    result = constraints.validate_intent(intent, holdings, prices, required_edge=0.002)
+    assert result.allowed, f"closed-loop should bypass reserve check; got: {result.reason}"
+
+
+def test_open_eth_sell_still_blocked_at_reserve(constraints):
+    """Open ETH sell (from_asset=ETH, to_asset≠ETH) is still blocked at the reserve floor."""
+    holdings = {"ETH": 0.25, "USD": 0.0}
+    prices = {"ETH": 2000.0, "UNI": 10.0}
+    intent = TradeIntent(
+        from_asset="ETH",
+        to_asset="UNI",  # open sell — NOT a closed loop
+        reason="momentum swap",
+        size_pct=0.10,
+        edge=0.005,
+        strategy_name="momentum_rotation",
+    )
+    result = constraints.validate_intent(intent, holdings, prices, required_edge=0.002)
+    assert not result.allowed, "open ETH sell at reserve floor must still be blocked"
+    assert "ETH reserve" in result.reason
+
+
 def test_trim_overweight_alt_emits_intent(constraints, prices):
     # ADA = $4000 / $6000 total = 67% > 40% cap
     holdings = {"ETH": 1.0, "ADA": 8000.0, "USD": 0.0}

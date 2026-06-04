@@ -1,0 +1,21 @@
+--- a/bot/portfolio_constraints.py
++++ b/bot/portfolio_constraints.py
+@@ -117,9 +117,15 @@
+         required_edge: float,
+     ) -> ConstraintResult:
+         size_pct = max(0.0, min(1.0, intent.size_pct))
+-        size_pct = self.clamp_eth_sell_size(intent.from_asset, size_pct, holdings)
+-
+-        if intent.from_asset == "ETH" and size_pct <= 0:
++
++        # Closed-loop intents (from_asset == to_asset, e.g. ETH→UNI→AAVE→ETH) borrow
++        # ETH as an intermediate and return it atomically — net ETH balance is unchanged
++        # after the loop, so the reserve check must NOT deduct from the holding.
++        is_closed_loop = intent.from_asset == intent.to_asset
++        if not is_closed_loop:
++            size_pct = self.clamp_eth_sell_size(intent.from_asset, size_pct, holdings)
++
++        if not is_closed_loop and intent.from_asset == "ETH" and size_pct <= 0:
+             reserve = self.min_eth_reserve
+             bal = holdings.get("ETH", 0.0)
+             return ConstraintResult(
