@@ -1,0 +1,47 @@
+--- a/bot/paper_broker.py
++++ b/bot/paper_broker.py
+@@ -193,21 +193,30 @@
+         if not route.legs:
+             return None
+ 
++        original_balances = dict(self.state.balances)
++        original_cost_basis = dict(self.state.cost_basis)
+         leg_trades: list[dict] = []
+-        for index, leg in enumerate(route.legs):
+-            price = prices.get(leg.pair.symbol, 0.0)
+-            leg_size = size_pct if index == 0 else 1.0
+-            trade = self._execute_leg(
+-                leg.pair,
+-                leg.side,
+-                price,
+-                usd_prices,
+-                reason=f"{reason} (leg {index + 1}/{route.hops})",
+-                size_pct=leg_size,
+-            )
+-            if not trade:
+-                return None
+-            leg_trades.append(trade)
++        try:
++            for index, leg in enumerate(route.legs):
++                price = prices.get(leg.pair.symbol, 0.0)
++                leg_size = size_pct if index == 0 else 1.0
++                trade = self._execute_leg(
++                    leg.pair,
++                    leg.side,
++                    price,
++                    usd_prices,
++                    reason=f"{reason} (leg {index + 1}/{route.hops})",
++                    size_pct=leg_size,
++                )
++                if not trade:
++                    self.state.balances = original_balances
++                    self.state.cost_basis = original_cost_basis
++                    return None
++                leg_trades.append(trade)
++        except Exception:
++            self.state.balances = original_balances
++            self.state.cost_basis = original_cost_basis
++            raise
+ 
+         combined = self._combine_path_trade(
+             route, leg_trades, reason, size_pct, strategy_name=strategy_name

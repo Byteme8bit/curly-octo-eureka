@@ -383,6 +383,16 @@
       "removed": 1,
       "request_id": "028",
       "timestamp": "2026-05-30 22:52:19 PDT"
+    },
+    {
+      "added": 23,
+      "number": 2,
+      "patch": "r002--2026-06-04_041532--rollback-failed-route.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "rollback failed route",
+      "removed": 14,
+      "request_id": "037",
+      "timestamp": "2026-06-04 04:15:32 PDT"
     }
   ],
   "bot/portfolio_constraints.py": [
@@ -825,6 +835,18 @@
       "removed": 1,
       "request_id": "024",
       "timestamp": "2026-05-30 12:37:15 PDT"
+    }
+  ],
+  "tests/test_triangular_arbitrage.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-04_041532--failed-route-regression.patch",
+      "path": "tests/test_triangular_arbitrage.py",
+      "reason": "failed route regression",
+      "removed": 0,
+      "request_id": "037",
+      "timestamp": "2026-06-04 04:15:32 PDT"
     }
   ],
   "tests/test_version_history.py": [

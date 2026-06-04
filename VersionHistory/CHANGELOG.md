@@ -646,3 +646,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +5 / -1
 - **Patch:** `r001--2026-06-03_222620--replace-edge-proxy-with-zsigmaratio-form.patch`
 
+## bot/paper_broker.py — r002
+
+- **When:** 2026-06-04 04:15:32 PDT
+- **Reason:** rollback failed route
+- **Request:** 037
+- **Diff:** +23 / -14
+- **Patch:** `r002--2026-06-04_041532--rollback-failed-route.patch`
+
+## tests/test_triangular_arbitrage.py — r001
+
+- **When:** 2026-06-04 04:15:32 PDT
+- **Reason:** failed route regression
+- **Request:** 037
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-04_041532--failed-route-regression.patch`
+
