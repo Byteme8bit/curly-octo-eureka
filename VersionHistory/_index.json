@@ -31,6 +31,18 @@
       "timestamp": "2026-06-02 21:13:09 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-04_171227--enforce-50pct-coverage-threshold.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "enforce 50pct coverage threshold",
+      "removed": 1,
+      "request_id": "038",
+      "timestamp": "2026-06-04 17:12:27 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -53,6 +65,16 @@
       "removed": 11,
       "request_id": "027",
       "timestamp": "2026-05-30 22:16:52 PDT"
+    },
+    {
+      "added": 17,
+      "number": 2,
+      "patch": "r002--2026-06-04_171232--mark-037-040-done.patch",
+      "path": "BACKLOG.md",
+      "reason": "mark 037-040 done",
+      "removed": 10,
+      "request_id": "040",
+      "timestamp": "2026-06-04 17:12:32 PDT"
     }
   ],
   "automation/maintenance_prompt.md": [
@@ -397,6 +419,18 @@
       "timestamp": "2026-06-03 22:26:20 PDT"
     }
   ],
+  "bot/preflight.py": [
+    {
+      "added": 8,
+      "number": 1,
+      "patch": "r001--2026-06-04_171221--show-bps-in-pre-flight-reject-messages.patch",
+      "path": "bot/preflight.py",
+      "reason": "show bps in pre-flight reject messages",
+      "removed": 4,
+      "request_id": "040",
+      "timestamp": "2026-06-04 17:12:21 PDT"
+    }
+  ],
   "bot/report.py": [
     {
       "added": 7,
@@ -455,6 +489,16 @@
       "removed": 21,
       "request_id": "030",
       "timestamp": "2026-06-01 07:53:37 PDT"
+    },
+    {
+      "added": 43,
+      "number": 2,
+      "patch": "r002--2026-06-04_171221--add-observability-scan-counters.patch",
+      "path": "bot/strategies/triangular_arbitrage.py",
+      "reason": "add observability scan counters",
+      "removed": 2,
+      "request_id": "037",
+      "timestamp": "2026-06-04 17:12:21 PDT"
     }
   ],
   "bot/trade_log.py": [
@@ -665,6 +709,16 @@
       "removed": 0,
       "request_id": "034",
       "timestamp": "2026-06-02 21:13:09 PDT"
+    },
+    {
+      "added": 1,
+      "number": 2,
+      "patch": "r002--2026-06-04_171227--add-pytest-cov-for-coverage-ci.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov for coverage CI",
+      "removed": 0,
+      "request_id": "038",
+      "timestamp": "2026-06-04 17:12:27 PDT"
     }
   ],
   "requirements.txt": [
@@ -677,6 +731,30 @@
       "removed": 0,
       "request_id": "034",
       "timestamp": "2026-06-02 21:13:09 PDT"
+    }
+  ],
+  "scripts/monitor_kraken_changes.py": [
+    {
+      "added": 5,
+      "number": 1,
+      "patch": "r001--2026-06-04_171227--use-shared-postwebhook-helper.patch",
+      "path": "scripts/monitor_kraken_changes.py",
+      "reason": "use shared post_webhook helper",
+      "removed": 16,
+      "request_id": "039",
+      "timestamp": "2026-06-04 17:12:27 PDT"
+    }
+  ],
+  "scripts/post_discord_alert.py": [
+    {
+      "added": 2,
+      "number": 1,
+      "patch": "r001--2026-06-04_171227--delegate-to-shared-postwebhook-helper.patch",
+      "path": "scripts/post_discord_alert.py",
+      "reason": "delegate to shared post_webhook helper",
+      "removed": 24,
+      "request_id": "039",
+      "timestamp": "2026-06-04 17:12:27 PDT"
     }
   ],
   "scripts/version_history.py": [
@@ -803,6 +881,18 @@
       "timestamp": "2026-06-01 15:35:19 PDT"
     }
   ],
+  "tests/test_fee_gate.py": [
+    {
+      "added": 21,
+      "number": 1,
+      "patch": "r001--2026-06-04_171232--add-bps-format-tests.patch",
+      "path": "tests/test_fee_gate.py",
+      "reason": "add bps format tests",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-04 17:12:32 PDT"
+    }
+  ],
   "tests/test_startup_display.py": [
     {
       "added": 0,
@@ -825,6 +915,18 @@
       "removed": 1,
       "request_id": "024",
       "timestamp": "2026-05-30 12:37:15 PDT"
+    }
+  ],
+  "tests/test_triangular_arbitrage.py": [
+    {
+      "added": 78,
+      "number": 1,
+      "patch": "r001--2026-06-04_171232--add-5-observability-counter-tests.patch",
+      "path": "tests/test_triangular_arbitrage.py",
+      "reason": "add 5 observability counter tests",
+      "removed": 1,
+      "request_id": "037",
+      "timestamp": "2026-06-04 17:12:32 PDT"
     }
   ],
   "tests/test_version_history.py": [

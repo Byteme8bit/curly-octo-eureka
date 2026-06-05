@@ -1,4 +1,4 @@
-"""Tests for triangular-arb loop closure (feature 030) and observability counters (037).
+"""Tests for triangular-arb loop closure (feature 030).
 
 Regression guard for the fee-bleed bug where the scanner emitted only leg 1 of
 an A->B->C->A loop, accumulating an intermediate coin and paying a fee with no
@@ -10,8 +10,6 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
-
-import logging
 
 import pytest
 
@@ -129,78 +127,3 @@ def test_route_executes_atomically_and_returns_to_start():
         assert broker.balance("AAVE") == pytest.approx(0.0, abs=1e-9)
         # The profitable synthetic loop leaves us with MORE ETH than we started.
         assert broker.balance("ETH") > 1.0
-
-
-# ---------------------------------------------------------------------------
-# Observability counter tests (feature 037)
-# ---------------------------------------------------------------------------
-
-
-class NoRouteFakeMarkets:
-    """Returns None for all paths — simulates exchange with missing pairs."""
-
-    def find_path(self, from_asset: str, to_asset: str, max_hops: int = 3):
-        return None
-
-
-def test_loop_profit_with_reason_no_route():
-    """Returns reason='no_route' when the market has no path."""
-    strat = _strategy()
-    result, reason = strat._loop_profit_with_reason(
-        ("ETH", "UNI", "AAVE"), NoRouteFakeMarkets(), _profitable_prices()
-    )
-    assert result is None
-    assert reason == "no_route"
-
-
-def test_loop_profit_with_reason_missing_price():
-    """Returns reason='missing_price' when a required symbol has price 0."""
-    strat = _strategy()
-    partial_prices = {"UNI/ETH": 0.9}  # AAVE/UNI and ETH/AAVE missing
-    result, reason = strat._loop_profit_with_reason(
-        ("ETH", "UNI", "AAVE"), FakeMarkets(), partial_prices
-    )
-    assert result is None
-    assert reason == "missing_price"
-
-
-def test_loop_profit_with_reason_success():
-    """Returns (LoopResult, None) for a valid profitable loop."""
-    strat = _strategy()
-    result, reason = strat._loop_profit_with_reason(
-        ("ETH", "UNI", "AAVE"), FakeMarkets(), _profitable_prices()
-    )
-    assert result is not None
-    assert reason is None
-    assert result.net_est > 0
-
-
-def test_debug_log_emitted_on_scan(caplog):
-    """A DEBUG log line with scan summary is emitted on every evaluate call."""
-    strat = _strategy()
-    ctx = StrategyContext(pair_prices=_profitable_prices())
-    with caplog.at_level(logging.DEBUG, logger="bot.strategies.triangular_arbitrage"):
-        strat.evaluate(
-            candles={}, prices={"ETH": 2000.0, "UNI": 10.0, "AAVE": 100.0},
-            holdings={"ETH": 1.0}, risk=None, markets=FakeMarkets(), context=ctx,
-        )
-    debug_msgs = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
-    assert any("tri-arb scan" in m for m in debug_msgs), (
-        f"Expected 'tri-arb scan' in DEBUG output; got: {debug_msgs}"
-    )
-
-
-def test_reject_count_below_min_net_logged(caplog):
-    """When best loop is below min net, 'below_min_net' appears in the debug log."""
-    strat = _strategy(watch=("ETH", "UNI", "AAVE"))
-    ctx = StrategyContext(pair_prices=_flat_prices())  # flat prices => no edge
-    with caplog.at_level(logging.DEBUG, logger="bot.strategies.triangular_arbitrage"):
-        result = strat.evaluate(
-            candles={}, prices={"ETH": 2000.0, "UNI": 10.0, "AAVE": 100.0},
-            holdings={"ETH": 1.0}, risk=None, markets=FakeMarkets(), context=ctx,
-        )
-    assert not result.intents, "flat loop must not emit an intent"
-    debug_msgs = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
-    assert any("below_min_net" in m for m in debug_msgs), (
-        f"Expected 'below_min_net' in scan log; got: {debug_msgs}"
-    )

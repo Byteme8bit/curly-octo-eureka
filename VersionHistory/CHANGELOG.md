@@ -646,3 +646,75 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +5 / -1
 - **Patch:** `r001--2026-06-03_222620--replace-edge-proxy-with-zsigmaratio-form.patch`
 
+## bot/strategies/triangular_arbitrage.py — r002
+
+- **When:** 2026-06-04 17:12:21 PDT
+- **Reason:** add observability scan counters
+- **Request:** 037
+- **Diff:** +43 / -2
+- **Patch:** `r002--2026-06-04_171221--add-observability-scan-counters.patch`
+
+## bot/preflight.py — r001
+
+- **When:** 2026-06-04 17:12:21 PDT
+- **Reason:** show bps in pre-flight reject messages
+- **Request:** 040
+- **Diff:** +8 / -4
+- **Patch:** `r001--2026-06-04_171221--show-bps-in-pre-flight-reject-messages.patch`
+
+## requirements-dev.txt — r002
+
+- **When:** 2026-06-04 17:12:27 PDT
+- **Reason:** add pytest-cov for coverage CI
+- **Request:** 038
+- **Diff:** +1 / -0
+- **Patch:** `r002--2026-06-04_171227--add-pytest-cov-for-coverage-ci.patch`
+
+## scripts/post_discord_alert.py — r001
+
+- **When:** 2026-06-04 17:12:27 PDT
+- **Reason:** delegate to shared post_webhook helper
+- **Request:** 039
+- **Diff:** +2 / -24
+- **Patch:** `r001--2026-06-04_171227--delegate-to-shared-postwebhook-helper.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-06-04 17:12:27 PDT
+- **Reason:** enforce 50pct coverage threshold
+- **Request:** 038
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-04_171227--enforce-50pct-coverage-threshold.patch`
+
+## scripts/monitor_kraken_changes.py — r001
+
+- **When:** 2026-06-04 17:12:27 PDT
+- **Reason:** use shared post_webhook helper
+- **Request:** 039
+- **Diff:** +5 / -16
+- **Patch:** `r001--2026-06-04_171227--use-shared-postwebhook-helper.patch`
+
+## tests/test_triangular_arbitrage.py — r001
+
+- **When:** 2026-06-04 17:12:32 PDT
+- **Reason:** add 5 observability counter tests
+- **Request:** 037
+- **Diff:** +78 / -1
+- **Patch:** `r001--2026-06-04_171232--add-5-observability-counter-tests.patch`
+
+## tests/test_fee_gate.py — r001
+
+- **When:** 2026-06-04 17:12:32 PDT
+- **Reason:** add bps format tests
+- **Request:** 040
+- **Diff:** +21 / -0
+- **Patch:** `r001--2026-06-04_171232--add-bps-format-tests.patch`
+
+## BACKLOG.md — r002
+
+- **When:** 2026-06-04 17:12:32 PDT
+- **Reason:** mark 037-040 done
+- **Request:** 040
+- **Diff:** +17 / -10
+- **Patch:** `r002--2026-06-04_171232--mark-037-040-done.patch`
+

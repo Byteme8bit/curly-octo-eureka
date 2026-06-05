@@ -1,0 +1,46 @@
+--- a/BACKLOG.md
++++ b/BACKLOG.md
+@@ -38,19 +38,17 @@
+ 
+ ## Soon (anytime)
+ 
+-- [ ] **Centralise the Discord webhook posting logic.** Both
+-  `scripts/monitor_kraken_changes.py` and `scripts/post_discord_alert.py`
+-  reimplement the same urllib JSON-POST. Extract to
+-  `bot/notifications/discord_webhook.py`, give both scripts a one-liner.
++- [x] **Centralise the Discord webhook posting logic.** Shipped 2026-06-05 (#037 run).
++  `bot/notifications/discord_webhook.py` — `post_webhook()` shared helper;
++  both scripts now delegate to it.
+ - [ ] **`bot/auditor_service.py` is 600+ lines.** Worth splitting the
+   proposal-application path from the chat path. Only do this after
+   test coverage exists for the parts you'd extract.
+-- [ ] **Add observability counters for triangular_arbitrage strategy.**
+-  How many loops scanned per tick? How many rejected for which reason?
+-  (Pure observability; do NOT change the strategy's decision logic.)
+-- [ ] **Improve `pre-flight reject` messages.** Currently shows raw
+-  decimals (`gross +0.0012 - fees 0.0040 - slippage 0.0005`). Could
+-  show basis points (12bps - 40bps - 5bps) which is easier to read.
++- [x] **Add observability counters for triangular_arbitrage strategy.**
++  Shipped 2026-06-05 (#037 run). `_loop_profit_with_reason()` + DEBUG scan
++  log with `loops_scanned` and `reject_counts` dict.
++- [x] **Improve `pre-flight reject` messages.** Shipped 2026-06-05 (#037 run).
++  `bot/preflight.py` now formats all values in bps (e.g. `+40bps`).
+ - [ ] **Document the full Discord command set in `README.md`.** We have
+   `DISCORD_COMMANDS.txt` but it's not linked from the README.
+ 
+@@ -73,6 +71,15 @@
+ 
+ (Add entries here as they ship — most recent first.)
+ 
++- [x] **Triangular-arb observability counters.** Shipped 2026-06-05 (feature 037).
++  DEBUG scan log per tick: `loops_scanned`, best loop path/net, reject_counts by reason.
++- [x] **CI coverage threshold `--cov-fail-under=50`.** Shipped 2026-06-05 (feature 038).
++  `pytest-cov>=5.0.0` in `requirements-dev.txt`; CI enforces 50% floor.
++  Current coverage: 53.93%.
++- [x] **Centralised Discord `post_webhook()` helper.** Shipped 2026-06-05 (feature 039).
++  `bot/notifications/discord_webhook.py`; both scripts now one-liner.
++- [x] **Pre-flight reject messages in bps.** Shipped 2026-06-05 (feature 040).
++  `bot/preflight.py` shows e.g. `net +12bps (gross +40bps - fees 40bps - slippage 5bps)`.
+ - [x] **Add a `pytest --cov` run to CI + warn on silent state recovery.**
+   Shipped by the 2026-05-30 auto run (commit `469534e`). _Note: landed on an
+   `auto/…` branch; confirm it's merged to `main` before relying on it._

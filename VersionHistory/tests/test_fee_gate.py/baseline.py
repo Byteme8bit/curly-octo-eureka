@@ -63,24 +63,3 @@ def test_genuine_edge_probe_allowed_at_breakeven():
     )
     assert res.allowed
     assert res.net_return_pct > 0
-
-
-def test_reject_reason_uses_bps():
-    """Pre-flight reject messages must express numbers in basis points, not raw decimals."""
-    pf = _validator(taker=0.0040, min_net=0.002)
-    res = pf.validate(_intent(0.0040), route_symbols=("ETH/USD",), hops=1)
-    assert not res.allowed
-    assert "bps" in res.reason, f"Expected 'bps' in reason: {res.reason!r}"
-    # Must NOT contain bare four-decimal patterns like '0.0040'
-    import re
-    assert not re.search(r"0\.\d{4}", res.reason), (
-        f"Reason contains raw decimal fractions: {res.reason!r}"
-    )
-
-
-def test_allow_reason_uses_bps():
-    """Pre-flight OK messages also express net in basis points."""
-    pf = _validator(taker=0.0010, min_net=0.0001)
-    res = pf.validate(_intent(0.010), route_symbols=("ETH/USD",), hops=1)
-    assert res.allowed
-    assert "bps" in res.reason, f"Expected 'bps' in OK reason: {res.reason!r}"
