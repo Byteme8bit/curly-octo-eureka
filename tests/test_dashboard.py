@@ -8,7 +8,15 @@ import pytest
 
 from dashboard.config import DashboardSettings
 from dashboard.parsers.auditor import _list_audit_reports, _parse_report_summary
-from dashboard.parsers.series import build_forecasts, parse_forecast_table
+from dashboard.parsers.series import (
+    _parse_confidence,
+    _parse_money,
+    _parse_receipt_time,
+    build_forecasts,
+    build_portfolio_history,
+    build_trades_series,
+    parse_forecast_table,
+)
 from dashboard.parsers.timeline import build_timeline
 from dashboard.parsers.tradebot import _extract_ticks_from_log, _parse_receipt, _parse_gain_loss_usd
 from dashboard.parsers.watchdog import _filter_watchdog_lines, _health_from_state
@@ -169,3 +177,138 @@ def test_overview_includes_summary_and_forecasts():
     assert "summary" in data
     assert "forecasts" in data
     assert "timeline" in data
+
+
+# --- series.py: forecast/money parsing edge cases -------------------------
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("$1,234.50", pytest.approx(1234.50)),
+        ("12.50", pytest.approx(12.50)),
+        ("-12.50", pytest.approx(-12.50)),
+        ("($5.00)", pytest.approx(-5.00)),
+        ("  -$2,000.00 ", pytest.approx(-2000.00)),
+        ("+3.21", pytest.approx(3.21)),
+    ],
+)
+def test_parse_money_values(raw, expected):
+    assert _parse_money(raw) == expected
+
+
+@pytest.mark.parametrize("raw", ["", "   ", "—", "-", "N/A", "abc", "$"])
+def test_parse_money_returns_none_for_blank_or_invalid(raw):
+    assert _parse_money(raw) is None
+
+
+def test_parse_money_zero_keeps_sign_neutral():
+    assert _parse_money("0") == pytest.approx(0.0)
+
+
+def test_parse_confidence_valid_and_invalid():
+    assert _parse_confidence(" 0.42 ") == pytest.approx(0.42)
+    assert _parse_confidence("high") is None
+    assert _parse_confidence("") is None
+
+
+# --- series.py: receipt-time day bucketing --------------------------------
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("2026-06-02 16:26:26 PDT", "2026-06-02"),
+        ("2026-06-02 16:26:26", "2026-06-02"),
+        ("2026-06-02", "2026-06-02"),
+    ],
+)
+def test_parse_receipt_time_extracts_day(raw, expected):
+    assert _parse_receipt_time(raw) == expected
+
+
+def test_parse_receipt_time_unknown_for_short_garbage():
+    assert _parse_receipt_time("xx") == "unknown"
+
+
+# --- series.py: portfolio history time series -----------------------------
+
+def _market_check_block(time_str: str, portfolio: str, pnl: str, drawdown: str) -> str:
+    return (
+        "==================================================\n"
+        f"MARKET CHECK - {time_str}\n"
+        "==================================================\n"
+        f"Portfolio:  ${portfolio}  (PnL {pnl} | drawdown {drawdown})\n"
+        "\n"
+        "Decision: HOLD\n"
+    )
+
+
+def test_build_portfolio_history_parses_drawdown_and_pnl_deltas(tmp_path):
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    text = (
+        _market_check_block("2026-06-02 20:00:11 PDT", "1,908.73", "-124.83", "7.05%")
+        + "\n"
+        + _market_check_block("2026-06-02 20:05:11 PDT", "1,925.00", "-108.56", "6.20%")
+    )
+    (logs / "2026-06-02_PDT.log").write_text(text, encoding="utf-8")
+
+    hist = build_portfolio_history(_settings(tmp_path))
+    assert len(hist["points"]) == 2
+    first, second = hist["points"]
+    assert first["portfolio_usd"] == pytest.approx(1908.73)
+    assert first["drawdown_pct"] == pytest.approx(0.0705)
+    assert second["drawdown_pct"] == pytest.approx(0.0620)
+    # One delta between the two consecutive baseline_pnl readings.
+    assert len(hist["pnl_deltas"]) == 1
+    assert hist["pnl_deltas"][0]["delta_pnl"] == pytest.approx(16.27)
+
+
+def test_build_portfolio_history_empty_when_no_logs(tmp_path):
+    (tmp_path / "logs").mkdir()
+    hist = build_portfolio_history(_settings(tmp_path))
+    assert hist["points"] == []
+    assert hist["pnl_deltas"] == []
+
+
+# --- series.py: per-day trade aggregation ---------------------------------
+
+def _write_receipt(path: Path, *, time_str: str, gain_loss: str) -> None:
+    path.write_text(
+        "==================================================\n"
+        "TRADE RECEIPT\n"
+        "==================================================\n"
+        f"Time:  {time_str}\n"
+        "\n"
+        "Traded 1.0000 ADA to $1.00 because test\n"
+        "\n"
+        f"Gain/Loss:  {gain_loss}\n"
+        "==================================================\n",
+        encoding="utf-8",
+    )
+
+
+def test_build_trades_series_buckets_by_day(tmp_path):
+    receipts = tmp_path / "receipts"
+    receipts.mkdir()
+    _write_receipt(receipts / "r1.txt", time_str="2026-06-01 10:00:00 PDT", gain_loss="+$3.00 (gain)")
+    _write_receipt(receipts / "r2.txt", time_str="2026-06-01 11:00:00 PDT", gain_loss="-$1.00 (loss)")
+    _write_receipt(receipts / "r3.txt", time_str="2026-06-02 09:00:00 PDT", gain_loss="+$5.50 (gain)")
+
+    series = build_trades_series(_settings(tmp_path))
+    buckets = {b["bucket"]: b for b in series["buckets"]}
+
+    assert set(buckets) == {"2026-06-01", "2026-06-02"}
+    assert buckets["2026-06-01"]["trade_count"] == 2
+    assert buckets["2026-06-01"]["net_pnl"] == pytest.approx(2.00)
+    assert buckets["2026-06-02"]["trade_count"] == 1
+    assert buckets["2026-06-02"]["net_pnl"] == pytest.approx(5.50)
+    # Buckets are sorted ascending by day.
+    assert [b["bucket"] for b in series["buckets"]] == ["2026-06-01", "2026-06-02"]
+    assert len(series["recent"]) == 3
+
+
+def test_build_trades_series_empty_dir(tmp_path):
+    (tmp_path / "receipts").mkdir()
+    series = build_trades_series(_settings(tmp_path))
+    assert series["buckets"] == []
+    assert series["recent"] == []
