@@ -646,3 +646,27 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +5 / -1
 - **Patch:** `r001--2026-06-03_222620--replace-edge-proxy-with-zsigmaratio-form.patch`
 
+## main.py — r002
+
+- **When:** 2026-06-05 07:40:19 PDT
+- **Reason:** singleton PID-lock guard to prevent duplicate instances
+- **Request:** 037
+- **Diff:** +14 / -0
+- **Patch:** `r002--2026-06-05_074019--singleton-pid-lock-guard-to-prevent-dupl.patch`
+
+## bot/engine.py — r008
+
+- **When:** 2026-06-05 07:40:19 PDT
+- **Reason:** singleton PID-lock guard to prevent duplicate instances
+- **Request:** 037
+- **Diff:** +9 / -1
+- **Patch:** `r008--2026-06-05_074019--singleton-pid-lock-guard-to-prevent-dupl.patch`
+
+## .gitignore — r002
+
+- **When:** 2026-06-05 07:40:19 PDT
+- **Reason:** singleton PID-lock guard to prevent duplicate instances
+- **Request:** 037
+- **Diff:** +10 / -0
+- **Patch:** `r002--2026-06-05_074019--singleton-pid-lock-guard-to-prevent-dupl.patch`
+
