@@ -767,6 +767,16 @@
       "removed": 22,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:32 PDT"
+    },
+    {
+      "added": 144,
+      "number": 2,
+      "patch": "r002--2026-06-05_030839--seriespy-parsingaggregation-tests.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "series.py parsing/aggregation tests",
+      "removed": 1,
+      "request_id": "037",
+      "timestamp": "2026-06-05 03:08:39 PDT"
     }
   ],
   "tests/test_discord_commands.py": [

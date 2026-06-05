@@ -646,3 +646,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +5 / -1
 - **Patch:** `r001--2026-06-03_222620--replace-edge-proxy-with-zsigmaratio-form.patch`
 
+## tests/test_dashboard.py — r002
+
+- **When:** 2026-06-05 03:08:39 PDT
+- **Reason:** series.py parsing/aggregation tests
+- **Request:** 037
+- **Diff:** +144 / -1
+- **Patch:** `r002--2026-06-05_030839--seriespy-parsingaggregation-tests.patch`
+
