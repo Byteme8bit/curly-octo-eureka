@@ -13,6 +13,15 @@ if str(ROOT) not in sys.path:
 
 def _run() -> None:
     """All heavy imports live here so missing deps are caught by main()."""
+    # Singleton guard must run before any heavy imports so a duplicate is
+    # rejected cheaply.  Pass --take-lock when spawned by os.execv restart.
+    from bot.singleton import acquire_lock, release_lock
+
+    _take_lock = "--take-lock" in sys.argv
+    if _take_lock:
+        sys.argv.remove("--take-lock")
+    acquire_lock(take_lock=_take_lock)
+
     import logging
     import signal
     from datetime import datetime
@@ -65,6 +74,11 @@ def _run() -> None:
         print("\n  Stopped by user.")
     finally:
         engine.shutdown()
+        # Release the lock only on clean exit.  When engine.run() performed a
+        # self-restart via os.execv the lock was already claimed by the child
+        # process (--take-lock), so we must NOT delete it here.
+        if not engine._restart_requested:
+            release_lock()
 
 
 def main() -> None:

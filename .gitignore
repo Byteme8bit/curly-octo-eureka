@@ -1,4 +1,5 @@
 .env
+tradebot.lock
 __pycache__/
 *.py[cod]
 .venv/

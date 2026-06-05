@@ -1,0 +1,21 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -1822,9 +1822,17 @@
+         Safe to call only after ``shutdown()`` has completed because
+         ``os.execv`` immediately replaces the process image — anything not
+         yet flushed to disk will be lost.
++
++        ``--take-lock`` is injected into the child's argv so the singleton
++        guard in ``main.py`` knows it is a legitimate restart and may
++        overwrite the existing lock file rather than refusing to start.
++        On Windows, ``os.execv`` spawns a child instead of replacing the
++        current process; ``--take-lock`` prevents the child from seeing the
++        still-running parent's PID and erroneously aborting.
+         """
+         python = sys.executable
+-        argv = [python, *sys.argv]
++        base_argv = [a for a in sys.argv if a != "--take-lock"]
++        argv = [python, *base_argv, "--take-lock"]
+         logger.warning(
+             "Self-restart: exec %s argv=%s reason=%s",
+             python, argv, self._restart_reason,
