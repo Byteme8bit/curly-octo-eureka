@@ -21,9 +21,16 @@ def test_pid_is_running_current_process():
 
 
 def test_pid_is_running_definitely_dead():
-    # Mock os.kill to raise OSError to simulate a non-existent process.
-    with patch("bot.singleton.os.kill", side_effect=OSError("no such process")):
-        assert _pid_is_running(99999) is False
+    # Simulate a non-existent process regardless of platform by patching the
+    # internals that _pid_is_running actually calls.
+    import sys as _sys
+    if _sys.platform == "win32":
+        import ctypes
+        with patch("ctypes.windll.kernel32.OpenProcess", return_value=0):
+            assert _pid_is_running(99999) is False
+    else:
+        with patch("bot.singleton.os.kill", side_effect=OSError("no such process")):
+            assert _pid_is_running(99999) is False
 
 
 # ---------------------------------------------------------------------------

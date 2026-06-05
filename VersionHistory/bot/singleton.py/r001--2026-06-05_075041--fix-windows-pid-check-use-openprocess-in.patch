@@ -1,0 +1,47 @@
+--- a/bot/singleton.py
++++ b/bot/singleton.py
+@@ -42,15 +42,36 @@
+ def _pid_is_running(pid: int) -> bool:
+     """Return True if a process with *pid* is currently running.
+ 
+-    Uses ``os.kill(pid, 0)`` which works on both POSIX and Windows:
+-    it raises ``OSError`` (errno ESRCH / ACCESS-DENIED sub-cases) when the
+-    process does not exist and succeeds silently when it does.
++    On Windows, ``os.kill(pid, 0)`` actually calls ``TerminateProcess`` and
++    is therefore unsafe for existence checks.  We use the Windows API
++    (``OpenProcess`` + ``GetExitCodeProcess``) instead.
++
++    On POSIX, ``os.kill(pid, 0)`` sends no signal and raises ``OSError``
++    (errno ESRCH) when the process does not exist.
+     """
+-    try:
+-        os.kill(pid, 0)
+-        return True
+-    except OSError:
+-        return False
++    if sys.platform == "win32":
++        import ctypes
++        import ctypes.wintypes
++
++        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
++        STILL_ACTIVE = 259
++        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
++        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
++        if not handle:
++            return False
++        try:
++            exit_code = ctypes.wintypes.DWORD(0)
++            if kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
++                return exit_code.value == STILL_ACTIVE
++            return False
++        finally:
++            kernel32.CloseHandle(handle)
++    else:
++        try:
++            os.kill(pid, 0)
++            return True
++        except OSError:
++            return False
+ 
+ 
+ def acquire_lock(*, take_lock: bool = False) -> None:
