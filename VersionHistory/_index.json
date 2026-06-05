@@ -441,6 +441,18 @@
       "timestamp": "2026-05-30 13:07:54 PDT"
     }
   ],
+  "bot/singleton.py": [
+    {
+      "added": 29,
+      "number": 1,
+      "patch": "r001--2026-06-05_075041--fix-windows-pid-check-use-openprocess-in.patch",
+      "path": "bot/singleton.py",
+      "reason": "fix Windows pid-check: use OpenProcess instead of os.kill",
+      "removed": 8,
+      "request_id": "037",
+      "timestamp": "2026-06-05 07:50:41 PDT"
+    }
+  ],
   "bot/strategies/base.py": [
     {
       "added": 6,

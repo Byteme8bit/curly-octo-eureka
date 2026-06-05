@@ -670,3 +670,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -0
 - **Patch:** `r002--2026-06-05_074019--singleton-pid-lock-guard-to-prevent-dupl.patch`
 
+## bot/singleton.py — r001
+
+- **When:** 2026-06-05 07:50:41 PDT
+- **Reason:** fix Windows pid-check: use OpenProcess instead of os.kill
+- **Request:** 037
+- **Diff:** +29 / -8
+- **Patch:** `r001--2026-06-05_075041--fix-windows-pid-check-use-openprocess-in.patch`
+
