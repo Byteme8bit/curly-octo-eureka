@@ -383,6 +383,16 @@
       "removed": 1,
       "request_id": "028",
       "timestamp": "2026-05-30 22:52:19 PDT"
+    },
+    {
+      "added": 4,
+      "number": 2,
+      "patch": "r002--2026-06-05_040947--rollback-failed-path.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "rollback failed path",
+      "removed": 0,
+      "request_id": "037",
+      "timestamp": "2026-06-05 04:09:47 PDT"
     }
   ],
   "bot/portfolio_constraints.py": [
@@ -825,6 +835,18 @@
       "removed": 1,
       "request_id": "024",
       "timestamp": "2026-05-30 12:37:15 PDT"
+    }
+  ],
+  "tests/test_triangular_arbitrage.py": [
+    {
+      "added": 41,
+      "number": 1,
+      "patch": "r001--2026-06-05_040947--cover-path-rollback.patch",
+      "path": "tests/test_triangular_arbitrage.py",
+      "reason": "cover path rollback",
+      "removed": 0,
+      "request_id": "037",
+      "timestamp": "2026-06-05 04:09:47 PDT"
     }
   ],
   "tests/test_version_history.py": [

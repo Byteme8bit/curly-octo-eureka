@@ -1,0 +1,20 @@
+--- a/bot/paper_broker.py
++++ b/bot/paper_broker.py
+@@ -194,6 +194,8 @@
+             return None
+ 
+         leg_trades: list[dict] = []
++        starting_balances = dict(self.state.balances)
++        starting_cost_basis = dict(self.state.cost_basis)
+         for index, leg in enumerate(route.legs):
+             price = prices.get(leg.pair.symbol, 0.0)
+             leg_size = size_pct if index == 0 else 1.0
+@@ -206,6 +208,8 @@
+                 size_pct=leg_size,
+             )
+             if not trade:
++                self.state.balances = starting_balances
++                self.state.cost_basis = starting_cost_basis
+                 return None
+             leg_trades.append(trade)
+ 
