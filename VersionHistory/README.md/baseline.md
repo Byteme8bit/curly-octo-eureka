@@ -66,32 +66,6 @@ That initializes git, stages all source files (never `.env`), commits, and pushe
 - **Feature history:** [`feature_logs/`](feature_logs/)
 - **Tests:** [`tests/README.md`](tests/README.md)
 
-## Discord commands
-
-The bot, watchdog, and auditor are controlled over Discord.
-Full reference: [`DISCORD_COMMANDS.txt`](DISCORD_COMMANDS.txt)
-
-**Quick reference:**
-
-| Command | What it does |
-|---|---|
-| `TradeBot -portfolio` | Current holdings + PnL |
-| `TradeBot -planned` | Signals the bot is weighing |
-| `TradeBot -reset` | Fresh paper start |
-| `WatchDog -status` | Health score |
-| `Auditor -review` | Full audit (trades, news, forecast, proposals) |
-| `Auditor -pending` | List proposals waiting for your approval |
-| `Auditor -confirm <id>` | Apply a proposal (then restart `main.py`) |
-| `Auditor -ask <question>` | Single-shot conversational Q&A |
-| `Auditor -chat <message>` | Multi-turn conversation |
-| `help` | All commands at a glance |
-
-**Prefix rules:** `TradeBot` / `TB`, `WatchDog` / `WD`, `Auditor` / `Au`.
-Prefixes and action names are case-insensitive.
-
-**Requires restart:** `Auditor -confirm` writes `runtime_overrides.json`, but
-the value doesn't take effect until you `Ctrl+C` and re-run `main.py`.
-
 ## Running tests
 
 ```powershell

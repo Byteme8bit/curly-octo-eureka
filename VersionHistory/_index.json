@@ -77,6 +77,18 @@
       "timestamp": "2026-05-30 22:16:52 PDT"
     }
   ],
+  "README.md": [
+    {
+      "added": 26,
+      "number": 1,
+      "patch": "r001--2026-06-05_172145--add-discord-commands-section-link-to-dis.patch",
+      "path": "README.md",
+      "reason": "add Discord commands section + link to DISCORD_COMMANDS.txt",
+      "removed": 0,
+      "request_id": "043",
+      "timestamp": "2026-06-05 17:21:45 PDT"
+    }
+  ],
   "automation/maintenance_prompt.md": [
     {
       "added": 204,

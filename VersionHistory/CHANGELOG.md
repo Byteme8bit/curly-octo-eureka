@@ -758,3 +758,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +28 / -1
 - **Patch:** `r003--2026-06-05_172103--add-regime-context-tests.patch`
 
+## README.md — r001
+
+- **When:** 2026-06-05 17:21:45 PDT
+- **Reason:** add Discord commands section + link to DISCORD_COMMANDS.txt
+- **Request:** 043
+- **Diff:** +26 / -0
+- **Patch:** `r001--2026-06-05_172145--add-discord-commands-section-link-to-dis.patch`
+
