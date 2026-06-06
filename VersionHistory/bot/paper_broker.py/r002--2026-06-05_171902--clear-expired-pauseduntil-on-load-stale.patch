@@ -1,0 +1,47 @@
+--- a/bot/paper_broker.py
++++ b/bot/paper_broker.py
+@@ -1,10 +1,23 @@
+ import json
++import logging
+ from dataclasses import asdict, dataclass, field
+ from datetime import datetime, timezone
+ from pathlib import Path
+ 
+ from bot.markets import PairInfo, TradeRoute
+ from bot.strategies.base import Signal
++
++logger = logging.getLogger(__name__)
++
++
++def _parse_iso(value: str | None) -> datetime | None:
++    """Parse an ISO-format datetime string; return None on failure."""
++    if not value:
++        return None
++    try:
++        return datetime.fromisoformat(value)
++    except (ValueError, TypeError):
++        return None
+ 
+ 
+ @dataclass
+@@ -38,10 +51,19 @@
+     def from_dict(cls, data: dict | None) -> "RiskState":
+         if not data:
+             return cls()
++        now = datetime.now(timezone.utc)
++        raw_paused_until = data.get("paused_until")
++        paused_until_dt = _parse_iso(raw_paused_until)
++        if paused_until_dt is not None and paused_until_dt <= now:
++            logger.debug(
++                "RiskState.from_dict: cleared expired paused_until=%s on load",
++                raw_paused_until,
++            )
++            raw_paused_until = None
+         return cls(
+             peak_portfolio=float(data.get("peak_portfolio", 0.0)),
+             baseline_portfolio=float(data.get("baseline_portfolio", 0.0)),
+-            paused_until=data.get("paused_until"),
++            paused_until=raw_paused_until,
+             hibernate_alert_sent=bool(data.get("hibernate_alert_sent", False)),
+             last_trade_at=data.get("last_trade_at"),
+             leader_symbol=data.get("leader_symbol"),

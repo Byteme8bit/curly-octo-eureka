@@ -1,0 +1,42 @@
+--- a/tests/test_watchdog_state.py
++++ b/tests/test_watchdog_state.py
+@@ -123,3 +123,39 @@
+     assert len(state.watchdog_error_timestamps) == 1
+     assert "err-A" in state.seen_error_keys
+     assert state.last_pnl_band == 5
++
++
++def test_load_drops_expired_wallclock_timestamps(tmp_path):
++    """Entries older than 24 h must be dropped even if they are valid wall-clock
++    timestamps (i.e. above WALL_CLOCK_MIN).  This is a regression test for the
++    stale-state-on-disk audit (#041)."""
++    path = tmp_path / ".watchdog_state.json"
++    now = time.time()
++    old_ts = now - (25 * 3600)   # 25 hours ago — beyond the 24h window
++    recent_ts = now - 60         # 1 minute ago — should be kept
++
++    path.write_text(
++        json.dumps({
++            "error_timestamps": [old_ts, recent_ts],
++            "watchdog_error_timestamps": [old_ts],
++            "seen_error_keys": {"old-key": old_ts, "new-key": recent_ts},
++            "error_pin_windows": {"err-A": [old_ts, recent_ts]},
++        }),
++        encoding="utf-8",
++    )
++    state = WatchdogState.load(path)
++
++    # 25h-old entries dropped, 1-min-old entry kept
++    assert len(state.error_timestamps) == 1
++    assert abs(state.error_timestamps[0] - recent_ts) < 1
++
++    # All 25h-old watchdog timestamps dropped
++    assert state.watchdog_error_timestamps == []
++
++    # Only recent key survives in seen_error_keys
++    assert "old-key" not in state.seen_error_keys
++    assert "new-key" in state.seen_error_keys
++
++    # pin window: old entry dropped, recent entry kept
++    assert "err-A" in state.error_pin_windows
++    assert len(state.error_pin_windows["err-A"]) == 1

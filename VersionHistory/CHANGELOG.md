@@ -726,3 +726,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +18 / -0
 - **Patch:** `r001--2026-06-05_171440--add-bps-format-tests.patch`
 
+## bot/paper_broker.py — r002
+
+- **When:** 2026-06-05 17:19:02 PDT
+- **Reason:** clear expired paused_until on load (stale state fix)
+- **Request:** 041
+- **Diff:** +23 / -1
+- **Patch:** `r002--2026-06-05_171902--clear-expired-pauseduntil-on-load-stale.patch`
+
+## tests/test_watchdog_state.py — r001
+
+- **When:** 2026-06-05 17:19:02 PDT
+- **Reason:** add 24h-cutoff regression test for TTL pruning
+- **Request:** 041
+- **Diff:** +36 / -0
+- **Patch:** `r001--2026-06-05_171902--add-24h-cutoff-regression-test-for-ttl-p.patch`
+
