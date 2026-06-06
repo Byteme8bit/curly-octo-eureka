@@ -1,0 +1,38 @@
+--- a/bot/auditor/report.py
++++ b/bot/auditor/report.py
+@@ -40,6 +40,23 @@
+ 
+ def _pct(v: float) -> str:
+     return f"{v * 100:.2f}%"
++
++
++def _regime_headline_bullets(headlines: list[NewsHeadline], *, max_items: int = 2) -> list[str]:
++    """Return 1–2 ETH/BTC-relevant headline bullets for the regime context note.
++
++    Priority: ETH or BTC tagged headlines first; falls back to the first
++    untagged headline if nothing asset-specific is available.
++    """
++    priority = {"ETH", "BTC"}
++    tagged = [h for h in headlines if priority & set(h.tickers)]
++    picks = (tagged or headlines)[:max_items]
++    lines: list[str] = []
++    for h in picks:
++        tag = _format_news_tag(h)
++        title = h.title if len(h.title) <= 100 else h.title[:97] + "…"
++        lines.append(f"  - {tag} {title}")
++    return lines
+ 
+ 
+ def _format_news_tag(headline) -> str:
+@@ -106,6 +123,11 @@
+     lines.append(f"- **Win rate:** {insights.win_rate:.1%}")
+     lines.append(f"- **Max drawdown (equity-curve):** {_money(insights.drawdown_max)}")
+     lines.append(f"- **Defensive / circuit-breaker trades:** {insights.recent_circuit_breaker_events}")
++    if headlines:
++        regime_bullets = _regime_headline_bullets(headlines)
++        if regime_bullets:
++            lines.append("- **Market context (ETH/BTC):**")
++            lines.extend(regime_bullets)
+     lines.append("")
+ 
+     # 3) Strategy attribution

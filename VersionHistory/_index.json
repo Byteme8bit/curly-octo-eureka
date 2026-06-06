@@ -201,6 +201,18 @@
       "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
+  "bot/auditor/report.py": [
+    {
+      "added": 22,
+      "number": 1,
+      "patch": "r001--2026-06-05_172103--add-regime-context-ethbtc-bullets-to-hea.patch",
+      "path": "bot/auditor/report.py",
+      "reason": "add regime context ETH/BTC bullets to headline numbers section",
+      "removed": 0,
+      "request_id": "042",
+      "timestamp": "2026-06-05 17:21:03 PDT"
+    }
+  ],
   "bot/auditor/state.py": [
     {
       "added": 0,
@@ -833,6 +845,16 @@
       "removed": 0,
       "request_id": "029",
       "timestamp": "2026-06-01 07:13:43 PDT"
+    },
+    {
+      "added": 28,
+      "number": 3,
+      "patch": "r003--2026-06-05_172103--add-regime-context-tests.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "add regime context tests",
+      "removed": 1,
+      "request_id": "042",
+      "timestamp": "2026-06-05 17:21:03 PDT"
     }
   ],
   "tests/test_auditor_chat.py": [

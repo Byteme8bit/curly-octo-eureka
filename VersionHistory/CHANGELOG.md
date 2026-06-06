@@ -742,3 +742,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +36 / -0
 - **Patch:** `r001--2026-06-05_171902--add-24h-cutoff-regression-test-for-ttl-p.patch`
 
+## bot/auditor/report.py — r001
+
+- **When:** 2026-06-05 17:21:03 PDT
+- **Reason:** add regime context ETH/BTC bullets to headline numbers section
+- **Request:** 042
+- **Diff:** +22 / -0
+- **Patch:** `r001--2026-06-05_172103--add-regime-context-ethbtc-bullets-to-hea.patch`
+
+## tests/test_auditor.py — r003
+
+- **When:** 2026-06-05 17:21:03 PDT
+- **Reason:** add regime context tests
+- **Request:** 042
+- **Diff:** +28 / -1
+- **Patch:** `r003--2026-06-05_172103--add-regime-context-tests.patch`
+

@@ -655,7 +655,34 @@ def test_render_markdown_report_contains_all_sections() -> None:
     assert "Auditor -confirm" in md  # confirm syntax surfaced
 
 
-def test_render_discord_summary_uses_source_when_sentiment_unknown() -> None:
+def test_render_markdown_report_shows_regime_context_for_eth_btc() -> None:
+    """ETH/BTC headlines must appear next to the 'Headline numbers' section
+    as a 'Market context' bullet — observability for the regime read (#042)."""
+    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
+    headlines = [
+        NewsHeadline(title="ETH surges on ETF news", url="u1", published_at="2026-06-01",
+                     source="CoinDesk", tickers=["ETH"], sentiment="positive"),
+        NewsHeadline(title="BTC holds support level", url="u2", published_at="2026-06-01",
+                     source="Cointelegraph", tickers=["BTC"], sentiment="neutral"),
+        NewsHeadline(title="SOL ecosystem update", url="u3", published_at="2026-06-01",
+                     source="Decrypt", tickers=["SOL"], sentiment="unknown"),
+    ]
+    md = render_markdown_report(insights, forecast, headlines, [], settings=_settings_stub())
+    # Market context should appear inside the Headline numbers section
+    assert "Market context" in md
+    # ETH or BTC headline title should appear in the context block
+    assert "ETH surges" in md or "BTC holds" in md
+
+
+def test_render_markdown_report_no_regime_context_when_no_headlines() -> None:
+    """When no headlines are available, the 'Market context' note is omitted."""
+    insights = analyze_trades([], {}, _settings_stub())
+    forecast = forecast_pnl(insights, [])
+    md = render_markdown_report(insights, forecast, [], [], settings=_settings_stub())
+    assert "Market context" not in md
+
+
     """RSS feeds carry source but no sentiment — we should show the publication name
     instead of the visually-noisy `[unknown]` tag."""
     from bot.auditor.report import _format_news_tag
