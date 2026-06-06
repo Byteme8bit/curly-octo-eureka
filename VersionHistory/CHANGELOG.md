@@ -694,3 +694,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +1 / -1
 - **Patch:** `r001--2026-06-05_171153--add-cov-cov-fail-under53-to-ci.patch`
 
+## scripts/post_discord_alert.py — r001
+
+- **When:** 2026-06-05 17:13:37 PDT
+- **Reason:** delegate to bot/notifications/discord_webhook
+- **Request:** 039
+- **Diff:** +3 / -30
+- **Patch:** `r001--2026-06-05_171337--delegate-to-botnotificationsdiscordwebho.patch`
+
+## scripts/monitor_kraken_changes.py — r001
+
+- **When:** 2026-06-05 17:13:37 PDT
+- **Reason:** delegate to bot/notifications/discord_webhook
+- **Request:** 039
+- **Diff:** +6 / -17
+- **Patch:** `r001--2026-06-05_171337--delegate-to-botnotificationsdiscordwebho.patch`
+

@@ -743,6 +743,30 @@
       "timestamp": "2026-06-02 21:13:09 PDT"
     }
   ],
+  "scripts/monitor_kraken_changes.py": [
+    {
+      "added": 6,
+      "number": 1,
+      "patch": "r001--2026-06-05_171337--delegate-to-botnotificationsdiscordwebho.patch",
+      "path": "scripts/monitor_kraken_changes.py",
+      "reason": "delegate to bot/notifications/discord_webhook",
+      "removed": 17,
+      "request_id": "039",
+      "timestamp": "2026-06-05 17:13:37 PDT"
+    }
+  ],
+  "scripts/post_discord_alert.py": [
+    {
+      "added": 3,
+      "number": 1,
+      "patch": "r001--2026-06-05_171337--delegate-to-botnotificationsdiscordwebho.patch",
+      "path": "scripts/post_discord_alert.py",
+      "reason": "delegate to bot/notifications/discord_webhook",
+      "removed": 30,
+      "request_id": "039",
+      "timestamp": "2026-06-05 17:13:37 PDT"
+    }
+  ],
   "scripts/version_history.py": [
     {
       "added": 0,

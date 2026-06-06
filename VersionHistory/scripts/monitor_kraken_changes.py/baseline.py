@@ -33,13 +33,12 @@ import json
 import os
 import sys
 import time
+import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 import ccxt
-
-from bot.notifications.discord_webhook import post_webhook
 
 ROOT = Path(__file__).resolve().parent.parent
 BASELINE = ROOT / ".kraken_monitor_baseline.json"
@@ -249,10 +248,22 @@ def post_discord(report: ChangeReport, webhook: str) -> None:
         "**Kraken monitor — changes detected**\n"
         + "\n".join(bullets)
         + f"\n\n_(scanned at {report.timestamp}, ccxt {report.ccxt_version})_"
-    )[:1900]
-    rc = post_webhook(webhook, content, username="Kraken Monitor")
-    if rc == 2:
-        print("WARN: Discord post failed (see stderr)")
+    )
+    payload = json.dumps({
+        "username": "Kraken Monitor",
+        "content": content[:1900],  # Discord 2000-char limit, leave headroom
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        webhook, data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status >= 300:
+                print(f"WARN: Discord webhook returned HTTP {resp.status}")
+    except Exception as exc:  # noqa: BLE001
+        print(f"WARN: Discord post failed: {exc}")
 
 
 # ---------------------------------------------------------------------------
