@@ -678,3 +678,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +29 / -8
 - **Patch:** `r001--2026-06-05_075041--fix-windows-pid-check-use-openprocess-in.patch`
 
+## requirements-dev.txt — r002
+
+- **When:** 2026-06-05 17:11:53 PDT
+- **Reason:** add pytest-cov>=5.0.0
+- **Request:** 038
+- **Diff:** +1 / -0
+- **Patch:** `r002--2026-06-05_171153--add-pytest-cov500.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-06-05 17:11:53 PDT
+- **Reason:** add --cov --cov-fail-under=53 to CI
+- **Request:** 038
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-05_171153--add-cov-cov-fail-under53-to-ci.patch`
+

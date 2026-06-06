@@ -31,6 +31,18 @@
       "timestamp": "2026-06-02 21:13:09 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-05_171153--add-cov-cov-fail-under53-to-ci.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "add --cov --cov-fail-under=53 to CI",
+      "removed": 1,
+      "request_id": "038",
+      "timestamp": "2026-06-05 17:11:53 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -707,6 +719,16 @@
       "removed": 0,
       "request_id": "034",
       "timestamp": "2026-06-02 21:13:09 PDT"
+    },
+    {
+      "added": 1,
+      "number": 2,
+      "patch": "r002--2026-06-05_171153--add-pytest-cov500.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov>=5.0.0",
+      "removed": 0,
+      "request_id": "038",
+      "timestamp": "2026-06-05 17:11:53 PDT"
     }
   ],
   "requirements.txt": [
