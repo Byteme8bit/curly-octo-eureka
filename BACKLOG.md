@@ -21,38 +21,30 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
-  `.auditor_state.json` (PR #8/#9). Audit the other persistent state
-  files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
-  for similar TTL-based fields that `load()` doesn't prune. Add a regression
-  test per file that loads a stale fixture and asserts the expired entries
-  are dropped.
-- [ ] **Surface the news review in the auditor report.** `scripts/review_news.py`
-  now exists (read-only `NewsClient` wrapper). Wire the same headline summary
-  into `bot/auditor/report.py` so the periodic audit cites 1–2 ETH/BTC
-  headlines next to the regime read. Observability only — no decision changes.
-- [ ] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
-  CI emits coverage but doesn't fail on regressions. Add `--cov-fail-under`
-  (start at the current measured number, ratchet up). Read the latest CI run
-  to find the baseline first.
+- [x] **Detect other "stale-state-on-disk" patterns.** Shipped #041 —
+  `RiskState.from_dict()` now clears expired `paused_until` on load;
+  regression tests added for all three files.
+- [x] **Surface the news review in the auditor report.** Shipped #042 —
+  `render_markdown_report()` now cites 1–2 ETH/BTC headlines in the
+  "Headline numbers" section.
+- [x] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
+  Shipped #038 — `pytest-cov>=5.0.0` in `requirements-dev.txt`; CI now runs
+  `--cov=bot --cov-fail-under=53` (current: 54.32%).
 
 ## Soon (anytime)
 
-- [ ] **Centralise the Discord webhook posting logic.** Both
-  `scripts/monitor_kraken_changes.py` and `scripts/post_discord_alert.py`
-  reimplement the same urllib JSON-POST. Extract to
-  `bot/notifications/discord_webhook.py`, give both scripts a one-liner.
+- [x] **Centralise the Discord webhook posting logic.** Shipped #039 —
+  `bot/notifications/discord_webhook.py` with `post_webhook()` / `post_alert()`;
+  both scripts refactored to one-liners.
 - [ ] **`bot/auditor_service.py` is 600+ lines.** Worth splitting the
   proposal-application path from the chat path. Only do this after
   test coverage exists for the parts you'd extract.
-- [ ] **Add observability counters for triangular_arbitrage strategy.**
-  How many loops scanned per tick? How many rejected for which reason?
-  (Pure observability; do NOT change the strategy's decision logic.)
-- [ ] **Improve `pre-flight reject` messages.** Currently shows raw
-  decimals (`gross +0.0012 - fees 0.0040 - slippage 0.0005`). Could
-  show basis points (12bps - 40bps - 5bps) which is easier to read.
-- [ ] **Document the full Discord command set in `README.md`.** We have
-  `DISCORD_COMMANDS.txt` but it's not linked from the README.
+- [x] **Add observability counters for triangular_arbitrage strategy.**
+  Shipped on branch `cursor/tradebot-optimization-agent-8956` — pending merge.
+- [x] **Improve `pre-flight reject` messages.** Shipped #040 — reason strings
+  now show bps (e.g. `net -35bps (gross +40bps - fees 40bps - slippage 5bps)`).
+- [x] **Document the full Discord command set in `README.md`.** Shipped #043 —
+  "Discord commands" section added with quick-reference table.
 
 ## Later (when there's slack)
 
@@ -73,6 +65,14 @@ what to work on.
 
 (Add entries here as they ship — most recent first.)
 
+- [x] **Document Discord commands in README.md.** #043 (2026-06-06)
+- [x] **Surface ETH/BTC news context in auditor report.** #042 (2026-06-06)
+- [x] **Stale-state-on-disk audit + regression tests.** #041 (2026-06-06)
+  `RiskState.from_dict()` clears expired `paused_until`; watchdog 24h-cutoff
+  test; PinTracker load test.
+- [x] **bps in pre-flight reject messages.** #040 (2026-06-06)
+- [x] **Centralise Discord webhook to `bot/notifications/discord_webhook.py`.** #039 (2026-06-06)
+- [x] **pytest-cov in CI + `--cov-fail-under=53`.** #038 (2026-06-06)
 - [x] **Add a `pytest --cov` run to CI + warn on silent state recovery.**
   Shipped by the 2026-05-30 auto run (commit `469534e`). _Note: landed on an
   `auto/…` branch; confirm it's merged to `main` before relying on it._
