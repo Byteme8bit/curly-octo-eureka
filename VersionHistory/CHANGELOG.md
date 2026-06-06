@@ -710,3 +710,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +6 / -17
 - **Patch:** `r001--2026-06-05_171337--delegate-to-botnotificationsdiscordwebho.patch`
 
+## bot/preflight.py — r001
+
+- **When:** 2026-06-05 17:14:40 PDT
+- **Reason:** show reject/ok reasons in bps not raw decimals
+- **Request:** 040
+- **Diff:** +11 / -4
+- **Patch:** `r001--2026-06-05_171440--show-rejectok-reasons-in-bps-not-raw-dec.patch`
+
+## tests/test_fee_gate.py — r001
+
+- **When:** 2026-06-05 17:14:40 PDT
+- **Reason:** add bps-format tests
+- **Request:** 040
+- **Diff:** +18 / -0
+- **Patch:** `r001--2026-06-05_171440--add-bps-format-tests.patch`
+

@@ -1,0 +1,36 @@
+--- a/bot/preflight.py
++++ b/bot/preflight.py
+@@ -6,6 +6,12 @@
+ 
+ from bot.fee_engine import FeeEngine
+ from bot.strategies.base import TradeIntent
++
++
++def _bps(pct: float) -> str:
++    """Format a decimal fraction as basis points, e.g. 0.0040 → '+40bps'."""
++    value = round(pct * 10_000)
++    return f"{value:+d}bps" if pct < 0 else f"{value:+d}bps"
+ 
+ 
+ @dataclass(frozen=True)
+@@ -67,9 +73,10 @@
+                 slippage_pct=slippage_pct,
+                 net_return_pct=net,
+                 reason=(
+-                    f"Pre-flight reject: net {net:+.4f} "
+-                    f"(gross {gross:+.4f} - fees {fee_pct:.4f} - slippage {slippage_pct:.4f}) "
+-                    f"<= min {threshold:.4f}"
++                    f"Pre-flight reject: net {_bps(net)} "
++                    f"(gross {_bps(gross)} - fees {abs(round(fee_pct * 10_000))}bps"
++                    f" - slippage {abs(round(slippage_pct * 10_000))}bps)"
++                    f" <= min {abs(round(threshold * 10_000))}bps"
+                 ),
+             )
+ 
+@@ -79,5 +86,5 @@
+             fee_pct=fee_pct,
+             slippage_pct=slippage_pct,
+             net_return_pct=net,
+-            reason=f"Pre-flight OK: net {net:+.4f}",
++            reason=f"Pre-flight OK: net {_bps(net)}",
+         )

@@ -429,6 +429,18 @@
       "timestamp": "2026-06-03 22:26:20 PDT"
     }
   ],
+  "bot/preflight.py": [
+    {
+      "added": 11,
+      "number": 1,
+      "patch": "r001--2026-06-05_171440--show-rejectok-reasons-in-bps-not-raw-dec.patch",
+      "path": "bot/preflight.py",
+      "reason": "show reject/ok reasons in bps not raw decimals",
+      "removed": 4,
+      "request_id": "040",
+      "timestamp": "2026-06-05 17:14:40 PDT"
+    }
+  ],
   "bot/report.py": [
     {
       "added": 7,
@@ -889,6 +901,18 @@
       "removed": 0,
       "request_id": "031",
       "timestamp": "2026-06-01 15:35:19 PDT"
+    }
+  ],
+  "tests/test_fee_gate.py": [
+    {
+      "added": 18,
+      "number": 1,
+      "patch": "r001--2026-06-05_171440--add-bps-format-tests.patch",
+      "path": "tests/test_fee_gate.py",
+      "reason": "add bps-format tests",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-05 17:14:40 PDT"
     }
   ],
   "tests/test_startup_display.py": [
