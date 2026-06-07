@@ -31,6 +31,18 @@
       "timestamp": "2026-06-02 21:13:09 PDT"
     }
   ],
+  ".github/workflows/test.yml": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-06_171848--add-cov-fail-under54-to-ci.patch",
+      "path": ".github/workflows/test.yml",
+      "reason": "add cov-fail-under=54 to CI",
+      "removed": 1,
+      "request_id": "039",
+      "timestamp": "2026-06-06 17:18:48 PDT"
+    }
+  ],
   ".gitignore": [
     {
       "added": 0,
@@ -403,6 +415,16 @@
       "removed": 1,
       "request_id": "028",
       "timestamp": "2026-05-30 22:52:19 PDT"
+    },
+    {
+      "added": 27,
+      "number": 2,
+      "patch": "r002--2026-06-06_171843--prune-expired-pauseduntil-on-riskstate-l.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "prune expired paused_until on RiskState load",
+      "removed": 2,
+      "request_id": "038",
+      "timestamp": "2026-06-06 17:18:43 PDT"
     }
   ],
   "bot/portfolio_constraints.py": [
@@ -487,6 +509,16 @@
       "removed": 21,
       "request_id": "030",
       "timestamp": "2026-06-01 07:53:37 PDT"
+    },
+    {
+      "added": 24,
+      "number": 2,
+      "patch": "r002--2026-06-06_171843--add-scan-observability-counters.patch",
+      "path": "bot/strategies/triangular_arbitrage.py",
+      "reason": "add scan observability counters",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-06 17:18:43 PDT"
     }
   ],
   "bot/trade_log.py": [
@@ -499,6 +531,16 @@
       "removed": 0,
       "request_id": "024",
       "timestamp": "2026-05-30 12:37:15 PDT"
+    },
+    {
+      "added": 7,
+      "number": 2,
+      "patch": "r002--2026-06-06_171843--wire-structuredlogger-for-jsonl-trade-ev.patch",
+      "path": "bot/trade_log.py",
+      "reason": "wire StructuredLogger for JSONL trade events",
+      "removed": 0,
+      "request_id": "041",
+      "timestamp": "2026-06-06 17:18:43 PDT"
     }
   ],
   "config.py": [
@@ -707,6 +749,16 @@
       "removed": 0,
       "request_id": "034",
       "timestamp": "2026-06-02 21:13:09 PDT"
+    },
+    {
+      "added": 1,
+      "number": 2,
+      "patch": "r002--2026-06-06_171848--add-pytest-cov500.patch",
+      "path": "requirements-dev.txt",
+      "reason": "add pytest-cov>=5.0.0",
+      "removed": 0,
+      "request_id": "039",
+      "timestamp": "2026-06-06 17:18:48 PDT"
     }
   ],
   "requirements.txt": [

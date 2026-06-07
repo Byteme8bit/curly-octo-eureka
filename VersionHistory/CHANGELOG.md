@@ -678,3 +678,43 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +29 / -8
 - **Patch:** `r001--2026-06-05_075041--fix-windows-pid-check-use-openprocess-in.patch`
 
+## bot/paper_broker.py — r002
+
+- **When:** 2026-06-06 17:18:43 PDT
+- **Reason:** prune expired paused_until on RiskState load
+- **Request:** 038
+- **Diff:** +27 / -2
+- **Patch:** `r002--2026-06-06_171843--prune-expired-pauseduntil-on-riskstate-l.patch`
+
+## bot/strategies/triangular_arbitrage.py — r002
+
+- **When:** 2026-06-06 17:18:43 PDT
+- **Reason:** add scan observability counters
+- **Request:** 040
+- **Diff:** +24 / -0
+- **Patch:** `r002--2026-06-06_171843--add-scan-observability-counters.patch`
+
+## bot/trade_log.py — r002
+
+- **When:** 2026-06-06 17:18:43 PDT
+- **Reason:** wire StructuredLogger for JSONL trade events
+- **Request:** 041
+- **Diff:** +7 / -0
+- **Patch:** `r002--2026-06-06_171843--wire-structuredlogger-for-jsonl-trade-ev.patch`
+
+## requirements-dev.txt — r002
+
+- **When:** 2026-06-06 17:18:48 PDT
+- **Reason:** add pytest-cov>=5.0.0
+- **Request:** 039
+- **Diff:** +1 / -0
+- **Patch:** `r002--2026-06-06_171848--add-pytest-cov500.patch`
+
+## .github/workflows/test.yml — r001
+
+- **When:** 2026-06-06 17:18:48 PDT
+- **Reason:** add cov-fail-under=54 to CI
+- **Request:** 039
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-06_171848--add-cov-fail-under54-to-ci.patch`
+
