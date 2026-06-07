@@ -7,6 +7,24 @@ from bot.markets import PairInfo, TradeRoute
 from bot.strategies.base import Signal
 
 
+def _prune_paused_until(value: str | None) -> tuple[str | None, bool]:
+    """Return ``(pruned_value, was_cleared)``.
+
+    If *value* is a non-None ISO timestamp that has already passed, return
+    ``(None, True)`` so callers know to also reset ``hibernate_alert_sent``.
+    A value that cannot be parsed is treated as expired and cleared.
+    """
+    if value is None:
+        return None, False
+    try:
+        until = datetime.fromisoformat(value)
+        if datetime.now(timezone.utc) >= until:
+            return None, True
+        return value, False
+    except (ValueError, TypeError):
+        return None, True
+
+
 @dataclass
 class RiskState:
     peak_portfolio: float = 0.0
@@ -38,11 +56,18 @@ class RiskState:
     def from_dict(cls, data: dict | None) -> "RiskState":
         if not data:
             return cls()
+        paused_until, cleared = _prune_paused_until(data.get("paused_until"))
+        # If the pause window already expired on disk, mirror what is_paused()
+        # would do at runtime: clear the alert flag so the next hibernate emits
+        # a fresh Discord notification.
+        hibernate_alert_sent = bool(data.get("hibernate_alert_sent", False))
+        if cleared:
+            hibernate_alert_sent = False
         return cls(
             peak_portfolio=float(data.get("peak_portfolio", 0.0)),
             baseline_portfolio=float(data.get("baseline_portfolio", 0.0)),
-            paused_until=data.get("paused_until"),
-            hibernate_alert_sent=bool(data.get("hibernate_alert_sent", False)),
+            paused_until=paused_until,
+            hibernate_alert_sent=hibernate_alert_sent,
             last_trade_at=data.get("last_trade_at"),
             leader_symbol=data.get("leader_symbol"),
             leader_since=data.get("leader_since"),
