@@ -1,0 +1,45 @@
+--- a/bot/strategies/triangular_arbitrage.py
++++ b/bot/strategies/triangular_arbitrage.py
+@@ -163,18 +163,42 @@
+             held = list(assets[:3])
+ 
+         best: LoopResult | None = None
++        loops_scanned = 0
++        loops_no_market = 0
++        loops_below_min = 0
++
+         for combo in itertools.permutations(assets, 3):
+             if held and combo[0] not in held:
+                 continue
++            loops_scanned += 1
+             result = self._loop_profit(combo, markets, pair_prices)
++            if result is None:
++                loops_no_market += 1
++                continue
++            if result.net_est <= min_net:
++                loops_below_min += 1
+             if result and (best is None or result.net_est > best.net_est):
+                 best = result
++
++        logger.debug(
++            "triangular_arb scan: %d loops checked — %d no-market, %d below-min-net (%.4f)",
++            loops_scanned,
++            loops_no_market,
++            loops_below_min,
++            min_net,
++        )
+ 
+         intents: list[TradeIntent] = []
+         opportunities: list[RotationOption] = []
+         blocked: list[str] = []
+ 
+         if best and best.net_est > min_net:
++            logger.debug(
++                "triangular_arb: best loop %s gross %+.4f est_net %+.4f → emitting intent",
++                best.path,
++                best.gross_prefee,
++                best.net_est,
++            )
+             # Emit the WHOLE closed loop as one atomic intent. from_asset ==
+             # to_asset == start_asset, and the pre-built route carries all three
+             # legs so the engine completes the loop in a single execution rather

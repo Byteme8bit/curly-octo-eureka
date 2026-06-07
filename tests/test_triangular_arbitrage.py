@@ -1,4 +1,4 @@
-"""Tests for triangular-arb loop closure (feature 030).
+"""Tests for triangular-arb loop closure (feature 030) and scan observability (feature 040).
 
 Regression guard for the fee-bleed bug where the scanner emitted only leg 1 of
 an A->B->C->A loop, accumulating an intermediate coin and paying a fee with no
@@ -7,6 +7,7 @@ completes (start asset == end asset) or does not fire.
 """
 from __future__ import annotations
 
+import logging
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -127,3 +128,50 @@ def test_route_executes_atomically_and_returns_to_start():
         assert broker.balance("AAVE") == pytest.approx(0.0, abs=1e-9)
         # The profitable synthetic loop leaves us with MORE ETH than we started.
         assert broker.balance("ETH") > 1.0
+
+
+# ---------------------------------------------------------------------------
+# Feature 040: scan observability counters
+# ---------------------------------------------------------------------------
+
+def test_scan_counters_logged_on_profitable_tick(caplog):
+    """evaluate() must emit a DEBUG line with the number of loops scanned."""
+    strat = _strategy()
+    ctx = StrategyContext(pair_prices=_profitable_prices())
+    with caplog.at_level(logging.DEBUG, logger="bot.strategies.triangular_arbitrage"):
+        strat.evaluate(
+            candles={}, prices={"ETH": 2000.0, "UNI": 10.0, "AAVE": 100.0},
+            holdings={"ETH": 1.0}, risk=None, markets=FakeMarkets(), context=ctx,
+        )
+    scan_lines = [r.message for r in caplog.records if "scan:" in r.message]
+    assert scan_lines, "expected at least one 'scan:' log line"
+    line = scan_lines[0]
+    assert "loops checked" in line
+
+
+def test_scan_counters_logged_on_flat_tick(caplog):
+    """Flat prices → all loops below min-net; counters still appear in DEBUG log."""
+    strat = _strategy()
+    ctx = StrategyContext(pair_prices=_flat_prices())
+    with caplog.at_level(logging.DEBUG, logger="bot.strategies.triangular_arbitrage"):
+        result = strat.evaluate(
+            candles={}, prices={"ETH": 2000.0, "UNI": 10.0, "AAVE": 100.0},
+            holdings={"ETH": 1.0}, risk=None, markets=FakeMarkets(), context=ctx,
+        )
+    assert not result.intents
+    scan_lines = [r.message for r in caplog.records if "scan:" in r.message]
+    assert scan_lines, "scan summary must be logged even when no intent emitted"
+
+
+def test_no_market_loops_counted(caplog):
+    """Loops with no route through FakeMarkets are tallied as no-market rejects."""
+    # Use a 4-asset set so some permutations lack routes in FakeMarkets.
+    strat = _strategy(watch=("ETH", "UNI", "AAVE", "BTC"))
+    ctx = StrategyContext(pair_prices=_profitable_prices())
+    with caplog.at_level(logging.DEBUG, logger="bot.strategies.triangular_arbitrage"):
+        strat.evaluate(
+            candles={}, prices={"ETH": 2000.0, "UNI": 10.0, "AAVE": 100.0, "BTC": 60000.0},
+            holdings={"ETH": 1.0}, risk=None, markets=FakeMarkets(), context=ctx,
+        )
+    scan_lines = [r.message for r in caplog.records if "no-market" in r.message]
+    assert scan_lines, "no-market reject count must appear in scan log"
