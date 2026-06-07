@@ -165,6 +165,7 @@ class BotFileLogger:
     """Human-readable logs in logs/, rotated every N hours (Pacific time)."""
 
     def __init__(self, log_dir: Path, rotate_hours: int = 4):
+        from bot.structured_log import StructuredLogger  # avoid circular import at module level
         self.log_dir = log_dir
         self.rotate_hours = rotate_hours
         self.log_dir.mkdir(parents=True, exist_ok=True)
@@ -173,6 +174,7 @@ class BotFileLogger:
         self.log_file: Path | None = None
         self._last_status_key: str | None = None
         self._status_since: str | None = None
+        self._structured = StructuredLogger(log_dir)
         self._ensure_log_file()
 
     def _ensure_log_file(self) -> None:
@@ -244,6 +246,11 @@ class BotFileLogger:
                 f"portfolio ${portfolio:,.2f} (PnL {baseline_pnl:+.2f}) — "
                 f"watching: {preview}\n"
             )
+
+        # Emit JSONL records for every filled trade so external tools can
+        # consume events.jsonl without parsing the human-readable log.
+        for trade in trades:
+            self._structured.log_trade(trade)
 
         self._last_status_key = status.summary_key
         if status_changed or trades:
