@@ -21,20 +21,10 @@ what to work on.
 
 ## Now (next 1-3 runs)
 
-- [ ] **Detect other "stale-state-on-disk" patterns.** We fixed
-  `.auditor_state.json` (PR #8/#9). Audit the other persistent state
-  files (`.paper_state.json`, `.watchdog_state.json`, `.discord_pins.json`)
-  for similar TTL-based fields that `load()` doesn't prune. Add a regression
-  test per file that loads a stale fixture and asserts the expired entries
-  are dropped.
 - [ ] **Surface the news review in the auditor report.** `scripts/review_news.py`
   now exists (read-only `NewsClient` wrapper). Wire the same headline summary
   into `bot/auditor/report.py` so the periodic audit cites 1–2 ETH/BTC
   headlines next to the regime read. Observability only — no decision changes.
-- [ ] **Pin a minimum coverage threshold now that `pytest --cov` runs in CI.**
-  CI emits coverage but doesn't fail on regressions. Add `--cov-fail-under`
-  (start at the current measured number, ratchet up). Read the latest CI run
-  to find the baseline first.
 
 ## Soon (anytime)
 
@@ -45,14 +35,14 @@ what to work on.
 - [ ] **`bot/auditor_service.py` is 600+ lines.** Worth splitting the
   proposal-application path from the chat path. Only do this after
   test coverage exists for the parts you'd extract.
-- [ ] **Add observability counters for triangular_arbitrage strategy.**
-  How many loops scanned per tick? How many rejected for which reason?
-  (Pure observability; do NOT change the strategy's decision logic.)
 - [ ] **Improve `pre-flight reject` messages.** Currently shows raw
   decimals (`gross +0.0012 - fees 0.0040 - slippage 0.0005`). Could
   show basis points (12bps - 40bps - 5bps) which is easier to read.
 - [ ] **Document the full Discord command set in `README.md`.** We have
   `DISCORD_COMMANDS.txt` but it's not linked from the README.
+- [ ] **Wire preflight_reject into StructuredLogger.** `bot/structured_log.py`
+  exposes `log_preflight_reject()` but it's not called yet. Wire it in
+  `bot/engine.py` at the two points where `pf.allowed` is False.
 
 ## Later (when there's slack)
 
@@ -60,18 +50,30 @@ what to work on.
   user is back at the keyboard, `TradeBot -recap` could show: PRs merged,
   config changes, notable trades, errors encountered. Saves time vs
   reading the chat log.
-- [ ] **Wire a simple structured log sink.** Most logs are free-text;
-  trades and pre-flight rejects could be ALSO emitted as JSONL so
-  external analysis is easier.
 - [ ] **Property-based tests for the fee calculation paths.** Use
   `hypothesis` to fuzz `compounded_taker_cost` etc., catch edge cases
   in multi-hop compounding.
+- [ ] **Ratchet coverage threshold to 56%.** Currently at 55.53%.
+  Add ~5-10 more tests (good targets: `bot/risk.py` at 21%, `bot/markets.py`
+  at 37%, `bot/pin_tracker.py` at 50%) to push over 56%, then bump
+  `--cov-fail-under` in test.yml.
 
 ---
 
 ## Done
 
 (Add entries here as they ship — most recent first.)
+
+- [x] **Detect stale `paused_until` in `.paper_state.json`.**
+  `RiskState.from_dict()` now prunes expired timestamps on load so a crashed
+  bot doesn't wake up still paused. Feature 038, branch
+  `cursor/tradebot-optimization-agent-4058`.
+- [x] **Pin coverage threshold.** Added `pytest-cov>=5.0.0` to dev deps;
+  CI fails at `--cov-fail-under=54` (baseline 55.53%). Feature 039.
+- [x] **Observability counters for triangular_arbitrage.** Scan/no-market/
+  below-min counts logged at DEBUG each tick. Feature 040.
+- [x] **JSONL structured log sink.** `bot/structured_log.py` + wired into
+  `BotFileLogger.log_tick()` for filled trades. Feature 041.
 
 - [x] **Add a `pytest --cov` run to CI + warn on silent state recovery.**
   Shipped by the 2026-05-30 auto run (commit `469534e`). _Note: landed on an
