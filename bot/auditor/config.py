@@ -36,6 +36,8 @@ class AuditorConfig:
     autoapply_min_severity: str = "high"   # "low" | "medium" | "high"
     autoapply_max_per_night: int = 1
     autoapply_restart_enabled: bool = True
+    # After a successful `Auditor -confirm`, self-restart to load overrides.
+    confirm_restart_enabled: bool = True
 
     # Conversational chat (default OFF — needs GEMINI_API_KEY to enable)
     chat_enabled: bool = False

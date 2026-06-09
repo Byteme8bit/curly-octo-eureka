@@ -147,6 +147,7 @@ class Settings:
     auditor_autoapply_min_severity: str
     auditor_autoapply_max_per_night: int
     auditor_autoapply_restart_enabled: bool
+    auditor_confirm_restart_enabled: bool
     auditor_chat_enabled: bool
     auditor_chat_backend: str
     auditor_chat_model: str
@@ -366,6 +367,7 @@ def load_settings() -> Settings:
         auditor_autoapply_min_severity=os.getenv("AUDITOR_AUTOAPPLY_MIN_SEVERITY", "high").lower().strip(),
         auditor_autoapply_max_per_night=int(os.getenv("AUDITOR_AUTOAPPLY_MAX_PER_NIGHT", "1")),
         auditor_autoapply_restart_enabled=os.getenv("AUDITOR_AUTOAPPLY_RESTART_ENABLED", "1") == "1",
+        auditor_confirm_restart_enabled=os.getenv("AUDITOR_CONFIRM_RESTART", "1") == "1",
         auditor_chat_enabled=os.getenv("AUDITOR_CHAT_ENABLED", "0") == "1",
         auditor_chat_backend=os.getenv("AUDITOR_CHAT_BACKEND", "gemini").lower().strip(),
         auditor_chat_model=os.getenv("AUDITOR_CHAT_MODEL", "gemini-2.5-flash-lite").strip(),
