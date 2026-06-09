@@ -1,0 +1,14 @@
+--- a/.env.example
++++ b/.env.example
+@@ -181,6 +181,11 @@
+ # value loads immediately. When 0 the override is written but won't take
+ # effect until you restart manually.
+ AUDITOR_AUTOAPPLY_RESTART_ENABLED=1
++
++# When 1 (default), a successful `Auditor -confirm <id>` self-restarts the bot
++# so `runtime_overrides.json` loads immediately. Set 0 to apply the override
++# but leave restart to you (same as before this feature).
++AUDITOR_CONFIRM_RESTART=1
+ 
+ # --- Auditor conversational chat (DEFAULT OFF) ---
+ # Lets you ask Auditor questions in Discord about TradeBot/WatchDog state.

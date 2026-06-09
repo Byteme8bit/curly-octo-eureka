@@ -678,3 +678,51 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +29 / -8
 - **Patch:** `r001--2026-06-05_075041--fix-windows-pid-check-use-openprocess-in.patch`
 
+## bot/auditor_service.py — r004
+
+- **When:** 2026-06-08 21:44:43 PDT
+- **Reason:** auditor-confirm auto-restart on Discord confirm
+- **Request:** 038
+- **Diff:** +21 / -0
+- **Patch:** `r004--2026-06-08_214443--auditor-confirm-auto-restart-on-discord.patch`
+
+## bot/auditor/config.py — r003
+
+- **When:** 2026-06-08 21:44:43 PDT
+- **Reason:** auditor-confirm auto-restart on Discord confirm
+- **Request:** 038
+- **Diff:** +2 / -0
+- **Patch:** `r003--2026-06-08_214443--auditor-confirm-auto-restart-on-discord.patch`
+
+## bot/engine.py — r009
+
+- **When:** 2026-06-08 21:44:43 PDT
+- **Reason:** auditor-confirm auto-restart on Discord confirm
+- **Request:** 038
+- **Diff:** +1 / -0
+- **Patch:** `r009--2026-06-08_214443--auditor-confirm-auto-restart-on-discord.patch`
+
+## config.py — r005
+
+- **When:** 2026-06-08 21:44:43 PDT
+- **Reason:** auditor-confirm auto-restart on Discord confirm
+- **Request:** 038
+- **Diff:** +2 / -0
+- **Patch:** `r005--2026-06-08_214443--auditor-confirm-auto-restart-on-discord.patch`
+
+## .env.example — r004
+
+- **When:** 2026-06-08 21:44:43 PDT
+- **Reason:** auditor-confirm auto-restart on Discord confirm
+- **Request:** 038
+- **Diff:** +5 / -0
+- **Patch:** `r004--2026-06-08_214443--auditor-confirm-auto-restart-on-discord.patch`
+
+## tests/test_auditor.py — r003
+
+- **When:** 2026-06-08 21:44:43 PDT
+- **Reason:** auditor-confirm auto-restart on Discord confirm
+- **Request:** 038
+- **Diff:** +53 / -5
+- **Patch:** `r003--2026-06-08_214443--auditor-confirm-auto-restart-on-discord.patch`
+

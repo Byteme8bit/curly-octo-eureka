@@ -1,0 +1,10 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -297,6 +297,7 @@
+                 autoapply_min_severity=settings.auditor_autoapply_min_severity,
+                 autoapply_max_per_night=settings.auditor_autoapply_max_per_night,
+                 autoapply_restart_enabled=settings.auditor_autoapply_restart_enabled,
++                confirm_restart_enabled=settings.auditor_confirm_restart_enabled,
+                 chat_enabled=settings.auditor_chat_enabled,
+                 chat_backend=settings.auditor_chat_backend,
+                 chat_model=settings.auditor_chat_model,

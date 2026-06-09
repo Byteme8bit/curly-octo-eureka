@@ -1,0 +1,88 @@
+--- a/tests/test_auditor.py
++++ b/tests/test_auditor.py
+@@ -741,6 +741,7 @@
+     autoapply_min_severity: str = "high",
+     autoapply_max_per_night: int = 1,
+     autoapply_restart_enabled: bool = True,
++    confirm_restart_enabled: bool = True,
+     clock: object | None = None,
+     request_restart: object | None = None,
+     discord: object | None = None,
+@@ -767,6 +768,7 @@
+         autoapply_min_severity=autoapply_min_severity,
+         autoapply_max_per_night=autoapply_max_per_night,
+         autoapply_restart_enabled=autoapply_restart_enabled,
++        confirm_restart_enabled=confirm_restart_enabled,
+     )
+     if broker is None:
+         broker = SimpleNamespace(
+@@ -792,18 +794,64 @@
+ 
+ 
+ def test_auditor_service_confirm_happy_path_writes_override(tmp_path: Path) -> None:
+-    service = _make_service(tmp_path)
++    restart_calls: list[str] = []
++    service = _make_service(
++        tmp_path,
++        request_restart=lambda reason: restart_calls.append(reason),
++    )
+     proposal = _future_proposal("MIN_TRADE_EDGE")
+     service.state.add_proposal(proposal)
+     msg = service.confirm_proposal(proposal.id)
+     assert "Applied" in msg
+-    # Explicit restart warning is required so users don't think `stop`/`start` Discord
+-    # commands reload settings — they don't.
+-    assert "full process restart" in msg.lower()
+-    assert "stop" in msg.lower() and "start" in msg.lower()
++    assert "restarting bot to load new settings" in msg.lower()
++    assert len(restart_calls) == 1
++    assert "auditor-confirm" in restart_calls[0]
++    assert proposal.id in restart_calls[0]
+     data = json.loads((tmp_path / "runtime_overrides.json").read_text(encoding="utf-8"))
+     assert data["MIN_TRADE_EDGE"] == pytest.approx(proposal.proposed_value)
+     assert proposal.id not in service.state.pending_proposals
++
++
++def test_confirm_success_schedules_restart(tmp_path: Path) -> None:
++    restart_calls: list[str] = []
++    service = _make_service(
++        tmp_path,
++        request_restart=lambda reason: restart_calls.append(reason),
++    )
++    proposal = _future_proposal("MIN_TRADE_EDGE")
++    service.state.add_proposal(proposal)
++    service.confirm_proposal(proposal.id)
++    assert len(restart_calls) == 1
++    assert proposal.knob in restart_calls[0]
++
++
++def test_confirm_failure_does_not_restart(tmp_path: Path) -> None:
++    restart_calls: list[str] = []
++    service = _make_service(
++        tmp_path,
++        request_restart=lambda reason: restart_calls.append(reason),
++    )
++    expired = _expired_proposal()
++    service.state.add_proposal(expired)
++    service.confirm_proposal(expired.id)
++    assert restart_calls == []
++    assert not (tmp_path / "runtime_overrides.json").exists()
++
++
++def test_confirm_restart_disabled_still_applies_but_no_restart(tmp_path: Path) -> None:
++    restart_calls: list[str] = []
++    service = _make_service(
++        tmp_path,
++        confirm_restart_enabled=False,
++        request_restart=lambda reason: restart_calls.append(reason),
++    )
++    proposal = _future_proposal("MIN_TRADE_EDGE")
++    service.state.add_proposal(proposal)
++    msg = service.confirm_proposal(proposal.id)
++    assert "Applied" in msg
++    assert "full process restart" in msg.lower()
++    assert restart_calls == []
++    assert (tmp_path / "runtime_overrides.json").exists()
+ 
+ 
+ def test_auditor_service_confirm_expired_proposal_rejects(tmp_path: Path) -> None:

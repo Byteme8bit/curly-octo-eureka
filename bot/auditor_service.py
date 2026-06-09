@@ -158,6 +158,27 @@ class AuditorService:
             self.state.consume_proposal(proposal_id)
             self.state.prune_expired()
             self._save_state()
+
+        restart_scheduled = False
+        if self.config.confirm_restart_enabled and self._request_restart is not None:
+            try:
+                self._request_restart(
+                    f"auditor-confirm {proposal_id} applied "
+                    f"{proposal.knob}={proposal.proposed_value}"
+                )
+                restart_scheduled = True
+            except Exception:  # noqa: BLE001
+                logger.exception("Confirm restart request failed")
+
+        if restart_scheduled:
+            return (
+                f"Applied `{proposal.knob}` = `{proposal.proposed_value}` "
+                f"(was `{proposal.current_value}`). "
+                f"Override stored in `runtime_overrides.json`.\n"
+                f":arrows_counterclockwise: **Restarting bot to load new settings…** "
+                f"The process will shut down cleanly and come back with the updated value.\n"
+                f"Use `Auditor -revert {proposal.knob}` after restart if you change your mind."
+            )
         return (
             f"Applied `{proposal.knob}` = `{proposal.proposed_value}` "
             f"(was `{proposal.current_value}`). "
