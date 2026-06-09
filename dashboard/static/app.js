@@ -326,6 +326,69 @@ function renderCompactTable(headers, rows) {
     <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
 
+function renderOverviewSnapshot(data) {
+  const tb = data.tradebot || {};
+  const wd = data.watchdog || {};
+  const au = data.auditor || {};
+  const s = data.summary || {};
+  const holdings = (tb.portfolio?.holdings || [])
+    .filter((h) => h.usd_value > 0)
+    .sort((a, b) => b.usd_value - a.usd_value)
+    .slice(0, 6);
+  const chips = holdings.map((h) =>
+    `<span class="holding-chip"><strong>${esc(h.asset)}</strong> <span class="mono">${esc(fmtUsd(h.usd_value))}</span></span>`
+  ).join("") || `<span class="muted">No holdings</span>`;
+
+  const lastTrade = (tb.recent_trades || [])[0];
+  const lastTradeHtml = lastTrade
+    ? `<div class="mono">${esc(shortTime(lastTrade.time))}</div><div>${esc(lastTrade.summary)}</div>
+       <div class="mono ${pnlClass(lastTrade.gain_loss_usd)}">${esc(lastTrade.gain_loss)}</div>`
+    : `<span class="muted">No trades yet</span>`;
+
+  const latestEvent = (data.timeline?.events || [])[0];
+  const latestHtml = latestEvent
+    ? `<div class="mono">${esc(shortTime(latestEvent.time))} · ${esc(latestEvent.type)}</div>
+       <div>${esc(latestEvent.title)}</div>
+       <div class="muted small">${esc((latestEvent.detail || "").slice(0, 140))}${(latestEvent.detail || "").length > 140 ? "…" : ""}</div>`
+    : `<span class="muted">No recent events</span>`;
+
+  const blocked = (tb.blocked_opportunities || [])[0];
+  const h = wd.health || {};
+  const sess = wd.session || {};
+  const pending = (au.pending_proposals || []).length;
+
+  return `
+    <div class="snapshot-grid">
+      <div class="snapshot-card">
+        <h3>Holdings</h3>
+        <div class="holding-chips">${chips}</div>
+      </div>
+      <div class="snapshot-card">
+        <h3>Last trade</h3>
+        ${lastTradeHtml}
+      </div>
+      <div class="snapshot-card">
+        <h3>Bot status</h3>
+        <div class="mini-stats">
+          <div><span class="muted">Health</span><span class="mono ${scoreClass(s.health_score || 0)}">${s.health_score ?? "—"}/100</span></div>
+          <div><span class="muted">Session trades</span><span class="mono">${s.trades_session ?? sess.trades_session ?? 0}</span></div>
+          <div><span class="muted">Heartbeat</span><span class="mono">${sess.heartbeat_age_sec != null ? sess.heartbeat_age_sec + "s" : "—"}</span></div>
+          <div><span class="muted">Auditor pending</span><span class="mono">${pending}</span></div>
+          <div><span class="muted">Errors (1h)</span><span class="mono ${(h.errors_last_hour || 0) > 0 ? "score-bad" : ""}">${h.errors_last_hour ?? 0}</span></div>
+          <div><span class="muted">Cash</span><span class="mono">${esc(fmtPct(s.cash_pct, true))}</span></div>
+        </div>
+      </div>
+      <div class="snapshot-card">
+        <h3>Latest activity</h3>
+        ${latestHtml}
+      </div>
+      <div class="snapshot-card snapshot-wide">
+        <h3>Below hurdle / blocked</h3>
+        ${blocked ? `<div class="small">${esc(blocked.slice(0, 160))}${blocked.length > 160 ? "…" : ""}</div>` : `<span class="muted">None right now</span>`}
+      </div>
+    </div>`;
+}
+
 function renderTradebotDetail(tb) {
   const holdings = (tb.portfolio?.holdings || []).map((h) => [
     esc(h.asset), `<span class="mono">${esc(h.qty)}</span>`, `<span class="mono">${esc(fmtUsd(h.usd_value))}</span>`,
@@ -365,6 +428,8 @@ async function refresh() {
 
     $("#meta-line").textContent = `Root: ${data.root} · refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
     $("#metric-strip").innerHTML = renderMetricStrip(data.summary);
+    const snap = $("#overview-snapshot-panel");
+    if (snap) snap.innerHTML = renderOverviewSnapshot(data);
 
     updatePortfolioChart(chartData.hist.points);
     updatePnlBarChart(chartData.hist.pnl_deltas);
