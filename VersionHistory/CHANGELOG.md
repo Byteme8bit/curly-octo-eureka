@@ -990,3 +990,35 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +1 / -0
 - **Patch:** `r001--2026-06-10_090734--add-autostart-doc-link.patch`
 
+## config.py — r009
+
+- **When:** 2026-06-10 11:03:15 PDT
+- **Reason:** whale discord alerts config
+- **Request:** 044
+- **Diff:** +4 / -0
+- **Patch:** `r009--2026-06-10_110315--whale-discord-alerts-config.patch`
+
+## bot/whale_watch.py — r002
+
+- **When:** 2026-06-10 11:03:16 PDT
+- **Reason:** whale quiet file log
+- **Request:** 044
+- **Diff:** +20 / -0
+- **Patch:** `r002--2026-06-10_110316--whale-quiet-file-log.patch`
+
+## bot/engine.py — r013
+
+- **When:** 2026-06-10 11:03:16 PDT
+- **Reason:** gate whale discord alerts
+- **Request:** 044
+- **Diff:** +7 / -3
+- **Patch:** `r013--2026-06-10_110316--gate-whale-discord-alerts.patch`
+
+## .env.example — r007
+
+- **When:** 2026-06-10 11:03:16 PDT
+- **Reason:** whale discord alerts env
+- **Request:** 044
+- **Diff:** +34 / -0
+- **Patch:** `r007--2026-06-10_110316--whale-discord-alerts-env.patch`
+

@@ -1,0 +1,26 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -43,7 +43,7 @@
+ from bot.strategies.base import Strategy, StrategyContext
+ from bot.trade_log import BotFileLogger, ReceiptWriter
+ from bot.watchdog_service import WatchdogService
+-from bot.whale_watch import WhaleWatcher, format_whale_alert
++from bot.whale_watch import WhaleWatcher, append_whale_event_log, format_whale_alert
+ from bot.strategies.whale_follow import (
+     WhaleFollowCooldown,
+     evaluate_whale_follow,
+@@ -437,8 +437,12 @@
+         if not self.settings.whale_watch_enabled:
+             return
+         for event in self.whale_watcher.maybe_poll():
+-            msg = format_whale_alert(event)
+-            if self.settings.discord_enabled:
++            append_whale_event_log(event, self.settings.whale_watch_log_file)
++            if (
++                self.settings.discord_enabled
++                and self.settings.whale_watch_discord_alerts
++            ):
++                msg = format_whale_alert(event)
+                 self.discord.post_important(msg, pin=False, source="TradeBot")
+             logger.info(
+                 "Whale alert: %s %s $%.0f (%s)",
