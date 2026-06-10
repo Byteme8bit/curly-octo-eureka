@@ -1022,3 +1022,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +34 / -0
 - **Patch:** `r007--2026-06-10_110316--whale-discord-alerts-env.patch`
 
+## .env.example — r008
+
+- **When:** 2026-06-10 11:46:52 PDT
+- **Reason:** verifier env knobs
+- **Request:** 045
+- **Diff:** +8 / -0
+- **Patch:** `r008--2026-06-10_114652--verifier-env-knobs.patch`
+

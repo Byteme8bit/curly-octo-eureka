@@ -69,6 +69,16 @@
       "removed": 0,
       "request_id": "044",
       "timestamp": "2026-06-10 11:03:16 PDT"
+    },
+    {
+      "added": 8,
+      "number": 8,
+      "patch": "r008--2026-06-10_114652--verifier-env-knobs.patch",
+      "path": ".env.example",
+      "reason": "verifier env knobs",
+      "removed": 0,
+      "request_id": "045",
+      "timestamp": "2026-06-10 11:46:52 PDT"
     }
   ],
   ".gitignore": [
