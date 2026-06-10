@@ -164,6 +164,8 @@ class Settings:
     whale_watch_volume_spike_ratio: float
     whale_watch_max_events: int
     whale_watch_state_file: Path
+    whale_watch_discord_alerts: bool
+    whale_watch_log_file: Path
     whale_follow_enabled: bool
     whale_follow_size_pct: float
     whale_follow_cooldown_sec: int
@@ -424,6 +426,8 @@ def load_settings() -> Settings:
         whale_watch_volume_spike_ratio=float(os.getenv("WHALE_WATCH_VOLUME_SPIKE_RATIO", "3.0")),
         whale_watch_max_events=int(os.getenv("WHALE_WATCH_MAX_EVENTS", "100")),
         whale_watch_state_file=ROOT / ".whale_watch_state.json",
+        whale_watch_discord_alerts=os.getenv("WHALE_WATCH_DISCORD_ALERTS", "0") == "1",
+        whale_watch_log_file=ROOT / os.getenv("WHALE_WATCH_LOG_FILE", "logs/whale_watch.log"),
         whale_follow_enabled=os.getenv("WHALE_FOLLOW_ENABLED", "0") == "1",
         whale_follow_size_pct=float(os.getenv("WHALE_FOLLOW_SIZE_PCT", "0.15")),
         whale_follow_cooldown_sec=int(os.getenv("WHALE_FOLLOW_COOLDOWN_SEC", "300")),

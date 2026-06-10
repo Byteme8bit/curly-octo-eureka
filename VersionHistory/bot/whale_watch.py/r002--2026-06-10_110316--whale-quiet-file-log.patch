@@ -1,0 +1,29 @@
+--- a/bot/whale_watch.py
++++ b/bot/whale_watch.py
+@@ -219,6 +219,26 @@
+     if event.detail:
+         body = f"{body}\n{event.detail}"
+     return body
++
++
++def format_whale_log_line(event: WhaleEvent) -> str:
++    """Single-line whale event for logs/whale_watch.log (not Discord)."""
++    detail = f" | {event.detail}" if event.detail else ""
++    return (
++        f"{event.time} {event.pair} {event.direction} "
++        f"${event.usd_size:,.0f} source={event.source}{detail}"
++    )
++
++
++def append_whale_event_log(event: WhaleEvent, path: Path) -> None:
++    """Append one whale detection to the quiet file log."""
++    try:
++        path.parent.mkdir(parents=True, exist_ok=True)
++        line = format_whale_log_line(event)
++        with open(path, "a", encoding="utf-8") as f:
++            f.write(line + "\n")
++    except OSError as exc:
++        logger.warning("Could not write whale watch log (%s): %s", path, exc)
+ 
+ 
+ def events_last_24h(events: list[dict], *, now: float | None = None) -> int:

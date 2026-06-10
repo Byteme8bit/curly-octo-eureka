@@ -1,0 +1,47 @@
+--- a/.env.example
++++ b/.env.example
+@@ -243,6 +243,10 @@
+ WHALE_WATCH_POLL_SECONDS=60
+ WHALE_WATCH_VOLUME_SPIKE_RATIO=3.0
+ WHALE_WATCH_MAX_EVENTS=100
++# Post routine whale detections to Discord (default OFF). Watch + follow still run;
++# events persist to .whale_watch_state.json and logs/whale_watch.log.
++WHALE_WATCH_DISCORD_ALERTS=0
++# WHALE_WATCH_LOG_FILE=logs/whale_watch.log
+ 
+ # ---------------------------------------------------------------------------
+ # Whale follow — optional paper trades mirroring whale signals (v2).
+@@ -253,3 +257,33 @@
+ WHALE_FOLLOW_COOLDOWN_SEC=300
+ WHALE_FOLLOW_MAX_PER_HOUR=2
+ WHALE_FOLLOW_MIN_NET_PROFIT=0.0005
++
++# ---------------------------------------------------------------------------
++# Goal evolution — portfolio milestones unlock strategies gradually (paper).
++# Default ON. State: .tradebot_goals_state.json
++# Tier 0 (<$10k): cross_momentum only
++# Tier 1 ($10k+): + stat_arb
++# Tier 2 ($100k+): + triangular_arbitrage, higher exploration
++# Tier 3 ($1M+): full multi-strategy + whale-follow sizing bump
++# ---------------------------------------------------------------------------
++GOAL_EVOLUTION_ENABLED=1
++# GOAL_STATE_FILE=.tradebot_goals_state.json
++GOAL_MILESTONES_USD=10000,100000,1000000
++GOAL_TIER0_STRATEGIES=cross_momentum
++GOAL_TIER1_STRATEGIES=cross_momentum,stat_arb
++GOAL_TIER2_STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage
++GOAL_TIER3_STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage
++GOAL_TIER2_EXPLORATION_RATIO=0.35
++GOAL_TIER3_EXPLORATION_RATIO=0.40
++GOAL_TIER3_WHALE_FOLLOW_SIZE_MULT=1.25
++
++# Crash hold — hard stop for new risk during market stress (complements watchdog).
++# Defensive trims still allowed; does not override circuit breaker / hibernate.
++CRASH_HOLD_ENABLED=1
++CRASH_HOLD_DRAWDOWN_PCT=0.08
++CRASH_HOLD_SESSION_DRAWDOWN_PCT=0.06
++CRASH_HOLD_RECOVERY_DRAWDOWN_PCT=0.05
++CRASH_HOLD_MOMENTUM_THRESHOLD=-0.015
++CRASH_HOLD_MOMENTUM_ASSET_RATIO=0.60
++CRASH_HOLD_WATCHDOG_DRAWDOWN_PCT=0.10
++CRASH_HOLD_MIN_MINUTES=30
