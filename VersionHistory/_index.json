@@ -95,6 +95,18 @@
       "timestamp": "2026-05-30 22:16:52 PDT"
     }
   ],
+  "README.md": [
+    {
+      "added": 11,
+      "number": 1,
+      "patch": "r001--2026-06-10_090734--link-windows-autostart-doc.patch",
+      "path": "README.md",
+      "reason": "link windows autostart doc",
+      "removed": 0,
+      "request_id": "043",
+      "timestamp": "2026-06-10 09:07:34 PDT"
+    }
+  ],
   "automation/maintenance_prompt.md": [
     {
       "added": 204,
@@ -967,6 +979,18 @@
       "removed": 15,
       "request_id": "040",
       "timestamp": "2026-06-09 20:24:56 PDT"
+    }
+  ],
+  "docs/README.md": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-10_090734--add-autostart-doc-link.patch",
+      "path": "docs/README.md",
+      "reason": "add autostart doc link",
+      "removed": 0,
+      "request_id": "043",
+      "timestamp": "2026-06-10 09:07:34 PDT"
     }
   ],
   "docs/architecture/modules.md": [

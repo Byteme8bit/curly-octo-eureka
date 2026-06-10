@@ -18,17 +18,6 @@ copy .env.example .env
 python main.py
 ```
 
-## Auto-start after reboot (Windows)
-
-Register a Task Scheduler job once so TradeBot starts when you log in:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\register_tradebot_task.ps1
-```
-
-See [`docs/auto-start-windows.md`](docs/auto-start-windows.md) for details,
-troubleshooting, and optional dashboard setup.
-
 ## Logs and receipts
 
 | Location | Contents |

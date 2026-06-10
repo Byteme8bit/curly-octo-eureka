@@ -24,7 +24,6 @@ Living architecture and engineering guide for the Kraken paper trading bot.
 
 | Topic | Where |
 |-------|-------|
-| Windows auto-start (Task Scheduler) | [`auto-start-windows.md`](auto-start-windows.md) |
 | Feature request history | [`../feature_logs/`](../feature_logs/) |
 | Test suite | [`../tests/README.md`](../tests/README.md) |
 | Run instructions | [`../README.md`](../README.md) |
