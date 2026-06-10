@@ -39,6 +39,16 @@
       "removed": 0,
       "request_id": "038",
       "timestamp": "2026-06-08 21:44:43 PDT"
+    },
+    {
+      "added": 12,
+      "number": 5,
+      "patch": "r005--2026-06-09_202455--whale-watch-env-vars.patch",
+      "path": ".env.example",
+      "reason": "whale watch env vars",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:55 PDT"
     }
   ],
   ".gitignore": [
@@ -263,6 +273,18 @@
       "timestamp": "2026-06-08 21:44:43 PDT"
     }
   ],
+  "bot/data.py": [
+    {
+      "added": 16,
+      "number": 1,
+      "patch": "r001--2026-06-09_202454--fetchtrades-for-whale-watch.patch",
+      "path": "bot/data.py",
+      "reason": "fetch_trades for whale watch",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:54 PDT"
+    }
+  ],
   "bot/discord_bot.py": [
     {
       "added": 0,
@@ -397,6 +419,16 @@
       "removed": 0,
       "request_id": "038",
       "timestamp": "2026-06-08 21:44:43 PDT"
+    },
+    {
+      "added": 28,
+      "number": 10,
+      "patch": "r010--2026-06-09_202454--whale-watch-run-loop-hook.patch",
+      "path": "bot/engine.py",
+      "reason": "whale watch run loop hook",
+      "removed": 1,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:54 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -591,6 +623,16 @@
       "removed": 0,
       "request_id": "038",
       "timestamp": "2026-06-08 21:44:43 PDT"
+    },
+    {
+      "added": 14,
+      "number": 6,
+      "patch": "r006--2026-06-09_202454--whalewatch-settings.patch",
+      "path": "config.py",
+      "reason": "WHALE_WATCH settings",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:54 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -603,6 +645,28 @@
       "removed": 2,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:31 PDT"
+    },
+    {
+      "added": 5,
+      "number": 2,
+      "patch": "r002--2026-06-09_202455--api-whales-endpoint.patch",
+      "path": "dashboard/app.py",
+      "reason": "api whales endpoint",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:55 PDT"
+    }
+  ],
+  "dashboard/config.py": [
+    {
+      "added": 2,
+      "number": 1,
+      "patch": "r001--2026-06-09_202455--whale-state-file-path.patch",
+      "path": "dashboard/config.py",
+      "reason": "whale state file path",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:55 PDT"
     }
   ],
   "dashboard/parsers/__init__.py": [
@@ -615,6 +679,16 @@
       "removed": 1,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:32 PDT"
+    },
+    {
+      "added": 2,
+      "number": 2,
+      "patch": "r002--2026-06-09_202455--export-buildwhaleview.patch",
+      "path": "dashboard/parsers/__init__.py",
+      "reason": "export build_whale_view",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:55 PDT"
     }
   ],
   "dashboard/parsers/auditor.py": [
@@ -651,6 +725,16 @@
       "removed": 0,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:31 PDT"
+    },
+    {
+      "added": 3,
+      "number": 2,
+      "patch": "r002--2026-06-09_202455--whales-in-overview-api.patch",
+      "path": "dashboard/service.py",
+      "reason": "whales in overview API",
+      "removed": 1,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:55 PDT"
     }
   ],
   "dashboard/static/app.js": [
@@ -663,6 +747,16 @@
       "removed": 145,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:32 PDT"
+    },
+    {
+      "added": 100,
+      "number": 2,
+      "patch": "r002--2026-06-09_202455--whales-dashboard-ui.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "whales dashboard UI",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:55 PDT"
     }
   ],
   "dashboard/static/index.html": [
@@ -675,6 +769,16 @@
       "removed": 12,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:32 PDT"
+    },
+    {
+      "added": 21,
+      "number": 2,
+      "patch": "r002--2026-06-09_202455--whales-nav-panel.patch",
+      "path": "dashboard/static/index.html",
+      "reason": "whales nav panel",
+      "removed": 11,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:55 PDT"
     }
   ],
   "dashboard/static/styles.css": [
@@ -687,6 +791,16 @@
       "removed": 94,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:32 PDT"
+    },
+    {
+      "added": 74,
+      "number": 2,
+      "patch": "r002--2026-06-09_202456--three-column-dual-panels.patch",
+      "path": "dashboard/static/styles.css",
+      "reason": "three column dual panels",
+      "removed": 15,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:56 PDT"
     }
   ],
   "docs/architecture/modules.md": [
@@ -869,6 +983,16 @@
       "removed": 22,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:32 PDT"
+    },
+    {
+      "added": 34,
+      "number": 2,
+      "patch": "r002--2026-06-09_202456--whale-view-dashboard-test.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "whale view dashboard test",
+      "removed": 0,
+      "request_id": "040",
+      "timestamp": "2026-06-09 20:24:56 PDT"
     }
   ],
   "tests/test_discord_commands.py": [

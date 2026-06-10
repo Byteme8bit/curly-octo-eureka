@@ -42,6 +42,7 @@ from bot.status import build_status_snapshot
 from bot.strategies.base import Strategy, StrategyContext
 from bot.trade_log import BotFileLogger, ReceiptWriter
 from bot.watchdog_service import WatchdogService
+from bot.whale_watch import WhaleWatcher, format_whale_alert
 from config import ROOT, Settings
 
 
@@ -316,6 +317,17 @@ class TradingEngine:
             request_restart=self.request_restart,
         )
 
+        self.whale_watcher = WhaleWatcher(
+            enabled=settings.whale_watch_enabled,
+            assets=settings.whale_watch_assets,
+            min_usd=settings.whale_watch_min_usd,
+            poll_seconds=settings.whale_watch_poll_seconds,
+            volume_spike_ratio=settings.whale_watch_volume_spike_ratio,
+            max_events=settings.whale_watch_max_events,
+            state_file=settings.whale_watch_state_file,
+            data=self.data,
+        )
+
 
 
     def _handle_auditor_command(self, command: str, user_id: str = "") -> str:
@@ -406,7 +418,20 @@ class TradingEngine:
 
         self.discord.post_important(message, pin=pin, source="WatchDog")
 
-
+    def _maybe_whale_watch(self) -> None:
+        if not self.settings.whale_watch_enabled:
+            return
+        for event in self.whale_watcher.maybe_poll():
+            msg = format_whale_alert(event)
+            if self.settings.discord_enabled:
+                self.discord.post_important(msg, pin=False, source="TradeBot")
+            logger.info(
+                "Whale alert: %s %s $%.0f (%s)",
+                event.pair,
+                event.direction,
+                event.usd_size,
+                event.source,
+            )
 
     def _holdings(self) -> dict[str, float]:
 
@@ -1930,6 +1955,8 @@ class TradingEngine:
                     self._report_error("Market tick", exc)
 
                     elapsed = 0.0
+
+                self._maybe_whale_watch()
 
                 time.sleep(max(0.0, self.settings.poll_interval - elapsed))
 

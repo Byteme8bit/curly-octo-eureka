@@ -1,0 +1,69 @@
+--- a/dashboard/static/index.html
++++ b/dashboard/static/index.html
+@@ -4,7 +4,7 @@
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>TradeBot Command Center</title>
+-  <link rel="stylesheet" href="/static/styles.css" />
++  <link rel="stylesheet" href="/static/styles.css?v=040" />
+   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+ </head>
+ <body>
+@@ -18,16 +18,20 @@
+       <a href="#charts">Charts</a>
+       <a href="#forecasts">Forecasts</a>
+       <a href="#watchdog">WatchDog</a>
++      <a href="#whales">Whales</a>
+       <a href="#auditor">Auditor</a>
+       <a href="#activity">Activity</a>
+     </nav>
+   </header>
+ 
+-  <section id="overview" class="strip-section">
+-    <div class="metric-strip" id="metric-strip"></div>
+-  </section>
++  <div class="layout-body">
++    <div class="primary-column">
++      <section id="overview" class="strip-section">
++        <div class="metric-strip" id="metric-strip"></div>
++        <div id="overview-snapshot-panel" class="overview-snapshot"></div>
++      </section>
+ 
+-  <main class="dashboard-main">
++      <main class="dashboard-main">
+     <section id="charts" class="panel-section">
+       <h2 class="section-heading">Portfolio &amp; PnL</h2>
+       <div class="chart-grid">
+@@ -56,6 +60,10 @@
+     </section>
+ 
+     <div class="dual-panels">
++      <section id="whales" class="panel-section">
++        <h2 class="section-heading">Whale watch</h2>
++        <div id="whales-panel"></div>
++      </section>
+       <section id="watchdog" class="panel-section">
+         <h2 class="section-heading">WatchDog</h2>
+         <div id="watchdog-panel"></div>
+@@ -75,13 +83,15 @@
+       <h2 class="section-heading">TradeBot detail</h2>
+       <div id="tradebot-detail"></div>
+     </section>
+-  </main>
++      </main>
++    </div>
+ 
+-  <aside class="sidebar" id="backlog-sidebar">
+-    <h2>Backlog</h2>
+-    <ul id="backlog-list"></ul>
+-  </aside>
++    <aside class="sidebar" id="backlog-sidebar">
++      <h2>Backlog</h2>
++      <ul id="backlog-list"></ul>
++    </aside>
++  </div>
+ 
+-  <script src="/static/app.js"></script>
++  <script src="/static/app.js?v=040"></script>
+ </body>
+ </html>

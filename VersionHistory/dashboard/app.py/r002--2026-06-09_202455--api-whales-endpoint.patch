@@ -1,0 +1,21 @@
+--- a/dashboard/app.py
++++ b/dashboard/app.py
+@@ -13,6 +13,7 @@
+ from dashboard.parsers.series import build_forecasts, build_portfolio_history, build_trades_series
+ from dashboard.parsers.timeline import build_timeline
+ from dashboard.service import build_overview
++from dashboard.parsers.whales import build_whale_view
+ 
+ STATIC_DIR = Path(__file__).resolve().parent / "static"
+ 
+@@ -70,6 +71,10 @@
+     def api_auditor() -> dict:
+         return build_auditor_view(settings)
+ 
++    @app.get("/api/whales")
++    def api_whales() -> dict:
++        return build_whale_view(settings)
++
+     @app.get("/")
+     def index() -> FileResponse:
+         return FileResponse(STATIC_DIR / "index.html")

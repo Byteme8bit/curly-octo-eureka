@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,7 @@ from dashboard.parsers.series import build_forecasts, parse_forecast_table
 from dashboard.parsers.timeline import build_timeline
 from dashboard.parsers.tradebot import _extract_ticks_from_log, _parse_receipt, _parse_gain_loss_usd
 from dashboard.parsers.watchdog import _filter_watchdog_lines, _health_from_state
+from dashboard.parsers.whales import build_whale_view
 from watchdog.state import WatchdogState
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "dashboard"
@@ -34,6 +36,7 @@ def _settings(root: Path) -> DashboardSettings:
         receipts_dir=root / "receipts",
         reports_dir=root / "reports",
         backlog_file=root / "BACKLOG.md",
+        whale_watch_state_file=root / ".whale_watch_state.json",
         error_burst_count=5,
         error_burst_minutes=10.0,
         auto_pause_score=25,
@@ -169,3 +172,34 @@ def test_overview_includes_summary_and_forecasts():
     assert "summary" in data
     assert "forecasts" in data
     assert "timeline" in data
+    assert "whales" in data
+
+
+def test_build_whale_view(tmp_path: Path):
+    state_path = tmp_path / ".whale_watch_state.json"
+    state_path.write_text(
+        json.dumps(
+            {
+                "last_check_at": "2026-06-09 10:00:00 PDT",
+                "events": [
+                    {
+                        "id": "trade:ETH/USD:1",
+                        "time": "2026-06-09 10:00:00 PDT",
+                        "asset": "ETH",
+                        "pair": "ETH/USD",
+                        "direction": "buy",
+                        "usd_size": 80000,
+                        "source": "kraken_trade",
+                        "detail": "test",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    cfg = _settings(tmp_path)
+    cfg = cfg.__class__(**{**cfg.__dict__, "whale_watch_state_file": state_path})
+    view = build_whale_view(cfg)
+    assert view["enabled"] is True
+    assert view["total_events"] == 1
+    assert view["recent_events"][0]["asset"] == "ETH"
