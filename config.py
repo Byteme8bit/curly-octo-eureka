@@ -157,6 +157,13 @@ class Settings:
     auditor_chat_temperature: float
     auditor_chat_tool_iterations: int
     auditor_chat_tool_result_max_chars: int
+    whale_watch_enabled: bool
+    whale_watch_min_usd: float
+    whale_watch_assets: tuple[str, ...]
+    whale_watch_poll_seconds: int
+    whale_watch_volume_spike_ratio: float
+    whale_watch_max_events: int
+    whale_watch_state_file: Path
 
 
 def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
@@ -377,6 +384,13 @@ def load_settings() -> Settings:
         auditor_chat_temperature=float(os.getenv("AUDITOR_CHAT_TEMPERATURE", "0.3")),
         auditor_chat_tool_iterations=int(os.getenv("AUDITOR_CHAT_TOOL_ITERATIONS", "2")),
         auditor_chat_tool_result_max_chars=int(os.getenv("AUDITOR_CHAT_TOOL_RESULT_MAX_CHARS", "2000")),
+        whale_watch_enabled=os.getenv("WHALE_WATCH_ENABLED", "0") == "1",
+        whale_watch_min_usd=float(os.getenv("WHALE_WATCH_MIN_USD", "50000")),
+        whale_watch_assets=_parse_core_assets(os.getenv("WHALE_WATCH_ASSETS", "ETH,BTC,SOL")),
+        whale_watch_poll_seconds=int(os.getenv("WHALE_WATCH_POLL_SECONDS", "60")),
+        whale_watch_volume_spike_ratio=float(os.getenv("WHALE_WATCH_VOLUME_SPIKE_RATIO", "3.0")),
+        whale_watch_max_events=int(os.getenv("WHALE_WATCH_MAX_EVENTS", "100")),
+        whale_watch_state_file=ROOT / ".whale_watch_state.json",
     )
     _apply_runtime_overrides(fields)
     return Settings(**fields)

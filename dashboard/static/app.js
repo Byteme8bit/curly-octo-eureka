@@ -326,6 +326,28 @@ function renderCompactTable(headers, rows) {
     <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
 
+function renderWhales(wh) {
+  if (!wh?.enabled && !wh?.recent_events?.length) {
+    return `<p class="empty muted">${esc(wh?.config_hint || "Whale watch inactive — no state file yet.")}</p>`;
+  }
+  const stats = `
+    <div class="mini-stats">
+      <div><span class="muted">Last check</span><span class="mono">${esc(shortTime(wh.last_check_at) || "—")}</span></div>
+      <div><span class="muted">24h count</span><span class="mono">${wh.count_24h ?? 0}</span></div>
+      <div><span class="muted">Stored</span><span class="mono">${wh.total_events ?? 0}</span></div>
+    </div>`;
+  const rows = (wh.recent_events || []).map((e) => [
+    esc(shortTime(e.time)),
+    esc(e.asset),
+    esc(e.direction),
+    `<span class="mono">${esc(fmtUsd(e.usd_size))}</span>`,
+    esc((e.source || "").replace(/_/g, " ")),
+  ]);
+  return `${stats}
+    <h3 class="sub-heading">Recent whale moves</h3>
+    ${renderCompactTable(["Time", "Asset", "Dir", "USD", "Source"], rows)}`;
+}
+
 function renderOverviewSnapshot(data) {
   const tb = data.tradebot || {};
   const wd = data.watchdog || {};
@@ -356,6 +378,13 @@ function renderOverviewSnapshot(data) {
   const h = wd.health || {};
   const sess = wd.session || {};
   const pending = (au.pending_proposals || []).length;
+  const wh = data.whales || {};
+  const lastWhale = (wh.recent_events || [])[0];
+  const whaleHtml = lastWhale
+    ? `<div class="mono">${esc(shortTime(lastWhale.time))} · ${esc(lastWhale.asset)} ${esc(lastWhale.direction)}</div>
+       <div class="mono">${esc(fmtUsd(lastWhale.usd_size))}</div>
+       <div class="muted small">${esc((lastWhale.source || "").replace(/_/g, " "))}</div>`
+    : `<span class="muted">${wh.enabled ? "No whale events yet" : "Enable WHALE_WATCH_ENABLED=1"}</span>`;
 
   return `
     <div class="snapshot-grid">
@@ -377,6 +406,11 @@ function renderOverviewSnapshot(data) {
           <div><span class="muted">Errors (1h)</span><span class="mono ${(h.errors_last_hour || 0) > 0 ? "score-bad" : ""}">${h.errors_last_hour ?? 0}</span></div>
           <div><span class="muted">Cash</span><span class="mono">${esc(fmtPct(s.cash_pct, true))}</span></div>
         </div>
+      </div>
+      <div class="snapshot-card">
+        <h3>Latest whale</h3>
+        ${whaleHtml}
+        <div class="muted small">${wh.count_24h ?? 0} in last 24h</div>
       </div>
       <div class="snapshot-card">
         <h3>Latest activity</h3>
@@ -437,6 +471,7 @@ async function refresh() {
     updateTradesChart(chartData.trades.buckets);
 
     $("#forecasts-panel").innerHTML = renderForecasts(data.forecasts);
+    $("#whales-panel").innerHTML = renderWhales(data.whales || {});
     $("#watchdog-panel").innerHTML = renderWatchdog(data.watchdog || {});
     $("#auditor-panel").innerHTML = renderAuditor(data.auditor || {});
     $("#timeline-panel").innerHTML = renderTimeline(data.timeline?.events);

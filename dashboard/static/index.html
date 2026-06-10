@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TradeBot Command Center</title>
-  <link rel="stylesheet" href="/static/styles.css?v=039b" />
+  <link rel="stylesheet" href="/static/styles.css?v=040" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 </head>
 <body>
@@ -18,6 +18,7 @@
       <a href="#charts">Charts</a>
       <a href="#forecasts">Forecasts</a>
       <a href="#watchdog">WatchDog</a>
+      <a href="#whales">Whales</a>
       <a href="#auditor">Auditor</a>
       <a href="#activity">Activity</a>
     </nav>
@@ -59,6 +60,10 @@
     </section>
 
     <div class="dual-panels">
+      <section id="whales" class="panel-section">
+        <h2 class="section-heading">Whale watch</h2>
+        <div id="whales-panel"></div>
+      </section>
       <section id="watchdog" class="panel-section">
         <h2 class="section-heading">WatchDog</h2>
         <div id="watchdog-panel"></div>
@@ -87,6 +92,6 @@
     </aside>
   </div>
 
-  <script src="/static/app.js?v=039"></script>
+  <script src="/static/app.js?v=040"></script>
 </body>
 </html>

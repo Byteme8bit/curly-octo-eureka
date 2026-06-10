@@ -5,6 +5,7 @@ from dashboard.parsers.series import build_forecasts, build_portfolio_history, b
 from dashboard.parsers.timeline import build_timeline
 from dashboard.parsers.tradebot import build_tradebot_view
 from dashboard.parsers.watchdog import build_watchdog_view
+from dashboard.parsers.whales import build_whale_view
 
 __all__ = [
     "build_auditor_view",
@@ -14,4 +15,5 @@ __all__ = [
     "build_tradebot_view",
     "build_trades_series",
     "build_watchdog_view",
+    "build_whale_view",
 ]

@@ -13,6 +13,7 @@ from dashboard.parsers import build_auditor_view, build_tradebot_view, build_wat
 from dashboard.parsers.series import build_forecasts, build_portfolio_history, build_trades_series
 from dashboard.parsers.timeline import build_timeline
 from dashboard.service import build_overview
+from dashboard.parsers.whales import build_whale_view
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -69,6 +70,10 @@ def create_app() -> FastAPI:
     @app.get("/api/auditor")
     def api_auditor() -> dict:
         return build_auditor_view(settings)
+
+    @app.get("/api/whales")
+    def api_whales() -> dict:
+        return build_whale_view(settings)
 
     @app.get("/")
     def index() -> FileResponse:

@@ -726,3 +726,99 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +53 / -5
 - **Patch:** `r003--2026-06-08_214443--auditor-confirm-auto-restart-on-discord.patch`
 
+## bot/data.py — r001
+
+- **When:** 2026-06-09 20:24:54 PDT
+- **Reason:** fetch_trades for whale watch
+- **Request:** 040
+- **Diff:** +16 / -0
+- **Patch:** `r001--2026-06-09_202454--fetchtrades-for-whale-watch.patch`
+
+## bot/engine.py — r010
+
+- **When:** 2026-06-09 20:24:54 PDT
+- **Reason:** whale watch run loop hook
+- **Request:** 040
+- **Diff:** +28 / -1
+- **Patch:** `r010--2026-06-09_202454--whale-watch-run-loop-hook.patch`
+
+## config.py — r006
+
+- **When:** 2026-06-09 20:24:54 PDT
+- **Reason:** WHALE_WATCH settings
+- **Request:** 040
+- **Diff:** +14 / -0
+- **Patch:** `r006--2026-06-09_202454--whalewatch-settings.patch`
+
+## .env.example — r005
+
+- **When:** 2026-06-09 20:24:55 PDT
+- **Reason:** whale watch env vars
+- **Request:** 040
+- **Diff:** +12 / -0
+- **Patch:** `r005--2026-06-09_202455--whale-watch-env-vars.patch`
+
+## dashboard/config.py — r001
+
+- **When:** 2026-06-09 20:24:55 PDT
+- **Reason:** whale state file path
+- **Request:** 040
+- **Diff:** +2 / -0
+- **Patch:** `r001--2026-06-09_202455--whale-state-file-path.patch`
+
+## dashboard/service.py — r002
+
+- **When:** 2026-06-09 20:24:55 PDT
+- **Reason:** whales in overview API
+- **Request:** 040
+- **Diff:** +3 / -1
+- **Patch:** `r002--2026-06-09_202455--whales-in-overview-api.patch`
+
+## dashboard/app.py — r002
+
+- **When:** 2026-06-09 20:24:55 PDT
+- **Reason:** api whales endpoint
+- **Request:** 040
+- **Diff:** +5 / -0
+- **Patch:** `r002--2026-06-09_202455--api-whales-endpoint.patch`
+
+## dashboard/parsers/__init__.py — r002
+
+- **When:** 2026-06-09 20:24:55 PDT
+- **Reason:** export build_whale_view
+- **Request:** 040
+- **Diff:** +2 / -0
+- **Patch:** `r002--2026-06-09_202455--export-buildwhaleview.patch`
+
+## dashboard/static/index.html — r002
+
+- **When:** 2026-06-09 20:24:55 PDT
+- **Reason:** whales nav panel
+- **Request:** 040
+- **Diff:** +21 / -11
+- **Patch:** `r002--2026-06-09_202455--whales-nav-panel.patch`
+
+## dashboard/static/app.js — r002
+
+- **When:** 2026-06-09 20:24:55 PDT
+- **Reason:** whales dashboard UI
+- **Request:** 040
+- **Diff:** +100 / -0
+- **Patch:** `r002--2026-06-09_202455--whales-dashboard-ui.patch`
+
+## dashboard/static/styles.css — r002
+
+- **When:** 2026-06-09 20:24:56 PDT
+- **Reason:** three column dual panels
+- **Request:** 040
+- **Diff:** +74 / -15
+- **Patch:** `r002--2026-06-09_202456--three-column-dual-panels.patch`
+
+## tests/test_dashboard.py — r002
+
+- **When:** 2026-06-09 20:24:56 PDT
+- **Reason:** whale view dashboard test
+- **Request:** 040
+- **Diff:** +34 / -0
+- **Patch:** `r002--2026-06-09_202456--whale-view-dashboard-test.patch`
+

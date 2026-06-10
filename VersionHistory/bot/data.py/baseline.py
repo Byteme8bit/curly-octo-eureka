@@ -178,19 +178,3 @@ class KrakenData:
         if not symbols:
             return {}
         return self.fetch_tickers(symbols)
-
-    def fetch_trades(self, symbol: str, limit: int = 60) -> list[dict]:
-        """Recent public trades for whale-watch (no API key required)."""
-        cap = max(1, min(limit, 500))
-        try:
-            return self._retry(
-                f"fetch_trades({symbol})",
-                lambda: self.exchange.fetch_trades(symbol, limit=cap),
-            )
-        except _RETRYABLE as exc:
-            logger.warning(
-                "Kraken fetch_trades(%s) failed after retries (%s); skipping whale trade scan",
-                symbol,
-                type(exc).__name__,
-            )
-            return []
