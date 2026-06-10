@@ -11,7 +11,6 @@ from bot.local_time import pacific_stamp
 from bot.verifier.config import VerifierSettings
 from bot.verifier.core import Verifier, format_pacific_now
 from bot.verifier.report import format_text_report, write_html_report, write_json_report
-from bot.verifier.summary import format_executive_banner, format_summary_one_line
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -23,11 +22,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="Also write JSON report to reports/")
     parser.add_argument("--html", type=str, default=None, metavar="PATH", help="Write HTML report to PATH")
     parser.add_argument("--verbose", "-v", action="store_true", help="Include all trades in text output")
-    parser.add_argument(
-        "--summary-only",
-        action="store_true",
-        help="Print one-line verdict + LIVE_READY banner only",
-    )
     parser.add_argument("--skip-kraken", action="store_true", help="Skip live Kraken API checks")
     args = parser.parse_args(argv)
 
@@ -36,12 +30,7 @@ def main(argv: list[str] | None = None) -> int:
         settings = replace(settings, skip_kraken=True)
 
     report = Verifier(settings).run(last=args.last, since=args.since)
-
-    if args.summary_only:
-        print(format_executive_banner(report))
-        print(format_summary_one_line(report))
-    else:
-        print(format_text_report(report, verbose=args.verbose))
+    print(format_text_report(report, verbose=args.verbose))
 
     stamp = pacific_stamp()
     if args.json:

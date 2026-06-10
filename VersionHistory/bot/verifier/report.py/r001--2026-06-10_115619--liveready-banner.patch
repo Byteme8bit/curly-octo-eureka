@@ -1,0 +1,19 @@
+--- a/bot/verifier/report.py
++++ b/bot/verifier/report.py
+@@ -7,13 +7,14 @@
+ from pathlib import Path
+ 
+ from bot.verifier.models import SessionReport, Verdict
++from bot.verifier.summary import format_executive_banner
+ 
+ 
+ def format_text_report(report: SessionReport, *, verbose: bool = False) -> str:
+     lines = [
+-        "=" * 60,
++        format_executive_banner(report),
++        "",
+         "INDEPENDENT TRADE VERIFICATION REPORT",
+-        "=" * 60,
+         f"Generated: {report.generated_at}",
+         f"Trades reviewed: {report.trades_reviewed}",
+         "",

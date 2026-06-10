@@ -7,14 +7,13 @@ from html import escape
 from pathlib import Path
 
 from bot.verifier.models import SessionReport, Verdict
-from bot.verifier.summary import format_executive_banner
 
 
 def format_text_report(report: SessionReport, *, verbose: bool = False) -> str:
     lines = [
-        format_executive_banner(report),
-        "",
+        "=" * 60,
         "INDEPENDENT TRADE VERIFICATION REPORT",
+        "=" * 60,
         f"Generated: {report.generated_at}",
         f"Trades reviewed: {report.trades_reviewed}",
         "",

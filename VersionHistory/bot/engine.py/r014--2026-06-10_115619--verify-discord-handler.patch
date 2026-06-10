@@ -1,0 +1,65 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -345,6 +345,47 @@
+ 
+ 
+ 
++    def _handle_verify_command(self, args: str = "") -> str:
++        """Run independent trade verifier; post executive summary to Discord."""
++        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
++
++        from bot.local_time import pacific_stamp
++        from bot.verifier.config import VerifierSettings
++        from bot.verifier.core import Verifier
++        from bot.verifier.report import write_json_report
++        from bot.verifier.summary import format_discord_verify_summary
++
++        last: int | None = None
++        if args.strip():
++            try:
++                last = int(args.strip().split()[0])
++            except ValueError:
++                return (
++                    "Usage: `WatchDog -verify` (full session) or "
++                    "`WatchDog -verify 20` (last N trades)"
++                )
++
++        settings = VerifierSettings.from_env()
++
++        def _run():
++            return Verifier(settings).run(last=last)
++
++        with ThreadPoolExecutor(max_workers=1) as pool:
++            future = pool.submit(_run)
++            try:
++                report = future.result(timeout=60)
++            except FuturesTimeout:
++                hint = f"`WatchDog -verify {last or 20}`" if last is None else ""
++                return (
++                    "Verification timed out after 60s — try fewer trades, e.g. "
++                    f"{hint or '`WatchDog -verify 20`'}"
++                )
++
++        stamp = pacific_stamp()
++        json_path = settings.reports_dir / f"verification_{stamp}.json"
++        write_json_report(report, json_path)
++        return format_discord_verify_summary(report, json_path)
++
+     def _handle_auditor_command(self, command: str, user_id: str = "") -> str:
+ 
+         token, _, args = command.partition(" ")
+@@ -1289,6 +1330,14 @@
+ 
+ 
+ 
++        if command == "verify" or command.startswith("verify "):
++
++            args = command[6:].strip() if command.startswith("verify ") else ""
++
++            return self._handle_verify_command(args)
++
++
++
+         if command == "start":
+ 
+             self.runtime.set_trading_active(True)

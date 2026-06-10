@@ -1,0 +1,58 @@
+--- a/bot/discord_bot.py
++++ b/bot/discord_bot.py
+@@ -57,11 +57,15 @@
+ WATCHDOG_ACTIONS: dict[str, str] = {
+     "status": "watchdog",
+     "pause": "watchdog-pause",
++    "verify": "verify",
+     "clearchat": "clearchat",
+     "clear-chat": "clearchat",
+     "clear": "clearchat",
+     "help": "watchdog-help",
+ }
++
++# WatchDog action tokens that accept a trailing arg (e.g. last N trades for verify).
++_WATCHDOG_ACTIONS_WITH_ARGS = {"verify"}
+ 
+ # Auditor commands. Some commands accept trailing args (e.g. proposal id or
+ # knob name); the parser concatenates them into the dispatched action string
+@@ -242,6 +246,7 @@
+ 
+ WatchDogHelpText = """**WatchDog commands** (monitor + maintenance):
+ \u2022 `WatchDog -status` \u2014 health score and risk assessment
++\u2022 `WatchDog -verify` \u2014 independent trade verification (optional: `WatchDog -verify 20` for last N)
+ \u2022 `WatchDog -pause` \u2014 watchdog pauses trade bot
+ \u2022 `WatchDog -clearchat` \u2014 bulk-delete recent channel messages (skips pinned)
+ \u2022 `WatchDog -help` \u2014 WatchDog help only
+@@ -278,6 +283,7 @@
+ 
+ **WatchDog commands** (monitor + maintenance):
+ \u2022 `WatchDog -status` \u2014 health score and risk assessment
++\u2022 `WatchDog -verify` \u2014 independent trade verification (optional: `WatchDog -verify 20` for last N)
+ \u2022 `WatchDog -pause` \u2014 watchdog pauses trade bot
+ \u2022 `WatchDog -clearchat` \u2014 bulk-delete recent channel messages (skips pinned)
+ \u2022 `WatchDog -help` \u2014 WatchDog help only
+@@ -344,9 +350,12 @@
+             return None  # TradeBot commands take no trailing args
+         action = TRADEBOT_ACTIONS.get(action_raw)
+     elif bot_raw in {"watchdog", "wd"}:
+-        if args_raw:
+-            return None  # WatchDog commands take no trailing args
+         action = WATCHDOG_ACTIONS.get(action_raw)
++        if action and args_raw:
++            if action_raw in _WATCHDOG_ACTIONS_WITH_ARGS:
++                action = f"{action} {args_raw}"
++            else:
++                return None
+     else:  # auditor / audit / au
+         action = AUDITOR_ACTIONS.get(action_raw)
+         if action and args_raw:
+@@ -369,7 +378,7 @@
+     token = (action or "").lower()
+     if token.startswith("auditor"):
+         return "Auditor"
+-    if token.startswith("watchdog") or token == "clearchat":
++    if token.startswith("watchdog") or token == "clearchat" or token.startswith("verify"):
+         return "WatchDog"
+     return DEFAULT_SOURCE
+ 

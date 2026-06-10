@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from dataclasses import replace
+from unittest.mock import patch
 
 import pytest
 
@@ -21,7 +22,8 @@ from bot.verifier.checks import (
 from bot.verifier.config import VerifierSettings
 from bot.verifier.core import Verifier
 from bot.verifier.kraken import PublicKraken
-from bot.verifier.models import Verdict
+from bot.verifier.models import CheckResult, SessionReport, TradeVerdict, Verdict
+from bot.verifier.summary import assess_live_ready, format_executive_banner, format_summary_one_line
 
 
 class _FakeKrakenExchange:
@@ -211,3 +213,208 @@ def test_fee_realism_tolerance(verifier_env: VerifierSettings):
     kraken = PublicKraken(_FakeKrakenExchange())
     result = check_fee_realism(trade, kraken, verifier_env)
     assert result.verdict in (Verdict.CONFIRM, Verdict.UNCERTAIN)
+
+
+def _session_report(
+    *,
+    confirm: int = 0,
+    deny: int = 0,
+    uncertain: int = 0,
+    trade_verdicts: list[TradeVerdict] | None = None,
+    systematic_issues: list[str] | None = None,
+) -> SessionReport:
+    trade_verdicts = trade_verdicts or []
+    n = confirm + deny + uncertain
+    if not trade_verdicts and n:
+        trade_verdicts = [
+            TradeVerdict(
+                trade_index=i,
+                time="2026-06-01T00:00:00+00:00",
+                from_asset="USD",
+                to_asset="ETH",
+                symbol="ETH/USD",
+                reason="test",
+                verdict=Verdict.CONFIRM,
+                checks=[],
+            )
+            for i in range(n)
+        ]
+    return SessionReport(
+        generated_at="2026-06-10 12:00:00 PDT",
+        trades_reviewed=n or len(trade_verdicts),
+        confirm=confirm,
+        deny=deny,
+        uncertain=uncertain,
+        paper_pnl_usd=100.0,
+        estimated_fee_drag_usd=5.0,
+        systematic_issues=systematic_issues or [],
+        trade_verdicts=trade_verdicts,
+    )
+
+
+def _trade_with_checks(checks: list[CheckResult], *, verdict: Verdict = Verdict.DENY) -> TradeVerdict:
+    return TradeVerdict(
+        trade_index=0,
+        time="2026-06-01T00:00:00+00:00",
+        from_asset="ETH",
+        to_asset="UNI",
+        symbol="UNI/ETH",
+        reason="triangular arb leg 1/3",
+        verdict=verdict,
+        checks=checks,
+    )
+
+
+@patch("bot.verifier.summary.codebase_has_live_broker", return_value=False)
+def test_live_ready_paper_only_always_notes_no_broker(_mock_live: object) -> None:
+    report = _session_report(confirm=10, deny=0, uncertain=0)
+    assessment = assess_live_ready(report)
+    assert assessment.level == "YES"
+    assert assessment.paper_only is True
+    assert any("No live broker" in r for r in assessment.reasons)
+
+
+@patch("bot.verifier.summary.codebase_has_live_broker", return_value=False)
+def test_live_ready_high_deny_is_do_not_trade(_mock_live: object) -> None:
+    checks = [
+        CheckResult("price_plausibility", Verdict.DENY, "implausible fill"),
+        CheckResult("fee_realism", Verdict.DENY, "fee mismatch"),
+    ]
+    verdicts = [_trade_with_checks(checks) for _ in range(8)] + [
+        _trade_with_checks(
+            [CheckResult("existence_correlation", Verdict.CONFIRM, "ok")],
+            verdict=Verdict.CONFIRM,
+        )
+        for _ in range(2)
+    ]
+    report = _session_report(
+        confirm=2,
+        deny=8,
+        uncertain=0,
+        trade_verdicts=verdicts,
+        systematic_issues=["362 trade(s) use triangular/multi-hop routes"],
+    )
+    assessment = assess_live_ready(report)
+    assert assessment.level == "NO"
+    assert "DO NOT TRADE" in assessment.headline
+    banner = format_executive_banner(report)
+    assert "LIVE_READY: NO" in banner
+    one_line = format_summary_one_line(report)
+    assert "CONFIRM 2/DENY 8" in one_line
+
+
+@patch("bot.verifier.summary.codebase_has_live_broker", return_value=False)
+def test_live_ready_integrity_failure(_mock_live: object) -> None:
+    verdicts = [
+        _trade_with_checks(
+            [CheckResult("existence_correlation", Verdict.DENY, "missing receipt")]
+        )
+        for _ in range(3)
+    ] + [
+        _trade_with_checks(
+            [CheckResult("existence_correlation", Verdict.CONFIRM, "ok")],
+            verdict=Verdict.CONFIRM,
+        )
+        for _ in range(17)
+    ]
+    report = _session_report(
+        confirm=17,
+        deny=3,
+        uncertain=0,
+        trade_verdicts=verdicts,
+    )
+    assessment = assess_live_ready(report)
+    assert assessment.level == "NO"
+    assert any("integrity" in r.lower() for r in assessment.reasons)
+
+
+@patch("bot.verifier.summary.codebase_has_live_broker", return_value=False)
+def test_live_ready_triangular_majority(_mock_live: object) -> None:
+    verdicts = [
+        _trade_with_checks(
+            [
+                CheckResult("multi_hop_atomic", Verdict.UNCERTAIN, "triangular"),
+                CheckResult("price_plausibility", Verdict.DENY, "bad price"),
+            ]
+        )
+        for _ in range(6)
+    ] + [
+        _trade_with_checks(
+            [CheckResult("existence_correlation", Verdict.CONFIRM, "ok")],
+            verdict=Verdict.CONFIRM,
+        )
+        for _ in range(4)
+    ]
+    report = _session_report(
+        confirm=4,
+        deny=6,
+        uncertain=0,
+        trade_verdicts=verdicts,
+    )
+    assessment = assess_live_ready(report)
+    assert assessment.level == "NO"
+    assert any("Multi-hop" in r for r in assessment.reasons)
+
+
+def test_discord_verify_command_parses() -> None:
+    from bot.discord_bot import parse_command, source_for_action
+
+    result = parse_command("WatchDog -verify")
+    assert result is not None
+    assert result.action == "verify"
+
+    result = parse_command("WD -verify 25")
+    assert result is not None
+    assert result.action == "verify 25"
+    assert source_for_action("verify") == "WatchDog"
+
+
+def test_engine_verify_handler_mocked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from bot.engine import TradingEngine
+
+    sample = _session_report(confirm=3, deny=1, uncertain=0)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+
+    class _FakeVerifier:
+        def __init__(self, settings):
+            self.settings = settings
+
+        def run(self, *, last=None, since=None):
+            return sample
+
+    monkeypatch.setattr("bot.verifier.core.Verifier", _FakeVerifier)
+    monkeypatch.setattr(
+        "bot.verifier.config.VerifierSettings.from_env",
+        lambda: VerifierSettings(
+            bot_root=tmp_path,
+            state_file=tmp_path / ".paper_state.json",
+            paper_portfolio_file=tmp_path / "paper_portfolio.json",
+            receipts_dir=tmp_path / "receipts",
+            log_dir=tmp_path / "logs",
+            runtime_log=tmp_path / "logs" / "runtime.log",
+            reports_dir=reports_dir,
+            min_eth_reserve=0.25,
+            max_alt_allocation_pct=0.40,
+            min_usd_trade=10.0,
+            fee_rate=0.0026,
+            slippage_buffer_pct=0.0005,
+            min_net_profit_pct=0.0005,
+            min_trade_edge=0.006,
+            price_tolerance_pct=0.02,
+            slippage_assume_pct=0.005,
+            fee_tolerance_rel=0.15,
+            liquidity_volume_warn_ratio=0.01,
+            log_time_window_minutes=30,
+            skip_kraken=True,
+            kraken_timeout_ms=5000,
+        ),
+    )
+    monkeypatch.setattr("bot.local_time.pacific_stamp", lambda: "20260610-120000")
+
+    engine = TradingEngine.__new__(TradingEngine)
+    reply = engine._handle_verify_command("10")
+    assert "LIVE_READY:" in reply
+    assert "CONFIRM **3**" in reply
+    assert "verification_20260610-120000.json" in reply
+    assert (reports_dir / "verification_20260610-120000.json").exists()

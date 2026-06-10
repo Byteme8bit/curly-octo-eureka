@@ -1030,3 +1030,59 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +8 / -0
 - **Patch:** `r008--2026-06-10_114652--verifier-env-knobs.patch`
 
+## bot/discord_bot.py — r004
+
+- **When:** 2026-06-10 11:56:19 PDT
+- **Reason:** WatchDog -verify command
+- **Request:** 045
+- **Diff:** +12 / -3
+- **Patch:** `r004--2026-06-10_115619--watchdog-verify-command.patch`
+
+## bot/engine.py — r014
+
+- **When:** 2026-06-10 11:56:19 PDT
+- **Reason:** verify discord handler
+- **Request:** 045
+- **Diff:** +49 / -0
+- **Patch:** `r014--2026-06-10_115619--verify-discord-handler.patch`
+
+## bot/verifier/__main__.py — r001
+
+- **When:** 2026-06-10 11:56:19 PDT
+- **Reason:** summary-only flag
+- **Request:** 045
+- **Diff:** +12 / -1
+- **Patch:** `r001--2026-06-10_115619--summary-only-flag.patch`
+
+## bot/verifier/report.py — r001
+
+- **When:** 2026-06-10 11:56:19 PDT
+- **Reason:** LIVE_READY banner
+- **Request:** 045
+- **Diff:** +3 / -2
+- **Patch:** `r001--2026-06-10_115619--liveready-banner.patch`
+
+## docs/independent-verification.md — r001
+
+- **When:** 2026-06-10 11:56:19 PDT
+- **Reason:** banner and discord docs
+- **Request:** 045
+- **Diff:** +44 / -5
+- **Patch:** `r001--2026-06-10_115619--banner-and-discord-docs.patch`
+
+## feature_logs/045_independent-verifier.md — r001
+
+- **When:** 2026-06-10 11:56:19 PDT
+- **Reason:** banner discord scope
+- **Request:** 045
+- **Diff:** +8 / -6
+- **Patch:** `r001--2026-06-10_115619--banner-discord-scope.patch`
+
+## tests/test_verifier.py — r001
+
+- **When:** 2026-06-10 11:56:20 PDT
+- **Reason:** banner discord tests
+- **Request:** 045
+- **Diff:** +208 / -1
+- **Patch:** `r001--2026-06-10_115620--banner-discord-tests.patch`
+
