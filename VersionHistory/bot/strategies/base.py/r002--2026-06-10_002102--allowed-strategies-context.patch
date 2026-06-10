@@ -1,0 +1,10 @@
+--- a/bot/strategies/base.py
++++ b/bot/strategies/base.py
+@@ -19,6 +19,7 @@
+ 
+     candles_by_timeframe: dict[str, dict[str, pd.DataFrame]] = field(default_factory=dict)
+     pair_prices: dict[str, float] = field(default_factory=dict)
++    allowed_strategies: frozenset[str] | None = None
+ 
+ 
+ @dataclass

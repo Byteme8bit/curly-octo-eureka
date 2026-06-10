@@ -40,9 +40,6 @@ class StrategyOrchestrator(Strategy):
         leader: str | None = None
 
         for strategy in self.strategies:
-            if context and context.allowed_strategies is not None:
-                if strategy.name not in context.allowed_strategies:
-                    continue
             try:
                 result = strategy.evaluate(
                     candles,

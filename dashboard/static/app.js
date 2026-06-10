@@ -357,6 +357,48 @@ function renderWhales(wh) {
     ${renderCompactTable(["Time", "Asset", "Dir", "USD", "Source", "Follow"], rows)}`;
 }
 
+function renderGoalsPanel(goals) {
+  const g = goals || {};
+  if (!g.enabled) {
+    return `<p class="muted">Goal evolution disabled — set <code>GOAL_EVOLUTION_ENABLED=1</code>.</p>`;
+  }
+  const crash = g.crash_hold || {};
+  const crashBadge = crash.active
+    ? `<span class="badge score-bad">Crash hold</span>`
+    : `<span class="badge score-good">Normal</span>`;
+  const next = g.next_threshold_usd != null
+    ? `${fmtUsd(g.next_threshold_usd)} (${esc(g.next_tier_label)})`
+    : esc(g.next_tier_label || "Max tier");
+  const strategies = (g.allowed_strategies || []).map((s) => `<code>${esc(s)}</code>`).join(", ") || "—";
+  const achieved = (g.achieved_tiers || []).length
+    ? (g.achieved_tiers || []).join(", ")
+    : "0";
+  return `
+    <div class="mini-stats">
+      <div><span class="muted">Tier</span><span class="mono">${esc(g.tier_label)} (${g.tier ?? 0})</span></div>
+      <div><span class="muted">Portfolio</span><span class="mono">${fmtUsd(g.portfolio_usd)}</span></div>
+      <div><span class="muted">Next goal</span><span class="mono">${next}</span></div>
+      <div><span class="muted">Mode</span>${crashBadge}</div>
+      <div><span class="muted">Achieved tiers</span><span class="mono">${esc(achieved)}</span></div>
+    </div>
+    <h3 class="sub-heading">Active strategies</h3>
+    <p>${strategies}</p>
+    ${crash.active ? `<p class="small score-bad">${esc(crash.reason || "Defensive holds only")}</p>` : ""}`;
+}
+
+function renderGoalsSnapshotCard(goals) {
+  const g = goals || {};
+  if (!g.enabled) {
+    return `<span class="muted">Goals off</span>`;
+  }
+  const crash = g.crash_hold || {};
+  const next = g.next_threshold_usd != null ? fmtUsd(g.next_threshold_usd) : "Max";
+  return `
+    <div class="mono">${esc(g.tier_label)} (tier ${g.tier ?? 0})</div>
+    <div class="muted small">Next: ${esc(next)}</div>
+    <div class="muted small">${crash.active ? "Crash hold" : (g.allowed_strategies || []).length + " strategies"}</div>`;
+}
+
 function renderOverviewSnapshot(data) {
   const tb = data.tradebot || {};
   const wd = data.watchdog || {};
@@ -388,6 +430,7 @@ function renderOverviewSnapshot(data) {
   const sess = wd.session || {};
   const pending = (au.pending_proposals || []).length;
   const wh = data.whales || {};
+  const goals = data.goals || {};
   const lastWhale = (wh.recent_events || [])[0];
   const whaleHtml = lastWhale
     ? `<div class="mono">${esc(shortTime(lastWhale.time))} · ${esc(lastWhale.asset)} ${esc(lastWhale.direction)}</div>
@@ -415,6 +458,10 @@ function renderOverviewSnapshot(data) {
           <div><span class="muted">Errors (1h)</span><span class="mono ${(h.errors_last_hour || 0) > 0 ? "score-bad" : ""}">${h.errors_last_hour ?? 0}</span></div>
           <div><span class="muted">Cash</span><span class="mono">${esc(fmtPct(s.cash_pct, true))}</span></div>
         </div>
+      </div>
+      <div class="snapshot-card">
+        <h3>Goals</h3>
+        ${renderGoalsSnapshotCard(goals)}
       </div>
       <div class="snapshot-card">
         <h3>Latest whale</h3>
@@ -481,6 +528,7 @@ async function refresh() {
 
     $("#forecasts-panel").innerHTML = renderForecasts(data.forecasts);
     $("#whales-panel").innerHTML = renderWhales(data.whales || {});
+    $("#goals-panel").innerHTML = renderGoalsPanel(data.goals || {});
     $("#watchdog-panel").innerHTML = renderWatchdog(data.watchdog || {});
     $("#auditor-panel").innerHTML = renderAuditor(data.auditor || {});
     $("#timeline-panel").innerHTML = renderTimeline(data.timeline?.events);

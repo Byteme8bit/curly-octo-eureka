@@ -894,3 +894,83 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +10 / -0
 - **Patch:** `r006--2026-06-09_232217--whalefollow-env-vars.patch`
 
+## config.py — r008
+
+- **When:** 2026-06-10 00:21:01 PDT
+- **Reason:** goal evolution crash hold config
+- **Request:** 042
+- **Diff:** +75 / -0
+- **Patch:** `r008--2026-06-10_002101--goal-evolution-crash-hold-config.patch`
+
+## bot/engine.py — r012
+
+- **When:** 2026-06-10 00:21:02 PDT
+- **Reason:** goal evolution engine hooks
+- **Request:** 042
+- **Diff:** +93 / -3
+- **Patch:** `r012--2026-06-10_002102--goal-evolution-engine-hooks.patch`
+
+## bot/orchestrator.py — r001
+
+- **When:** 2026-06-10 00:21:02 PDT
+- **Reason:** filter strategies by tier
+- **Request:** 042
+- **Diff:** +3 / -0
+- **Patch:** `r001--2026-06-10_002102--filter-strategies-by-tier.patch`
+
+## bot/strategies/base.py — r002
+
+- **When:** 2026-06-10 00:21:02 PDT
+- **Reason:** allowed strategies context
+- **Request:** 042
+- **Diff:** +1 / -0
+- **Patch:** `r002--2026-06-10_002102--allowed-strategies-context.patch`
+
+## dashboard/config.py — r002
+
+- **When:** 2026-06-10 00:21:02 PDT
+- **Reason:** goal state file path
+- **Request:** 042
+- **Diff:** +2 / -0
+- **Patch:** `r002--2026-06-10_002102--goal-state-file-path.patch`
+
+## dashboard/service.py — r003
+
+- **When:** 2026-06-10 00:21:02 PDT
+- **Reason:** goals in overview api
+- **Request:** 042
+- **Diff:** +3 / -1
+- **Patch:** `r003--2026-06-10_002102--goals-in-overview-api.patch`
+
+## dashboard/parsers/__init__.py — r003
+
+- **When:** 2026-06-10 00:21:02 PDT
+- **Reason:** export build goals view
+- **Request:** 042
+- **Diff:** +2 / -0
+- **Patch:** `r003--2026-06-10_002102--export-build-goals-view.patch`
+
+## dashboard/static/app.js — r004
+
+- **When:** 2026-06-10 00:21:02 PDT
+- **Reason:** goals dashboard panel
+- **Request:** 042
+- **Diff:** +48 / -0
+- **Patch:** `r004--2026-06-10_002102--goals-dashboard-panel.patch`
+
+## dashboard/static/index.html — r003
+
+- **When:** 2026-06-10 00:21:03 PDT
+- **Reason:** goals nav panel
+- **Request:** 042
+- **Diff:** +7 / -2
+- **Patch:** `r003--2026-06-10_002103--goals-nav-panel.patch`
+
+## tests/test_dashboard.py — r004
+
+- **When:** 2026-06-10 00:21:03 PDT
+- **Reason:** goals dashboard tests
+- **Request:** 042
+- **Diff:** +26 / -0
+- **Patch:** `r004--2026-06-10_002103--goals-dashboard-tests.patch`
+

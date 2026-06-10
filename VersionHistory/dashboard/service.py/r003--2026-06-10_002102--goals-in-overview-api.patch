@@ -1,0 +1,27 @@
+--- a/dashboard/service.py
++++ b/dashboard/service.py
+@@ -4,7 +4,7 @@
+ 
+ from dashboard.config import DashboardSettings, load_settings
+ from dashboard.io_util import read_text
+-from dashboard.parsers import build_auditor_view, build_tradebot_view, build_watchdog_view, build_whale_view
++from dashboard.parsers import build_auditor_view, build_goals_view, build_tradebot_view, build_watchdog_view, build_whale_view
+ from dashboard.parsers.series import build_forecasts, build_portfolio_history, build_trades_series
+ from dashboard.parsers.timeline import build_timeline
+ 
+@@ -48,6 +48,7 @@
+     watchdog = build_watchdog_view(cfg, drawdown_pct=drawdown)
+     auditor = build_auditor_view(cfg)
+     whales = build_whale_view(cfg)
++    goals = build_goals_view(cfg)
+     forecasts = build_forecasts(cfg)
+     timeline = build_timeline(
+         cfg, tradebot=tradebot, watchdog=watchdog, auditor=auditor, limit=25
+@@ -60,6 +61,7 @@
+         "watchdog": watchdog,
+         "auditor": auditor,
+         "whales": whales,
++        "goals": goals,
+         "forecasts": forecasts,
+         "timeline": timeline,
+         "backlog": _backlog_snippet(cfg.backlog_file),
