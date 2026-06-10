@@ -21,19 +21,25 @@ fires at logon. If you sign in manually, TradeBot starts then.
 From the repo root in PowerShell (admin **not** required for your own user):
 
 ```powershell
+# TradeBot only
 powershell -ExecutionPolicy Bypass -File .\scripts\register_tradebot_task.ps1
+
+# TradeBot + local dashboard (recommended after reboot)
+powershell -ExecutionPolicy Bypass -File .\scripts\register_tradebot_task.ps1 -IncludeDashboard
 ```
 
 Verify:
 
 ```powershell
 schtasks /Query /TN "TradeBot-AutoStart" /V /FO LIST
+schtasks /Query /TN "TradeBot-Dashboard-AutoStart" /V /FO LIST   # when -IncludeDashboard used
 ```
 
 Manual test (safe — skips if already running):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\start_tradebot.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
 ```
 
 ## What the task does
@@ -59,19 +65,27 @@ bot process.
 powershell -ExecutionPolicy Bypass -File .\scripts\unregister_tradebot_task.ps1
 ```
 
-## Optional: dashboard auto-start
+## Dashboard auto-start
 
-TradeBot and the local dashboard are separate processes. To auto-start the
-dashboard, duplicate the pattern with a second task (example name
-`TradeBot-Dashboard-AutoStart`):
+TradeBot and the local dashboard are separate processes. Register both at logon
+with `-IncludeDashboard`:
 
 ```powershell
-# Example action only — not registered by default
-python -m dashboard
+powershell -ExecutionPolicy Bypass -File .\scripts\register_tradebot_task.ps1 -IncludeDashboard
 ```
 
-Use the same logon trigger and singleton discipline if the dashboard gains its
-own lock file in the future.
+This creates a second task, **`TradeBot-Dashboard-AutoStart`**, that runs
+`scripts/start_dashboard.ps1`. The launcher skips startup when port
+`DASHBOARD_PORT` (default **8765**) is already listening. Logs:
+
+- `logs/dashboard_autostart.log` — launcher actions
+- `logs/dashboard_stdout.log` / `logs/dashboard_stderr.log` — process output
+
+Remove both tasks:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\unregister_tradebot_task.ps1 -IncludeDashboard
+```
 
 ## Equivalent `schtasks` command
 

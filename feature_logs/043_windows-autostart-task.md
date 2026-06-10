@@ -1,7 +1,7 @@
 # 043 — Windows autostart scheduled task
 
 **Requested:** 2026-06-10
-**Status:** complete (pytest passed locally; task registered on user PC)
+**Status:** complete — dashboard autostart added; PR pending merge
 **Branch:** `feature/043-windows-autostart-task`
 **Request-ID:** 043
 
@@ -19,8 +19,13 @@
   `logs/bot_stderr.log`; wrapper log at `logs/autostart.log`.
 - `scripts/register_tradebot_task.ps1` — registers `TradeBot-AutoStart` with
   **At logon** trigger (current user), Interactive/Limited principal, restart 3×
-  at 1-minute intervals on launcher failure.
-- `scripts/unregister_tradebot_task.ps1` — removes the task.
+  at 1-minute intervals on launcher failure. `-IncludeDashboard` also registers
+  `TradeBot-Dashboard-AutoStart`.
+- `scripts/start_dashboard.ps1` — port-aware dashboard launcher; logs to
+  `logs/dashboard_autostart.log`, `logs/dashboard_stdout.log`,
+  `logs/dashboard_stderr.log`.
+- `scripts/unregister_tradebot_task.ps1` — removes the task(s); `-IncludeDashboard`
+  removes the dashboard task too.
 - `docs/auto-start-windows.md` — setup, trigger rationale, troubleshooting,
   optional dashboard note.
 - `README.md`, `docs/README.md` — links to auto-start doc.
@@ -43,4 +48,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_tradebot.ps1
 ## Notes
 
 - Does not register the task in CI.
-- Dashboard auto-start documented as optional second task; not registered by default.
+- Dashboard auto-start via `-IncludeDashboard` on `register_tradebot_task.ps1`.
