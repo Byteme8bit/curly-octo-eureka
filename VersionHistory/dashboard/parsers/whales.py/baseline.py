@@ -38,5 +38,4 @@ def build_whale_view(settings: DashboardSettings) -> dict:
         "total_events": len(events),
         "recent_events": recent,
         "config_hint": "Set WHALE_WATCH_ENABLED=1 in .env and restart TradeBot",
-        "follow_enabled_hint": "Set WHALE_FOLLOW_ENABLED=1 to mirror whale signals (paper)",
     }
