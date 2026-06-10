@@ -974,3 +974,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +26 / -0
 - **Patch:** `r004--2026-06-10_002103--goals-dashboard-tests.patch`
 
+## README.md — r001
+
+- **When:** 2026-06-10 09:07:34 PDT
+- **Reason:** link windows autostart doc
+- **Request:** 043
+- **Diff:** +11 / -0
+- **Patch:** `r001--2026-06-10_090734--link-windows-autostart-doc.patch`
+
+## docs/README.md — r001
+
+- **When:** 2026-06-10 09:07:34 PDT
+- **Reason:** add autostart doc link
+- **Request:** 043
+- **Diff:** +1 / -0
+- **Patch:** `r001--2026-06-10_090734--add-autostart-doc-link.patch`
+
