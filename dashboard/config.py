@@ -30,6 +30,7 @@ class DashboardSettings:
     reports_dir: Path
     backlog_file: Path
     whale_watch_state_file: Path
+    goal_state_file: Path
     # Watchdog health computation (mirrors watchdog/config defaults)
     error_burst_count: int
     error_burst_minutes: float
@@ -58,6 +59,7 @@ def load_settings() -> DashboardSettings:
         reports_dir=root / os.getenv("AUDITOR_REPORTS_DIR", "reports"),
         backlog_file=root / "BACKLOG.md",
         whale_watch_state_file=root / ".whale_watch_state.json",
+        goal_state_file=root / os.getenv("GOAL_STATE_FILE", ".tradebot_goals_state.json"),
         error_burst_count=int(os.getenv("WATCHDOG_ERROR_BURST_COUNT", "5")),
         error_burst_minutes=float(os.getenv("WATCHDOG_ERROR_BURST_MINUTES", "10")),
         auto_pause_score=int(os.getenv("WATCHDOG_AUTO_PAUSE_SCORE", "25")),

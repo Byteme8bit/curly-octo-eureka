@@ -1,0 +1,98 @@
+--- a/config.py
++++ b/config.py
+@@ -169,6 +169,24 @@
+     whale_follow_cooldown_sec: int
+     whale_follow_max_per_hour: int
+     whale_follow_min_net_profit: float
++    goal_evolution_enabled: bool
++    goal_state_file: Path
++    goal_milestones_usd: tuple[float, ...]
++    goal_tier0_strategies: tuple[str, ...]
++    goal_tier1_strategies: tuple[str, ...]
++    goal_tier2_strategies: tuple[str, ...]
++    goal_tier3_strategies: tuple[str, ...]
++    goal_tier2_exploration_ratio: float | None
++    goal_tier3_exploration_ratio: float | None
++    goal_tier3_whale_follow_size_mult: float
++    crash_hold_enabled: bool
++    crash_hold_drawdown_pct: float
++    crash_hold_session_drawdown_pct: float
++    crash_hold_recovery_drawdown_pct: float
++    crash_hold_momentum_threshold: float
++    crash_hold_momentum_asset_ratio: float
++    crash_hold_watchdog_drawdown_pct: float
++    crash_hold_min_minutes: float
+ 
+ 
+ def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
+@@ -196,6 +214,16 @@
+ 
+ def _parse_strategies(raw: str) -> tuple[str, ...]:
+     return tuple(s.strip() for s in raw.split(",") if s.strip())
++
++
++def _parse_milestones(raw: str) -> tuple[float, ...]:
++    return tuple(float(x.strip()) for x in raw.split(",") if x.strip())
++
++
++def _parse_optional_float(raw: str | None) -> float | None:
++    if raw is None or not str(raw).strip():
++        return None
++    return float(raw)
+ 
+ 
+ def _parse_stat_arb_pairs(raw: str) -> tuple[tuple[str, str], ...]:
+@@ -401,6 +429,53 @@
+         whale_follow_cooldown_sec=int(os.getenv("WHALE_FOLLOW_COOLDOWN_SEC", "300")),
+         whale_follow_max_per_hour=int(os.getenv("WHALE_FOLLOW_MAX_PER_HOUR", "2")),
+         whale_follow_min_net_profit=float(os.getenv("WHALE_FOLLOW_MIN_NET_PROFIT", "0.0005")),
++        goal_evolution_enabled=os.getenv("GOAL_EVOLUTION_ENABLED", "1") == "1",
++        goal_state_file=ROOT / os.getenv("GOAL_STATE_FILE", ".tradebot_goals_state.json"),
++        goal_milestones_usd=_parse_milestones(
++            os.getenv("GOAL_MILESTONES_USD", "10000,100000,1000000")
++        ),
++        goal_tier0_strategies=_parse_strategies(
++            os.getenv("GOAL_TIER0_STRATEGIES", "cross_momentum")
++        ),
++        goal_tier1_strategies=_parse_strategies(
++            os.getenv("GOAL_TIER1_STRATEGIES", "cross_momentum,stat_arb")
++        ),
++        goal_tier2_strategies=_parse_strategies(
++            os.getenv("GOAL_TIER2_STRATEGIES", "cross_momentum,stat_arb,triangular_arbitrage")
++        ),
++        goal_tier3_strategies=_parse_strategies(
++            os.getenv(
++                "GOAL_TIER3_STRATEGIES",
++                "cross_momentum,stat_arb,triangular_arbitrage",
++            )
++        ),
++        goal_tier2_exploration_ratio=_parse_optional_float(
++            os.getenv("GOAL_TIER2_EXPLORATION_RATIO", "0.35")
++        ),
++        goal_tier3_exploration_ratio=_parse_optional_float(
++            os.getenv("GOAL_TIER3_EXPLORATION_RATIO", "0.40")
++        ),
++        goal_tier3_whale_follow_size_mult=float(
++            os.getenv("GOAL_TIER3_WHALE_FOLLOW_SIZE_MULT", "1.25")
++        ),
++        crash_hold_enabled=os.getenv("CRASH_HOLD_ENABLED", "1") == "1",
++        crash_hold_drawdown_pct=float(os.getenv("CRASH_HOLD_DRAWDOWN_PCT", "0.08")),
++        crash_hold_session_drawdown_pct=float(
++            os.getenv("CRASH_HOLD_SESSION_DRAWDOWN_PCT", "0.06")
++        ),
++        crash_hold_recovery_drawdown_pct=float(
++            os.getenv("CRASH_HOLD_RECOVERY_DRAWDOWN_PCT", "0.05")
++        ),
++        crash_hold_momentum_threshold=float(
++            os.getenv("CRASH_HOLD_MOMENTUM_THRESHOLD", "-0.015")
++        ),
++        crash_hold_momentum_asset_ratio=float(
++            os.getenv("CRASH_HOLD_MOMENTUM_ASSET_RATIO", "0.60")
++        ),
++        crash_hold_watchdog_drawdown_pct=float(
++            os.getenv("CRASH_HOLD_WATCHDOG_DRAWDOWN_PCT", "0.10")
++        ),
++        crash_hold_min_minutes=float(os.getenv("CRASH_HOLD_MIN_MINUTES", "30")),
+     )
+     _apply_runtime_overrides(fields)
+     return Settings(**fields)

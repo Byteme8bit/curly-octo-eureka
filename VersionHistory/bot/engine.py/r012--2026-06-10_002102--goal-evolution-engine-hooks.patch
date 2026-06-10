@@ -1,0 +1,175 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -21,6 +21,7 @@
+ )
+ from bot.display import TerminalDisplay
+ from bot.fee_engine import FeeEngine
++from bot.goal_evolution import build_manager_from_settings
+ from bot.local_time import format_pacific
+ from bot.markets import MarketRegistry
+ from bot.paper_broker import PaperBroker
+@@ -49,7 +50,7 @@
+     format_whale_follow_alert,
+     format_whale_follow_skip,
+ )
+-from config import ROOT, Settings
++from config import ROOT, Settings, SYMBOL_ASSETS
+ 
+ 
+ 
+@@ -337,6 +338,10 @@
+             cooldown_sec=settings.whale_follow_cooldown_sec,
+             max_per_hour=settings.whale_follow_max_per_hour,
+         )
++        self.goal_evolution = build_manager_from_settings(settings)
++        self._goal_status = None
++        self._crash_status = None
++        self._allowed_strategies: frozenset[str] | None = None
+ 
+ 
+ 
+@@ -466,6 +471,12 @@
+         """Run portfolio, preflight, and risk gates then execute one intent."""
+         if in_reevaluation and not intent.is_defensive:
+             return None, "Re-evaluation mode — non-defensive trades blocked"
++        if (
++            self._crash_status
++            and self._crash_status.blocks_new_risk
++            and not intent.is_defensive
++        ):
++            return None, "Crash hold — new risk blocked"
+         route = getattr(intent, "route", None) or self.markets.find_path(
+             intent.from_asset, intent.to_asset
+         )
+@@ -535,6 +546,10 @@
+             reason = "trading paused or inactive"
+             self._annotate_whale_follow(event, status="skipped", reason=reason)
+             return
++        if self._crash_status and self._crash_status.blocks_new_risk:
++            reason = "crash hold active"
++            self._annotate_whale_follow(event, status="skipped", reason=reason)
++            return
+         try:
+             usd_prices = self._usd_prices()
+             holdings = self._holdings()
+@@ -549,7 +564,7 @@
+                 holdings=holdings,
+                 find_path=self.markets.find_path,
+                 candles=candles,
+-                size_pct=self.settings.whale_follow_size_pct,
++                size_pct=self._effective_whale_follow_size_pct(),
+                 fee_rate=self.settings.fee_rate,
+                 min_usd=self.settings.whale_watch_min_usd,
+                 cooldown=self.whale_follow_cooldown,
+@@ -706,7 +721,62 @@
+ 
+             pair_prices=pair_prices,
+ 
+-        )
++            allowed_strategies=self._allowed_strategies,
++
++        )
++
++
++
++    def _effective_whale_follow_size_pct(self) -> float:
++        mult = 1.0
++        if self._goal_status and self._goal_status.enabled:
++            mult = self._goal_status.whale_follow_size_mult
++        return min(0.5, self.settings.whale_follow_size_pct * mult)
++
++
++
++    def _asset_momentum_scores(self, candles: dict) -> dict[str, float]:
++        scores: dict[str, float] = {}
++        for symbol, df in candles.items():
++            if df is None or len(df) < 2:
++                continue
++            asset = SYMBOL_ASSETS.get(symbol)
++            if not asset:
++                continue
++            prev = float(df["close"].iloc[-2])
++            last = float(df["close"].iloc[-1])
++            if prev > 0:
++                scores[asset] = (last - prev) / prev
++        return scores
++
++
++
++    def _update_goal_evolution(self, portfolio: float, drawdown: float, candles: dict) -> None:
++        self._goal_status = self.goal_evolution.evaluate_goals(portfolio)
++        allowed = self.goal_evolution.filter_configured_strategies(
++            self.settings.strategies,
++            self._goal_status.allowed_strategies,
++        )
++        self._allowed_strategies = frozenset(allowed)
++        self.governor.exploration_ratio = max(
++            0.0,
++            min(1.0, self._goal_status.exploration_ratio),
++        )
++        self._crash_status = self.goal_evolution.evaluate_crash_guard(
++            portfolio_usd=portfolio,
++            peak_drawdown_pct=drawdown,
++            asset_momentum=self._asset_momentum_scores(candles),
++            watchdog_drawdown_pct=drawdown,
++            risk_paused=self.risk.is_paused(),
++            trading_active=self.runtime.is_trading_active(),
++        )
++        if self.settings.discord_enabled:
++            if self._goal_status.newly_achieved and self._goal_status.achievement_message:
++                self.discord.post_important(self._goal_status.achievement_message, pin=True)
++            if self._crash_status.newly_activated and self._crash_status.activate_message:
++                self.discord.post_important(self._crash_status.activate_message, pin=True)
++            elif self._crash_status.newly_released and self._crash_status.release_message:
++                self.discord.post_plain(self._crash_status.release_message)
+ 
+ 
+ 
+@@ -819,6 +889,10 @@
+                 f"(attempt {adaptive.relax_attempts + 1}/{adaptive.max_relax_attempts}; fee floor enforced)"
+ 
+             )
++
++        if self._crash_status and self._crash_status.active:
++
++            return f"CRASH HOLD — {self._crash_status.reason or 'defensive only'}"
+ 
+         if adaptive.suspended:
+ 
+@@ -1425,6 +1499,10 @@
+ 
+         )
+ 
++        drawdown = self.risk.drawdown_pct(portfolio)
++
++        self._update_goal_evolution(portfolio, drawdown, candles)
++
+         cb_event = None
+ 
+         if self.settings.circuit_breaker_enabled:
+@@ -1559,6 +1637,8 @@
+ 
+         in_reevaluation = self.circuit_breaker.in_reevaluation()
+ 
++        crash_hold = bool(self._crash_status and self._crash_status.blocks_new_risk)
++
+         can_trade = self.runtime.is_trading_active() and (
+ 
+             not self.risk.is_paused() or in_reevaluation
+@@ -1588,6 +1668,16 @@
+                     blocked.append(
+ 
+                         f"Re-evaluation mode — blocked {intent.from_asset}->{intent.to_asset}"
++
++                    )
++
++                    continue
++
++                if crash_hold and not intent.is_defensive:
++
++                    blocked.append(
++
++                        f"Crash hold — blocked {intent.from_asset}->{intent.to_asset}"
+ 
+                     )
+ 
