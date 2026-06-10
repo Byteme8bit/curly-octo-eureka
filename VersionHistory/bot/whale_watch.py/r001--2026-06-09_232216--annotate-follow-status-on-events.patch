@@ -1,0 +1,19 @@
+--- a/bot/whale_watch.py
++++ b/bot/whale_watch.py
+@@ -322,3 +322,16 @@
+                 discovered.append(spike)
+                 self._known_event_ids.add(spike.id)
+         return discovered
++
++    def annotate_event(self, event_id: str, *, follow_status: str, follow_reason: str) -> None:
++        """Persist whale-follow outcome on a stored event for dashboard badges."""
++        updated = False
++        for raw in self.state.events:
++            if str(raw.get("id")) != event_id:
++                continue
++            raw["follow_status"] = follow_status
++            raw["follow_reason"] = follow_reason
++            updated = True
++            break
++        if updated:
++            self.state.save(self.state_file)

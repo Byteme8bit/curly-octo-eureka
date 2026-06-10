@@ -1,0 +1,36 @@
+--- a/dashboard/static/app.js
++++ b/dashboard/static/app.js
+@@ -336,16 +336,25 @@
+       <div><span class="muted">24h count</span><span class="mono">${wh.count_24h ?? 0}</span></div>
+       <div><span class="muted">Stored</span><span class="mono">${wh.total_events ?? 0}</span></div>
+     </div>`;
+-  const rows = (wh.recent_events || []).map((e) => [
+-    esc(shortTime(e.time)),
+-    esc(e.asset),
+-    esc(e.direction),
+-    `<span class="mono">${esc(fmtUsd(e.usd_size))}</span>`,
+-    esc((e.source || "").replace(/_/g, " ")),
+-  ]);
++  const rows = (wh.recent_events || []).map((e) => {
++    const follow = e.follow_status
++      ? `<span class="badge badge-${e.follow_status === "followed" ? "ok" : "muted"}">${esc(e.follow_status)}</span>`
++      : `<span class="muted">—</span>`;
++    const skip = e.follow_reason && e.follow_status === "skipped"
++      ? `<div class="muted small">${esc(e.follow_reason.slice(0, 80))}</div>`
++      : "";
++    return [
++      esc(shortTime(e.time)),
++      esc(e.asset),
++      esc(e.direction),
++      `<span class="mono">${esc(fmtUsd(e.usd_size))}</span>`,
++      esc((e.source || "").replace(/_/g, " ")),
++      follow + skip,
++    ];
++  });
+   return `${stats}
+     <h3 class="sub-heading">Recent whale moves</h3>
+-    ${renderCompactTable(["Time", "Asset", "Dir", "USD", "Source"], rows)}`;
++    ${renderCompactTable(["Time", "Asset", "Dir", "USD", "Source", "Follow"], rows)}`;
+ }
+ 
+ function renderOverviewSnapshot(data) {

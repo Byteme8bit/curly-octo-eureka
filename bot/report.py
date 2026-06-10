@@ -209,6 +209,7 @@ STRATEGY_DESCRIPTIONS: dict[str, str] = {
     "momentum_rotation": "Momentum rotation (single-strategy legacy)",
     "hold": "Hold — no trades (data-feed test mode)",
     "orchestrator": "Multi-strategy orchestrator",
+    "whale_follow": "Whale follow — mirror large moves when rails allow",
 }
 
 

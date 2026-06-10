@@ -43,6 +43,12 @@ from bot.strategies.base import Strategy, StrategyContext
 from bot.trade_log import BotFileLogger, ReceiptWriter
 from bot.watchdog_service import WatchdogService
 from bot.whale_watch import WhaleWatcher, format_whale_alert
+from bot.strategies.whale_follow import (
+    WhaleFollowCooldown,
+    evaluate_whale_follow,
+    format_whale_follow_alert,
+    format_whale_follow_skip,
+)
 from config import ROOT, Settings
 
 
@@ -327,6 +333,10 @@ class TradingEngine:
             state_file=settings.whale_watch_state_file,
             data=self.data,
         )
+        self.whale_follow_cooldown = WhaleFollowCooldown(
+            cooldown_sec=settings.whale_follow_cooldown_sec,
+            max_per_hour=settings.whale_follow_max_per_hour,
+        )
 
 
 
@@ -432,6 +442,170 @@ class TradingEngine:
                 event.usd_size,
                 event.source,
             )
+            if self.settings.whale_follow_enabled:
+                self._maybe_whale_follow(event)
+
+    def _annotate_whale_follow(self, event, *, status: str, reason: str) -> None:
+        try:
+            self.whale_watcher.annotate_event(
+                event.id, follow_status=status, follow_reason=reason
+            )
+        except OSError as exc:
+            logger.warning("Could not persist whale-follow status: %s", exc)
+
+    def _try_execute_intent(
+        self,
+        intent,
+        *,
+        holdings: dict[str, float],
+        usd_prices: dict[str, float],
+        portfolio: float,
+        min_net_profit: float | None = None,
+        in_reevaluation: bool = False,
+    ) -> tuple[dict | None, str]:
+        """Run portfolio, preflight, and risk gates then execute one intent."""
+        if in_reevaluation and not intent.is_defensive:
+            return None, "Re-evaluation mode — non-defensive trades blocked"
+        route = getattr(intent, "route", None) or self.markets.find_path(
+            intent.from_asset, intent.to_asset
+        )
+        if not route:
+            return None, f"No route: {intent.from_asset} -> {intent.to_asset}"
+        trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
+        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+        constraint = self.constraints.validate_intent(
+            intent,
+            holdings,
+            usd_prices,
+            required_edge=required_edge,
+        )
+        if not constraint.allowed:
+            return None, constraint.reason
+        intent.size_pct = constraint.size_pct
+        trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
+        pf = self.preflight.validate(
+            intent,
+            route_symbols=route.symbols,
+            hops=route.hops,
+            is_defensive=intent.is_defensive,
+            min_net_profit=(
+                min_net_profit
+                if min_net_profit is not None
+                else self.risk.effective_min_net_profit()
+            ),
+        )
+        if not pf.allowed:
+            return None, pf.reason
+        intent.edge = pf.net_return_pct
+        approval = self.risk.approve_action(
+            "buy" if intent.to_asset != "USD" else "sell",
+            intent.edge,
+            trade_usd,
+            is_defensive_sell=intent.is_defensive,
+            is_held_swap=intent.is_held_swap,
+            hops=route.hops,
+            require_leader_stable=intent.require_leader_stable,
+        )
+        if not approval.allowed:
+            return None, approval.reason
+        trade = self._execute_intent(intent, usd_prices)
+        if not trade:
+            return None, "Execution failed"
+        trade["edge"] = intent.edge
+        trade["gross_return_pct"] = intent.gross_return_pct
+        trade["is_defensive"] = intent.is_defensive
+        trade["is_expansion"] = intent.is_expansion
+        trade["is_held_swap"] = intent.is_held_swap
+        trade["is_whale_follow"] = intent.strategy_name == "whale_follow"
+        receipt_path = self.receipts.save(trade)
+        trade["receipt_file"] = str(receipt_path)
+        self.governor.record_trade(
+            intent.strategy_name or "unknown",
+            portfolio,
+            float(trade.get("gain_loss", 0.0)),
+        )
+        self.risk.record_trade()
+        self.auditor.note_trade(trade)
+        return trade, ""
+
+    def _maybe_whale_follow(self, event) -> None:
+        if not self.settings.whale_follow_enabled:
+            return
+        if not self.runtime.is_trading_active() or self.risk.is_paused():
+            reason = "trading paused or inactive"
+            self._annotate_whale_follow(event, status="skipped", reason=reason)
+            return
+        try:
+            usd_prices = self._usd_prices()
+            holdings = self._holdings()
+            portfolio = self.broker.portfolio_value(usd_prices)
+            candles = None
+            try:
+                candles = self.data.fetch_candles(event.pair)
+            except Exception:
+                logger.debug("Whale follow candle fetch failed for %s", event.pair, exc_info=True)
+            follow = evaluate_whale_follow(
+                event,
+                holdings=holdings,
+                find_path=self.markets.find_path,
+                candles=candles,
+                size_pct=self.settings.whale_follow_size_pct,
+                fee_rate=self.settings.fee_rate,
+                min_usd=self.settings.whale_watch_min_usd,
+                cooldown=self.whale_follow_cooldown,
+            )
+            if not follow.intent:
+                reason = follow.skip_reason or "no actionable follow"
+                self._annotate_whale_follow(event, status="skipped", reason=reason)
+                logger.info("Whale follow skipped (%s): %s", event.pair, reason)
+                if self.settings.discord_enabled:
+                    self.discord.post_plain(format_whale_follow_skip(event, reason))
+                return
+            in_reeval = self.circuit_breaker.in_reevaluation()
+            trade, block_reason = self._try_execute_intent(
+                follow.intent,
+                holdings=holdings,
+                usd_prices=usd_prices,
+                portfolio=portfolio,
+                min_net_profit=self.settings.whale_follow_min_net_profit,
+                in_reevaluation=in_reeval,
+            )
+            if not trade:
+                self._annotate_whale_follow(event, status="skipped", reason=block_reason)
+                logger.info("Whale follow blocked (%s): %s", event.pair, block_reason)
+                if self.settings.discord_enabled:
+                    self.discord.post_plain(format_whale_follow_skip(event, block_reason))
+                return
+            self.whale_follow_cooldown.record_follow(event.asset)
+            self._annotate_whale_follow(event, status="followed", reason=follow.intent.reason)
+            portfolio = self.broker.portfolio_value(usd_prices)
+            baseline_pnl = self.risk.pnl_from_baseline(portfolio)
+            drawdown = self.risk.drawdown_pct(portfolio)
+            self._write_portfolio_file(
+                holdings=self._holdings(),
+                usd_prices=usd_prices,
+                portfolio=portfolio,
+                baseline_pnl=baseline_pnl,
+                drawdown=drawdown,
+            )
+            if self.settings.discord_enabled:
+                msg = format_whale_follow_alert(
+                    event,
+                    trade,
+                    portfolio=portfolio,
+                    baseline_pnl=baseline_pnl,
+                    inferred_direction=follow.inferred_direction,
+                )
+                self.discord.post_important(msg, pin=False, source="TradeBot")
+            logger.info(
+                "Whale follow executed: %s -> %s ($%.0f signal)",
+                trade.get("from_asset"),
+                trade.get("to_asset"),
+                event.usd_size,
+            )
+        except Exception:
+            logger.exception("Whale follow failed for %s", event.pair)
+            self._annotate_whale_follow(event, status="skipped", reason="internal error")
 
     def _holdings(self) -> dict[str, float]:
 

@@ -1,0 +1,35 @@
+--- a/tests/test_dashboard.py
++++ b/tests/test_dashboard.py
+@@ -203,3 +203,32 @@
+     assert view["enabled"] is True
+     assert view["total_events"] == 1
+     assert view["recent_events"][0]["asset"] == "ETH"
++
++
++def test_build_whale_view_includes_follow_status(tmp_path: Path):
++    state_path = tmp_path / ".whale_watch_state.json"
++    state_path.write_text(
++        json.dumps(
++            {
++                "events": [
++                    {
++                        "id": "x",
++                        "time": "2026-06-09 10:00:00 PDT",
++                        "asset": "BTC",
++                        "direction": "sell",
++                        "usd_size": 90000,
++                        "source": "kraken_trade",
++                        "follow_status": "skipped",
++                        "follow_reason": "cooldown (120s remaining for BTC)",
++                    }
++                ],
++            }
++        ),
++        encoding="utf-8",
++    )
++    cfg = _settings(tmp_path)
++    cfg = cfg.__class__(**{**cfg.__dict__, "whale_watch_state_file": state_path})
++    view = build_whale_view(cfg)
++    ev = view["recent_events"][0]
++    assert ev["follow_status"] == "skipped"
++    assert "cooldown" in ev["follow_reason"]

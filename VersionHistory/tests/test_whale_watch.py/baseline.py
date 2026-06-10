@@ -150,28 +150,6 @@ def test_whale_watcher_poll_interval_and_persistence(tmp_path: Path):
     assert len(data["events"]) == 1
 
 
-def test_whale_watcher_annotate_event(tmp_path: Path):
-    path = tmp_path / ".whale_watch_state.json"
-    state = WhaleWatchState(events=[{"id": "trade:ETH/USD:1", "asset": "ETH"}])
-    state.save(path)
-    watcher = WhaleWatcher(
-        enabled=True,
-        assets=("ETH",),
-        min_usd=50000,
-        poll_seconds=60,
-        volume_spike_ratio=3.0,
-        max_events=50,
-        state_file=path,
-        data=None,  # type: ignore[arg-type]
-        fetch_trades=lambda _s, _l: [],
-        fetch_candles=lambda _s: pd.DataFrame(),
-    )
-    watcher.annotate_event("trade:ETH/USD:1", follow_status="followed", follow_reason="ok")
-    data = json.loads(path.read_text(encoding="utf-8"))
-    assert data["events"][0]["follow_status"] == "followed"
-    assert data["events"][0]["follow_reason"] == "ok"
-
-
 def test_format_whale_alert():
     event = WhaleEvent(
         id="x",

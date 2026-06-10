@@ -1,0 +1,26 @@
+--- a/config.py
++++ b/config.py
+@@ -164,6 +164,11 @@
+     whale_watch_volume_spike_ratio: float
+     whale_watch_max_events: int
+     whale_watch_state_file: Path
++    whale_follow_enabled: bool
++    whale_follow_size_pct: float
++    whale_follow_cooldown_sec: int
++    whale_follow_max_per_hour: int
++    whale_follow_min_net_profit: float
+ 
+ 
+ def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
+@@ -391,6 +396,11 @@
+         whale_watch_volume_spike_ratio=float(os.getenv("WHALE_WATCH_VOLUME_SPIKE_RATIO", "3.0")),
+         whale_watch_max_events=int(os.getenv("WHALE_WATCH_MAX_EVENTS", "100")),
+         whale_watch_state_file=ROOT / ".whale_watch_state.json",
++        whale_follow_enabled=os.getenv("WHALE_FOLLOW_ENABLED", "0") == "1",
++        whale_follow_size_pct=float(os.getenv("WHALE_FOLLOW_SIZE_PCT", "0.15")),
++        whale_follow_cooldown_sec=int(os.getenv("WHALE_FOLLOW_COOLDOWN_SEC", "300")),
++        whale_follow_max_per_hour=int(os.getenv("WHALE_FOLLOW_MAX_PER_HOUR", "2")),
++        whale_follow_min_net_profit=float(os.getenv("WHALE_FOLLOW_MIN_NET_PROFIT", "0.0005")),
+     )
+     _apply_runtime_overrides(fields)
+     return Settings(**fields)

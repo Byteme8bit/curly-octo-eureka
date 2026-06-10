@@ -822,3 +822,75 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +34 / -0
 - **Patch:** `r002--2026-06-09_202456--whale-view-dashboard-test.patch`
 
+## bot/whale_watch.py — r001
+
+- **When:** 2026-06-09 23:22:16 PDT
+- **Reason:** annotate follow status on events
+- **Request:** 041
+- **Diff:** +13 / -0
+- **Patch:** `r001--2026-06-09_232216--annotate-follow-status-on-events.patch`
+
+## config.py — r007
+
+- **When:** 2026-06-09 23:22:16 PDT
+- **Reason:** WHALE_FOLLOW settings
+- **Request:** 041
+- **Diff:** +10 / -0
+- **Patch:** `r007--2026-06-09_232216--whalefollow-settings.patch`
+
+## bot/engine.py — r011
+
+- **When:** 2026-06-09 23:22:16 PDT
+- **Reason:** whale follow execution hook
+- **Request:** 041
+- **Diff:** +174 / -0
+- **Patch:** `r011--2026-06-09_232216--whale-follow-execution-hook.patch`
+
+## dashboard/static/app.js — r003
+
+- **When:** 2026-06-09 23:22:16 PDT
+- **Reason:** whale follow dashboard badges
+- **Request:** 041
+- **Diff:** +17 / -8
+- **Patch:** `r003--2026-06-09_232216--whale-follow-dashboard-badges.patch`
+
+## dashboard/parsers/whales.py — r001
+
+- **When:** 2026-06-09 23:22:17 PDT
+- **Reason:** follow enabled hint
+- **Request:** 041
+- **Diff:** +1 / -0
+- **Patch:** `r001--2026-06-09_232217--follow-enabled-hint.patch`
+
+## bot/report.py — r002
+
+- **When:** 2026-06-09 23:22:17 PDT
+- **Reason:** whale_follow strategy desc
+- **Request:** 041
+- **Diff:** +1 / -0
+- **Patch:** `r002--2026-06-09_232217--whalefollow-strategy-desc.patch`
+
+## tests/test_dashboard.py — r003
+
+- **When:** 2026-06-09 23:22:17 PDT
+- **Reason:** follow status view test
+- **Request:** 041
+- **Diff:** +29 / -0
+- **Patch:** `r003--2026-06-09_232217--follow-status-view-test.patch`
+
+## tests/test_whale_watch.py — r001
+
+- **When:** 2026-06-09 23:22:17 PDT
+- **Reason:** annotate event test
+- **Request:** 041
+- **Diff:** +22 / -0
+- **Patch:** `r001--2026-06-09_232217--annotate-event-test.patch`
+
+## .env.example — r006
+
+- **When:** 2026-06-09 23:22:17 PDT
+- **Reason:** WHALE_FOLLOW env vars
+- **Request:** 041
+- **Diff:** +10 / -0
+- **Patch:** `r006--2026-06-09_232217--whalefollow-env-vars.patch`
+
