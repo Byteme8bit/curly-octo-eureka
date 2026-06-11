@@ -1,0 +1,17 @@
+--- a/.env.example
++++ b/.env.example
+@@ -66,6 +66,14 @@
+ STAT_ARB_PAIRS=ETH/BTC,SOL/ETH,LINK/ETH,AVAX/ETH
+ 
+ LOG_ROTATE_HOURS=4
++
++# Independent verifier (scripts/verify_trades.py) — optional tuning
++VERIFIER_PRICE_TOLERANCE_PCT=0.02
++VERIFIER_SLIPPAGE_ASSUME_PCT=0.005
++VERIFIER_FEE_TOLERANCE_REL=0.15
++VERIFIER_LIQUIDITY_WARN_RATIO=0.01
++VERIFIER_LOG_WINDOW_MINUTES=30
++# VERIFIER_SKIP_KRAKEN=1
+ 
+ # Discord — status updates + remote commands
+ DISCORD_ENABLED=0

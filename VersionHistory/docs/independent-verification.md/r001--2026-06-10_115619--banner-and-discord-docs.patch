@@ -1,0 +1,76 @@
+--- a/docs/independent-verification.md
++++ b/docs/independent-verification.md
+@@ -16,6 +16,12 @@
+ 
+ # Save JSON + HTML reports
+ .\.venv\Scripts\python.exe scripts\verify_trades.py --json --html reports/verification.html -v
++
++# Executive verdict only (LIVE_READY banner + one line)
++.\.venv\Scripts\python.exe scripts\verify_trades.py --summary-only
++
++# Last 20 trades, summary only
++.\.venv\Scripts\python.exe scripts\verify_trades.py --last 20 --summary-only --json
+ 
+ # Offline (no Kraken API) — correlation and constraints only
+ .\.venv\Scripts\python.exe scripts\verify_trades.py --skip-kraken
+@@ -48,6 +54,36 @@
+ 
+ Session summary includes counts of each verdict, paper PnL and fee drag for reviewed trades, and **systematic issues** (e.g. many triangular routes).
+ 
++## LIVE_READY executive banner
++
++Every run prints a blunt **LIVE_READY** banner at the top (or alone with `--summary-only`):
++
++| Banner | Meaning |
++|--------|---------|
++| **LIVE_READY: NO — DO NOT TRADE** | Hard failures: high DENY rate, data integrity issues, unrealistic fills, or triangular majority |
++| **LIVE_READY: CONDITIONAL** | Mixed signals — some trades OK, manual review before trusting paper PnL |
++| **LIVE_READY: YES — paper session verified** | Reviewed trades pass checks; still paper-only until a live broker exists |
++
++Honest rules:
++
++- **No live broker in codebase** → banner always notes real-money trading is not supported (this repo uses `PaperBroker` only).
++- **>5% DENY on receipt/log correlation** → "data integrity failed"
++- **Price/fee DENY dominates** → "paper fills not realistic vs Kraken"
++- **>50% triangular/multi-hop** → "not live-safe without atomic execution"
++
++Per-trade **CONFIRM / DENY / UNCERTAIN** counts describe individual checks; the **LIVE_READY** banner is the executive answer to "is this bot hallucinating?"
++
++## Discord
++
++On demand only (no automatic spam):
++
++```
++WatchDog -verify          # full session (60s timeout cap)
++WatchDog -verify 20       # last 20 trades
++```
++
++Posts the executive summary to Discord; full JSON is written under `reports/verification_*.json`.
++
+ ## Configuration
+ 
+ Optional `.env` knobs (see `.env.example`):
+@@ -65,7 +101,8 @@
+ 
+ ## Output
+ 
+-- **stdout** — Human-readable summary; non-CONFIRM trades listed by default (`--verbose` for all).
++- **stdout** — LIVE_READY executive banner + human-readable summary; non-CONFIRM trades listed by default (`--verbose` for all).
++- **`--summary-only`** — banner + one-line verdict (ideal for quick checks).
+ - **`reports/verification_YYYYMMDD-HHMMSS.json`** — Full structured report when `--json` is passed.
+ - **`--html PATH`** — Simple HTML table for sharing.
+ 
+@@ -88,7 +125,9 @@
+ 
+ ## Interpreting results for go-live
+ 
+-1. Run on full history: `python scripts/verify_trades.py --json`
+-2. If **DENY** count > 0, inspect `--verbose` output — fix data integrity or bot logic before live.
+-3. High **UNCERTAIN** from triangular/multi-hop is expected for arb strategies; live needs atomic execution or acceptance of leg risk.
+-4. Compare `estimated_fee_drag_usd` to paper PnL — if fees dominate, paper edge may not survive live taker rates.
++1. Run: `python scripts/verify_trades.py --summary-only --json`
++2. Read the **LIVE_READY** banner first — not the raw CONFIRM count alone.
++3. If banner is **NO — DO NOT TRADE**, inspect `--verbose` output — fix data integrity or bot logic before trusting paper PnL.
++4. High **UNCERTAIN** from triangular/multi-hop is expected for arb strategies; live needs atomic execution or acceptance of leg risk.
++5. Compare `estimated_fee_drag_usd` to paper PnL — if fees dominate, paper edge may not survive live taker rates.
++6. **Never** treat CONFIRM count as permission for real money while only `PaperBroker` exists.
