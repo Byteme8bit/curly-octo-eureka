@@ -1,0 +1,14 @@
+--- a/.env.example
++++ b/.env.example
+@@ -246,7 +246,10 @@
+ # Persists to .whale_watch_state.json for the dashboard. Does NOT auto-trade.
+ # ---------------------------------------------------------------------------
+ WHALE_WATCH_ENABLED=0
+-WHALE_WATCH_MIN_USD=50000
++# Minimum USD notional for large-trade detection (default $1M — true whale size).
++WHALE_WATCH_MIN_USD=1000000
++# Volume-spike notional floor (defaults to WHALE_WATCH_MIN_USD when unset).
++WHALE_WATCH_SPIKE_MIN_USD=1000000
+ WHALE_WATCH_ASSETS=ETH,BTC,SOL
+ WHALE_WATCH_POLL_SECONDS=60
+ WHALE_WATCH_VOLUME_SPIKE_RATIO=3.0

@@ -1,0 +1,10 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -328,6 +328,7 @@
+             enabled=settings.whale_watch_enabled,
+             assets=settings.whale_watch_assets,
+             min_usd=settings.whale_watch_min_usd,
++            spike_min_usd=settings.whale_watch_spike_min_usd,
+             poll_seconds=settings.whale_watch_poll_seconds,
+             volume_spike_ratio=settings.whale_watch_volume_spike_ratio,
+             max_events=settings.whale_watch_max_events,

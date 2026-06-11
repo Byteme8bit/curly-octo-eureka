@@ -1,0 +1,154 @@
+--- a/tests/test_whale_watch.py
++++ b/tests/test_whale_watch.py
+@@ -19,6 +19,9 @@
+     trade_usd_size,
+ )
+ from bot.local_time import format_pacific
++from config import load_settings
++
++WHALE_MIN_USD = 1_000_000
+ 
+ 
+ def test_trade_usd_size_uses_cost():
+@@ -39,7 +42,7 @@
+         trades,
+         pair="ETH/USD",
+         asset="ETH",
+-        min_usd=50000,
++        min_usd=WHALE_MIN_USD,
+         seen_ids={"2"},
+     )
+     assert events == []
+@@ -47,19 +50,19 @@
+ 
+ def test_detect_large_trades_emits_event():
+     trades = [
+-        {"id": "99", "side": "buy", "cost": 120000, "amount": 40, "price": 3000, "timestamp": 1_700_000_000_000},
++        {"id": "99", "side": "buy", "cost": 1_500_000, "amount": 500, "price": 3000, "timestamp": 1_700_000_000_000},
+     ]
+     events = detect_large_trades(
+         trades,
+         pair="ETH/USD",
+         asset="ETH",
+-        min_usd=50000,
++        min_usd=WHALE_MIN_USD,
+         seen_ids=set(),
+     )
+     assert len(events) == 1
+     assert events[0].asset == "ETH"
+     assert events[0].direction == "buy"
+-    assert events[0].usd_size == pytest.approx(120000)
++    assert events[0].usd_size == pytest.approx(1_500_000)
+     assert events[0].source == "kraken_trade"
+ 
+ 
+@@ -95,7 +98,7 @@
+ def test_detect_volume_spike_below_threshold():
+     rows = [{"timestamp": pd.Timestamp("2026-06-01", tz="UTC"), "open": 1, "high": 1, "low": 1, "close": 1, "volume": 1.0}] * 20
+     df = pd.DataFrame(rows)
+-    assert detect_volume_spike(df, pair="ETH/USD", asset="ETH", min_usd=50000, spike_ratio=3.0) is None
++    assert detect_volume_spike(df, pair="ETH/USD", asset="ETH", min_usd=WHALE_MIN_USD, spike_ratio=3.0) is None
+ 
+ 
+ def test_prune_events_caps_and_age():
+@@ -123,13 +126,13 @@
+     def fetch_trades(symbol: str, limit: int) -> list[dict]:
+         calls["n"] += 1
+         return [
+-            {"id": "t1", "side": "buy", "cost": 90000, "timestamp": now_ms},
++            {"id": "t1", "side": "buy", "cost": 1_500_000, "timestamp": now_ms},
+         ]
+ 
+     watcher = WhaleWatcher(
+         enabled=True,
+         assets=("ETH",),
+-        min_usd=50000,
++        min_usd=WHALE_MIN_USD,
+         poll_seconds=60,
+         volume_spike_ratio=3.0,
+         max_events=50,
+@@ -157,7 +160,7 @@
+     watcher = WhaleWatcher(
+         enabled=True,
+         assets=("ETH",),
+-        min_usd=50000,
++        min_usd=WHALE_MIN_USD,
+         poll_seconds=60,
+         volume_spike_ratio=3.0,
+         max_events=50,
+@@ -179,14 +182,73 @@
+         asset="ETH",
+         pair="ETH/USD",
+         direction="buy",
+-        usd_size=75000,
++        usd_size=1_500_000,
+         source="kraken_trade",
+         detail="detail line",
+     )
+     text = format_whale_alert(event)
+     assert "Whale alert" in text
+     assert "ETH/USD" in text
+-    assert "75,000" in text
++    assert "1,500,000" in text
++
++
++def test_whale_watch_min_usd_default_one_million(monkeypatch):
++    monkeypatch.delenv("WHALE_WATCH_MIN_USD", raising=False)
++    monkeypatch.delenv("WHALE_WATCH_SPIKE_MIN_USD", raising=False)
++    settings = load_settings()
++    assert settings.whale_watch_min_usd == pytest.approx(1_000_000)
++    assert settings.whale_watch_spike_min_usd == pytest.approx(1_000_000)
++
++
++def test_whale_watcher_spike_uses_separate_floor(tmp_path: Path):
++    path = tmp_path / ".whale_watch_state.json"
++    rows = []
++    for i in range(15):
++        vol = 10.0 if i < 14 else 50.0
++        rows.append(
++            {
++                "timestamp": pd.Timestamp("2026-06-01", tz="UTC") + pd.Timedelta(minutes=5 * i),
++                "open": 100.0,
++                "high": 101.0,
++                "low": 99.0,
++                "close": 100.0,
++                "volume": vol,
++            }
++        )
++    df = pd.DataFrame(rows)
++
++    watcher = WhaleWatcher(
++        enabled=True,
++        assets=("BTC",),
++        min_usd=WHALE_MIN_USD,
++        spike_min_usd=WHALE_MIN_USD,
++        poll_seconds=60,
++        volume_spike_ratio=3.0,
++        max_events=50,
++        state_file=path,
++        data=None,  # type: ignore[arg-type]
++        fetch_trades=lambda _s, _l: [],
++        fetch_candles=lambda _sym: df,
++    )
++    events = watcher.maybe_poll()
++    assert len(events) == 0
++
++    watcher_loose = WhaleWatcher(
++        enabled=True,
++        assets=("BTC",),
++        min_usd=WHALE_MIN_USD,
++        spike_min_usd=4000,
++        poll_seconds=60,
++        volume_spike_ratio=3.0,
++        max_events=50,
++        state_file=path,
++        data=None,  # type: ignore[arg-type]
++        fetch_trades=lambda _s, _l: [],
++        fetch_candles=lambda _sym: df,
++    )
++    events = watcher_loose.maybe_poll()
++    assert len(events) == 1
++    assert events[0].source == "volume_spike"
+ 
+ 
+ def test_events_last_24h():
