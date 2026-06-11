@@ -24,8 +24,6 @@ from bot.strategies.whale_follow import (
 )
 from bot.whale_watch import WhaleEvent
 
-WHALE_MIN_USD = 1_000_000
-
 
 def _event(**kwargs) -> WhaleEvent:
     defaults = dict(
@@ -34,7 +32,7 @@ def _event(**kwargs) -> WhaleEvent:
         asset="ETH",
         pair="ETH/USD",
         direction="buy",
-        usd_size=2_000_000,
+        usd_size=80000,
         source="kraken_trade",
         detail="",
     )
@@ -108,7 +106,7 @@ def test_evaluate_skips_unclear_direction():
         candles=flat,
         size_pct=0.1,
         fee_rate=0.004,
-        min_usd=WHALE_MIN_USD,
+        min_usd=50000,
         cooldown=cd,
     )
     assert result.intent is None
@@ -116,7 +114,7 @@ def test_evaluate_skips_unclear_direction():
 
 
 def test_evaluate_emits_intent_when_gates_allow():
-    ev = _event(direction="buy", usd_size=2_000_000)
+    ev = _event(direction="buy", usd_size=120000)
     cd = WhaleFollowCooldown(cooldown_sec=0, max_per_hour=5)
     result = evaluate_whale_follow(
         ev,
@@ -125,7 +123,7 @@ def test_evaluate_emits_intent_when_gates_allow():
         candles=_candles_with_spike(bullish=True),
         size_pct=0.12,
         fee_rate=0.004,
-        min_usd=WHALE_MIN_USD,
+        min_usd=50000,
         cooldown=cd,
     )
     assert result.intent is not None
@@ -137,9 +135,9 @@ def test_evaluate_emits_intent_when_gates_allow():
 
 def test_edge_insufficient_blocks_preflight():
     """Tiny momentum + small whale should still fail a strict min-net gate."""
-    ev = _event(direction="buy", usd_size=1_010_000)
+    ev = _event(direction="buy", usd_size=51000)
     gross = estimate_whale_follow_edge(
-        ev, candles=_candles_with_spike(bullish=False), fee_rate=0.004, hops=1, min_usd=WHALE_MIN_USD
+        ev, candles=_candles_with_spike(bullish=False), fee_rate=0.004, hops=1, min_usd=50000
     )
     floor = fee_floor_edge(0.004, 1) * 1.15
     assert gross >= floor
@@ -157,10 +155,10 @@ def test_edge_insufficient_blocks_preflight():
 
 
 def test_successful_intent_clears_break_even_preflight():
-    ev = _event(direction="buy", usd_size=2_500_000)
+    ev = _event(direction="buy", usd_size=200000)
     candles = _candles_with_spike(bullish=True)
     gross = estimate_whale_follow_edge(
-        ev, candles=candles, fee_rate=0.004, hops=1, min_usd=WHALE_MIN_USD
+        ev, candles=candles, fee_rate=0.004, hops=1, min_usd=50000
     )
     pf = PreFlightValidator(
         FeeEngine(None, 0.004, force_static=True),

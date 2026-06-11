@@ -1086,3 +1086,59 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +208 / -1
 - **Patch:** `r001--2026-06-10_115620--banner-discord-tests.patch`
 
+## config.py — r010
+
+- **When:** 2026-06-10 19:59:15 PDT
+- **Reason:** whale min 1M defaults
+- **Request:** 046
+- **Diff:** +5 / -1
+- **Patch:** `r010--2026-06-10_195915--whale-min-1m-defaults.patch`
+
+## .env.example — r009
+
+- **When:** 2026-06-10 19:59:15 PDT
+- **Reason:** whale min 1M env
+- **Request:** 046
+- **Diff:** +4 / -1
+- **Patch:** `r009--2026-06-10_195915--whale-min-1m-env.patch`
+
+## bot/whale_watch.py — r003
+
+- **When:** 2026-06-10 19:59:15 PDT
+- **Reason:** spike min usd param
+- **Request:** 046
+- **Diff:** +3 / -1
+- **Patch:** `r003--2026-06-10_195915--spike-min-usd-param.patch`
+
+## bot/engine.py — r015
+
+- **When:** 2026-06-10 19:59:16 PDT
+- **Reason:** pass spike min usd
+- **Request:** 046
+- **Diff:** +1 / -0
+- **Patch:** `r015--2026-06-10_195916--pass-spike-min-usd.patch`
+
+## tests/test_whale_watch.py — r002
+
+- **When:** 2026-06-10 19:59:16 PDT
+- **Reason:** 1M threshold tests
+- **Request:** 046
+- **Diff:** +72 / -10
+- **Patch:** `r002--2026-06-10_195916--1m-threshold-tests.patch`
+
+## tests/test_whale_follow.py — r001
+
+- **When:** 2026-06-10 19:59:16 PDT
+- **Reason:** 1M follow tests
+- **Request:** 046
+- **Diff:** +10 / -8
+- **Patch:** `r001--2026-06-10_195916--1m-follow-tests.patch`
+
+## feature_logs/040_whale-watch.md — r001
+
+- **When:** 2026-06-10 19:59:16 PDT
+- **Reason:** cross-ref 046
+- **Request:** 046
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-10_195916--cross-ref-046.patch`
+

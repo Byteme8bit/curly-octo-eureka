@@ -1,0 +1,27 @@
+--- a/bot/whale_watch.py
++++ b/bot/whale_watch.py
+@@ -261,6 +261,7 @@
+         enabled: bool,
+         assets: tuple[str, ...],
+         min_usd: float,
++        spike_min_usd: float | None = None,
+         poll_seconds: int,
+         volume_spike_ratio: float,
+         max_events: int,
+@@ -272,6 +273,7 @@
+         self.enabled = enabled
+         self.assets = assets
+         self.min_usd = min_usd
++        self.spike_min_usd = min_usd if spike_min_usd is None else spike_min_usd
+         self.poll_seconds = max(15, poll_seconds)
+         self.volume_spike_ratio = max(1.5, volume_spike_ratio)
+         self.max_events = max(10, max_events)
+@@ -332,7 +334,7 @@
+                     candles,
+                     pair=pair,
+                     asset=asset,
+-                    min_usd=self.min_usd,
++                    min_usd=self.spike_min_usd,
+                     spike_ratio=self.volume_spike_ratio,
+                 )
+             except Exception:

@@ -79,6 +79,16 @@
       "removed": 0,
       "request_id": "045",
       "timestamp": "2026-06-10 11:46:52 PDT"
+    },
+    {
+      "added": 4,
+      "number": 9,
+      "patch": "r009--2026-06-10_195915--whale-min-1m-env.patch",
+      "path": ".env.example",
+      "reason": "whale min 1M env",
+      "removed": 1,
+      "request_id": "046",
+      "timestamp": "2026-06-10 19:59:15 PDT"
     }
   ],
   ".gitignore": [
@@ -521,6 +531,16 @@
       "removed": 0,
       "request_id": "045",
       "timestamp": "2026-06-10 11:56:19 PDT"
+    },
+    {
+      "added": 1,
+      "number": 15,
+      "patch": "r015--2026-06-10_195916--pass-spike-min-usd.patch",
+      "path": "bot/engine.py",
+      "reason": "pass spike min usd",
+      "removed": 0,
+      "request_id": "046",
+      "timestamp": "2026-06-10 19:59:16 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -741,6 +761,16 @@
       "removed": 0,
       "request_id": "044",
       "timestamp": "2026-06-10 11:03:16 PDT"
+    },
+    {
+      "added": 3,
+      "number": 3,
+      "patch": "r003--2026-06-10_195915--spike-min-usd-param.patch",
+      "path": "bot/whale_watch.py",
+      "reason": "spike min usd param",
+      "removed": 1,
+      "request_id": "046",
+      "timestamp": "2026-06-10 19:59:15 PDT"
     }
   ],
   "config.py": [
@@ -833,6 +863,16 @@
       "removed": 0,
       "request_id": "044",
       "timestamp": "2026-06-10 11:03:15 PDT"
+    },
+    {
+      "added": 5,
+      "number": 10,
+      "patch": "r010--2026-06-10_195915--whale-min-1m-defaults.patch",
+      "path": "config.py",
+      "reason": "whale min 1M defaults",
+      "removed": 1,
+      "request_id": "046",
+      "timestamp": "2026-06-10 19:59:15 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -1135,6 +1175,18 @@
       "timestamp": "2026-05-27 03:51:58 PDT"
     }
   ],
+  "feature_logs/040_whale-watch.md": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-10_195916--cross-ref-046.patch",
+      "path": "feature_logs/040_whale-watch.md",
+      "reason": "cross-ref 046",
+      "removed": 1,
+      "request_id": "046",
+      "timestamp": "2026-06-10 19:59:16 PDT"
+    }
+  ],
   "feature_logs/045_independent-verifier.md": [
     {
       "added": 8,
@@ -1405,6 +1457,18 @@
       "timestamp": "2026-05-27 03:51:59 PDT"
     }
   ],
+  "tests/test_whale_follow.py": [
+    {
+      "added": 10,
+      "number": 1,
+      "patch": "r001--2026-06-10_195916--1m-follow-tests.patch",
+      "path": "tests/test_whale_follow.py",
+      "reason": "1M follow tests",
+      "removed": 8,
+      "request_id": "046",
+      "timestamp": "2026-06-10 19:59:16 PDT"
+    }
+  ],
   "tests/test_whale_watch.py": [
     {
       "added": 22,
@@ -1415,6 +1479,16 @@
       "removed": 0,
       "request_id": "041",
       "timestamp": "2026-06-09 23:22:17 PDT"
+    },
+    {
+      "added": 72,
+      "number": 2,
+      "patch": "r002--2026-06-10_195916--1m-threshold-tests.patch",
+      "path": "tests/test_whale_watch.py",
+      "reason": "1M threshold tests",
+      "removed": 10,
+      "request_id": "046",
+      "timestamp": "2026-06-10 19:59:16 PDT"
     }
   ]
 }
