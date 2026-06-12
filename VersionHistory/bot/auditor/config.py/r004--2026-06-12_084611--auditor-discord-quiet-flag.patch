@@ -1,0 +1,7 @@
+--- a/bot/auditor/config.py
++++ b/bot/auditor/config.py
+@@ -57,3 +57,4 @@
+     # Each iteration resends the entire conversation, so this dominates
+     # token usage when the LLM calls multiple tools.
+     chat_tool_result_max_chars: int = 2000  # was 8000 (4x reduction)
++    discord_quiet: bool = False

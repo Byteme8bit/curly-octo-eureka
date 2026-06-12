@@ -656,12 +656,6 @@ class WatchdogEngine:
 
         self.state.last_heartbeat_at = now
 
-        report = self.health_report()
-
-        if self.settings.quiet_mode and report.bot_errors_last_hour == 0 and report.score >= 70:
-
-            return None
-
         return self._build_heartbeat_message()
 
 
@@ -829,10 +823,6 @@ class WatchdogEngine:
 
 
     def startup_message(self) -> str:
-
-        if self.settings.quiet_mode:
-
-            return ""
 
         logs = self._current_session_logs()
 

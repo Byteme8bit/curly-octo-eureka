@@ -611,7 +611,7 @@ class AuditorService:
         self.state.prune_expired()
         self._save_state()
 
-        self._post_summary_to_discord(summary)
+        self._post_summary_to_discord(summary, trigger=trigger, proposals=proposals, insights=insights)
 
         # Sleep-window auto-apply happens AFTER the regular summary post so the
         # user wakes up to two messages in chronological order: the audit
@@ -840,9 +840,25 @@ class AuditorService:
             logger.warning("Auditor could not write markdown report: %s", exc)
             return None
 
-    def _post_summary_to_discord(self, summary: str) -> None:
+    def _post_summary_to_discord(
+        self,
+        summary: str,
+        *,
+        trigger: str = "manual",
+        proposals: list | None = None,
+        insights=None,
+    ) -> None:
         if not self.discord:
             return
+        if self.config.discord_quiet and trigger.startswith(("scheduled", "event:")):
+            has_proposals = bool(proposals)
+            over_cap = bool(getattr(insights, "over_concentrated", None))
+            if not has_proposals and not over_cap:
+                logger.info(
+                    "Auditor quiet mode — skipping Discord for %s (no proposals/issues)",
+                    trigger,
+                )
+                return
         try:
             if hasattr(self.discord, "config") and not getattr(self.discord.config, "enabled", False):
                 return

@@ -1,0 +1,51 @@
+--- a/bot/discord_bot.py
++++ b/bot/discord_bot.py
+@@ -52,6 +52,8 @@
+     "strategies": "strategy",
+     "focus": "strategy",
+     "help": "tradebot-help",
++    "skips": "whale-skips",
++    "summary": "trade-summary",
+ }
+ 
+ WATCHDOG_ACTIONS: dict[str, str] = {
+@@ -62,6 +64,7 @@
+     "clear-chat": "clearchat",
+     "clear": "clearchat",
+     "help": "watchdog-help",
++    "whale-skips": "watchdog-whale-skips",
+ }
+ 
+ # WatchDog action tokens that accept a trailing arg (e.g. last N trades for verify).
+@@ -240,6 +243,8 @@
+ \u2022 `TradeBot -portfolio` \u2014 current holdings and value
+ \u2022 `TradeBot -planned` \u2014 actions the bot is considering
+ \u2022 `TradeBot -strategy` \u2014 active strategy plugins
++\u2022 `TradeBot -summary` \u2014 last-hour activity summary on demand
++\u2022 `TradeBot -skips` \u2014 recent whale-follow skips (file log)
+ \u2022 `TradeBot -help` \u2014 TradeBot help only
+ 
+ Send `help` for all bots + utility commands."""
+@@ -247,6 +252,7 @@
+ WatchDogHelpText = """**WatchDog commands** (monitor + maintenance):
+ \u2022 `WatchDog -status` \u2014 health score and risk assessment
+ \u2022 `WatchDog -verify` \u2014 independent trade verification (optional: `WatchDog -verify 20` for last N)
++\u2022 `WatchDog -whale-skips` \u2014 recent whale-follow skips (file log)
+ \u2022 `WatchDog -pause` \u2014 watchdog pauses trade bot
+ \u2022 `WatchDog -clearchat` \u2014 bulk-delete recent channel messages (skips pinned)
+ \u2022 `WatchDog -help` \u2014 WatchDog help only
+@@ -279,11 +285,14 @@
+ \u2022 `TradeBot -portfolio` \u2014 current holdings and value
+ \u2022 `TradeBot -planned` \u2014 actions the bot is considering
+ \u2022 `TradeBot -strategy` \u2014 active strategy plugins
++\u2022 `TradeBot -summary` \u2014 last-hour activity summary on demand
++\u2022 `TradeBot -skips` \u2014 recent whale-follow skips (file log)
+ \u2022 `TradeBot -help` \u2014 TradeBot help only
+ 
+ **WatchDog commands** (monitor + maintenance):
+ \u2022 `WatchDog -status` \u2014 health score and risk assessment
+ \u2022 `WatchDog -verify` \u2014 independent trade verification (optional: `WatchDog -verify 20` for last N)
++\u2022 `WatchDog -whale-skips` \u2014 recent whale-follow skips (file log)
+ \u2022 `WatchDog -pause` \u2014 watchdog pauses trade bot
+ \u2022 `WatchDog -clearchat` \u2014 bulk-delete recent channel messages (skips pinned)
+ \u2022 `WatchDog -help` \u2014 WatchDog help only

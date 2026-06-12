@@ -76,6 +76,14 @@ class Settings:
     discord_channel_id: str
     discord_allowed_user_ids: tuple[str, ...]
     discord_heartbeat_minutes: int
+    discord_quiet_mode: bool
+    discord_whale_skip_to_discord: bool
+    discord_trade_summary_interval_minutes: int
+    discord_major_move_pct: float
+    discord_major_move_cooldown_minutes: int
+    trade_verify_discord_tag: bool
+    trade_verify_skip_kraken: bool
+    whale_follow_skip_log_file: Path
     discord_error_cooldown_minutes: int
     discord_error_pin_count: int
     discord_error_pin_window_minutes: int
@@ -157,6 +165,7 @@ class Settings:
     auditor_chat_temperature: float
     auditor_chat_tool_iterations: int
     auditor_chat_tool_result_max_chars: int
+    auditor_discord_quiet: bool
     whale_watch_enabled: bool
     whale_watch_min_usd: float
     whale_watch_spike_min_usd: float
@@ -284,9 +293,19 @@ def _apply_runtime_overrides(
     return active
 
 
+def _env_int(name: str, default: str, *, quiet: bool = False, quiet_default: str | None = None) -> int:
+    raw = os.getenv(name)
+    if raw is not None and str(raw).strip() != "":
+        return int(raw)
+    if quiet and quiet_default is not None:
+        return int(quiet_default)
+    return int(default)
+
+
 def load_settings() -> Settings:
     usd_symbols = _parse_usd_symbols(os.getenv("SYMBOLS", DEFAULT_SYMBOLS))
     watch_assets = tuple(SYMBOL_ASSETS[s] for s in usd_symbols)
+    discord_quiet_mode = os.getenv("DISCORD_QUIET_MODE", "0") == "1"
     # "Day-trader mode" — opt-in aggressive profile (DAY_TRADER_MODE=1). It only
     # changes the *defaults* for the cadence/sizing knobs below; any explicit
     # env var still overrides. Edges remain fee-protected by preflight, so
@@ -332,7 +351,29 @@ def load_settings() -> Settings:
         discord_bot_token=os.getenv("DISCORD_BOT_TOKEN", "").strip(),
         discord_channel_id=os.getenv("DISCORD_CHANNEL_ID", "").strip(),
         discord_allowed_user_ids=_parse_user_ids(os.getenv("DISCORD_ALLOWED_USER_IDS", "")),
-        discord_heartbeat_minutes=int(os.getenv("DISCORD_HEARTBEAT_MINUTES", "30")),
+        discord_heartbeat_minutes=_env_int(
+            "DISCORD_HEARTBEAT_MINUTES",
+            "30",
+            quiet=discord_quiet_mode,
+            quiet_default="60",
+        ),
+        discord_quiet_mode=discord_quiet_mode,
+        discord_whale_skip_to_discord=os.getenv("DISCORD_WHALE_SKIP_TO_DISCORD", "0") == "1",
+        discord_trade_summary_interval_minutes=_env_int(
+            "DISCORD_TRADE_SUMMARY_INTERVAL_MINUTES",
+            "0",
+            quiet=discord_quiet_mode,
+            quiet_default="60",
+        ),
+        discord_major_move_pct=float(os.getenv("DISCORD_MAJOR_MOVE_PCT", "0.05")),
+        discord_major_move_cooldown_minutes=_env_int(
+            "DISCORD_MAJOR_MOVE_COOLDOWN_MINUTES", "60"
+        ),
+        trade_verify_discord_tag=os.getenv("TRADE_VERIFY_DISCORD_TAG", "1") == "1",
+        trade_verify_skip_kraken=os.getenv("TRADE_VERIFY_SKIP_KRAKEN", "0") == "1",
+        whale_follow_skip_log_file=ROOT / os.getenv(
+            "WHALE_FOLLOW_SKIP_LOG_FILE", "logs/whale_follow_skips.log"
+        ),
         discord_error_cooldown_minutes=int(os.getenv("DISCORD_ERROR_COOLDOWN_MINUTES", "15")),
         discord_error_pin_count=int(os.getenv("DISCORD_ERROR_PIN_COUNT", "3")),
         discord_error_pin_window_minutes=int(os.getenv("DISCORD_ERROR_PIN_WINDOW_MINUTES", "30")),
@@ -420,6 +461,9 @@ def load_settings() -> Settings:
         auditor_chat_temperature=float(os.getenv("AUDITOR_CHAT_TEMPERATURE", "0.3")),
         auditor_chat_tool_iterations=int(os.getenv("AUDITOR_CHAT_TOOL_ITERATIONS", "2")),
         auditor_chat_tool_result_max_chars=int(os.getenv("AUDITOR_CHAT_TOOL_RESULT_MAX_CHARS", "2000")),
+        auditor_discord_quiet=os.getenv(
+            "AUDITOR_DISCORD_QUIET", "1" if discord_quiet_mode else "0"
+        ) == "1",
         whale_watch_enabled=os.getenv("WHALE_WATCH_ENABLED", "0") == "1",
         whale_watch_min_usd=float(os.getenv("WHALE_WATCH_MIN_USD", "1000000")),
         whale_watch_spike_min_usd=float(

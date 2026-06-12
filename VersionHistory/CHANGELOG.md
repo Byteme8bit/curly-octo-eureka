@@ -1158,3 +1158,107 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +3 / -1
 - **Patch:** `r001--2026-06-12_014545--pass-usdprices-to-fee-check.patch`
 
+## config.py — r011
+
+- **When:** 2026-06-12 08:46:09 PDT
+- **Reason:** quiet discord and verify config
+- **Request:** 048
+- **Diff:** +41 / -1
+- **Patch:** `r011--2026-06-12_084609--quiet-discord-and-verify-config.patch`
+
+## bot/engine.py — r016
+
+- **When:** 2026-06-12 08:46:09 PDT
+- **Reason:** live verify tag quiet discord
+- **Request:** 048
+- **Diff:** +151 / -9
+- **Patch:** `r016--2026-06-12_084609--live-verify-tag-quiet-discord.patch`
+
+## bot/report.py — r003
+
+- **When:** 2026-06-12 08:46:09 PDT
+- **Reason:** verify tag on trade alert
+- **Request:** 048
+- **Diff:** +9 / -1
+- **Patch:** `r003--2026-06-12_084609--verify-tag-on-trade-alert.patch`
+
+## bot/discord_bot.py — r005
+
+- **When:** 2026-06-12 08:46:09 PDT
+- **Reason:** summary skips commands
+- **Request:** 048
+- **Diff:** +9 / -0
+- **Patch:** `r005--2026-06-12_084609--summary-skips-commands.patch`
+
+## bot/markets.py — r001
+
+- **When:** 2026-06-12 08:46:10 PDT
+- **Reason:** symbol_exists helper
+- **Request:** 048
+- **Diff:** +3 / -0
+- **Patch:** `r001--2026-06-12_084610--symbolexists-helper.patch`
+
+## bot/watchdog_service.py — r001
+
+- **When:** 2026-06-12 08:46:10 PDT
+- **Reason:** quiet startup message
+- **Request:** 048
+- **Diff:** +3 / -1
+- **Patch:** `r001--2026-06-12_084610--quiet-startup-message.patch`
+
+## bot/auditor_service.py — r005
+
+- **When:** 2026-06-12 08:46:10 PDT
+- **Reason:** quiet audit discord gate
+- **Request:** 048
+- **Diff:** +18 / -2
+- **Patch:** `r005--2026-06-12_084610--quiet-audit-discord-gate.patch`
+
+## bot/auditor/config.py — r004
+
+- **When:** 2026-06-12 08:46:11 PDT
+- **Reason:** auditor discord quiet flag
+- **Request:** 048
+- **Diff:** +1 / -0
+- **Patch:** `r004--2026-06-12_084611--auditor-discord-quiet-flag.patch`
+
+## watchdog/config.py — r001
+
+- **When:** 2026-06-12 08:46:11 PDT
+- **Reason:** watchdog quiet heartbeat
+- **Request:** 048
+- **Diff:** +11 / -1
+- **Patch:** `r001--2026-06-12_084611--watchdog-quiet-heartbeat.patch`
+
+## watchdog/engine.py — r001
+
+- **When:** 2026-06-12 08:46:11 PDT
+- **Reason:** suppress routine heartbeats
+- **Request:** 048
+- **Diff:** +10 / -0
+- **Patch:** `r001--2026-06-12_084611--suppress-routine-heartbeats.patch`
+
+## .env.example — r010
+
+- **When:** 2026-06-12 08:46:12 PDT
+- **Reason:** quiet verify env vars
+- **Request:** 048
+- **Diff:** +12 / -0
+- **Patch:** `r010--2026-06-12_084612--quiet-verify-env-vars.patch`
+
+## config.py — r012
+
+- **When:** 2026-06-12 08:49:00 PDT
+- **Reason:** auditor discord quiet setting
+- **Request:** 048
+- **Diff:** +4 / -0
+- **Patch:** `r012--2026-06-12_084859--auditor-discord-quiet-setting.patch`
+
+## bot/engine.py — r017
+
+- **When:** 2026-06-12 08:49:00 PDT
+- **Reason:** auditor discord quiet wiring
+- **Request:** 048
+- **Diff:** +1 / -1
+- **Patch:** `r017--2026-06-12_084900--auditor-discord-quiet-wiring.patch`
+

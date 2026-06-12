@@ -75,9 +75,6 @@ class MarketRegistry:
     def usd_symbols(self) -> tuple[str, ...]:
         return tuple(self.usd_by_asset[a] for a in self.watch_assets if a in self.usd_by_asset)
 
-    def symbol_exists(self, symbol: str) -> bool:
-        return symbol in self.pairs
-
     def _leg(self, from_asset: str, to_asset: str) -> RouteLeg | None:
         if from_asset == to_asset:
             return None

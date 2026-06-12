@@ -1,0 +1,261 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -43,6 +43,10 @@
+ from bot.strategies.base import Strategy, StrategyContext
+ from bot.trade_log import BotFileLogger, ReceiptWriter
+ from bot.watchdog_service import WatchdogService
++from bot.discord_summary import MajorMoveTracker, TradeActivityBuffer, format_hourly_summary
++from bot.whale_follow_log import append_whale_follow_skip, read_whale_follow_skips
++from bot.verifier.kraken import PublicKraken
++from bot.verifier.live_tag import build_live_verify_tag
+ from bot.whale_watch import WhaleWatcher, append_whale_event_log, format_whale_alert
+ from bot.strategies.whale_follow import (
+     WhaleFollowCooldown,
+@@ -315,6 +319,7 @@
+                 chat_temperature=settings.auditor_chat_temperature,
+                 chat_tool_iterations=settings.auditor_chat_tool_iterations,
+                 chat_tool_result_max_chars=settings.auditor_chat_tool_result_max_chars,
++                discord_quiet=settings.discord_quiet_mode,
+             ),
+             broker=self.broker,
+             governor=self.governor,
+@@ -344,6 +349,19 @@
+         self._crash_status = None
+         self._allowed_strategies: frozenset[str] | None = None
+ 
++        self._activity_buffer = TradeActivityBuffer()
++        self._last_summary_monotonic = time.monotonic()
++        self._major_moves = MajorMoveTracker(
++            threshold_pct=settings.discord_major_move_pct,
++            cooldown_seconds=settings.discord_major_move_cooldown_minutes * 60.0,
++        )
++        self._live_kraken: PublicKraken | None = None
++        if settings.trade_verify_discord_tag and not settings.trade_verify_skip_kraken:
++            try:
++                self._live_kraken = PublicKraken(timeout_ms=2000)
++            except Exception as exc:  # noqa: BLE001
++                logger.debug("Live verify Kraken client unavailable: %s", exc)
++
+ 
+ 
+     def _handle_verify_command(self, args: str = "") -> str:
+@@ -474,6 +492,96 @@
+             return
+ 
+         self.discord.post_important(message, pin=pin, source="WatchDog")
++
++    def _log_whale_follow_skip(self, event, reason: str) -> None:
++        append_whale_follow_skip(event, reason, self.settings.whale_follow_skip_log_file)
++        if self.settings.discord_whale_skip_to_discord and self.settings.discord_enabled:
++            self.discord.post_plain(format_whale_follow_skip(event, reason))
++
++    def _live_verify_tag(self, trade: dict, usd_prices: dict[str, float] | None) -> str:
++        if not self.settings.trade_verify_discord_tag:
++            return ""
++        try:
++            result = build_live_verify_tag(
++                trade,
++                markets=self.markets,
++                kraken=self._live_kraken,
++                fee_engine=self.fee_engine,
++                preflight=self.preflight,
++                usd_prices=usd_prices,
++                skip_kraken=self.settings.trade_verify_skip_kraken,
++            )
++            return result.tag
++        except Exception as exc:  # noqa: BLE001
++            logger.debug("Live verify tag failed: %s", exc)
++            return ""
++
++    def _format_trade_summary_on_demand(self) -> str:
++        snap = self._activity_buffer.snapshot()
++        portfolio_view = self._refresh_market_view()
++        tier = ""
++        if self._goal_status is not None:
++            tier = getattr(self._goal_status, "tier_label", "") or str(
++                getattr(self._goal_status, "tier", "")
++            )
++        crash = bool(self._crash_status and self._crash_status.blocks_new_risk)
++        body = format_hourly_summary(
++            trade_count=snap["trade_count"],
++            net_pnl=snap["net_pnl"],
++            blocked_count=snap["blocked_count"],
++            top_block_reason=snap["top_block_reason"],
++            portfolio=portfolio_view.portfolio,
++            baseline_pnl=portfolio_view.baseline_pnl,
++            tier_label=tier,
++            crash_hold=crash,
++        )
++        return f"{body}\n\n_Updated {format_pacific()}_"
++
++    def _format_whale_skips_on_demand(self, *, last: int = 15) -> str:
++        lines = read_whale_follow_skips(self.settings.whale_follow_skip_log_file, last=last)
++        if not lines:
++            return f"No whale-follow skips logged yet (`{self.settings.whale_follow_skip_log_file}`)."
++        rendered = "\n".join(f"• {ln}" for ln in lines)
++        return f"**Whale-follow skips** (last {len(lines)}):\n{rendered}"
++
++    def _maybe_discord_hourly_summary(self, portfolio: float, baseline_pnl: float) -> None:
++        interval = self.settings.discord_trade_summary_interval_minutes
++        if interval <= 0 or not self.settings.discord_enabled:
++            return
++        interval_sec = interval * 60
++        if time.monotonic() - self._last_summary_monotonic < interval_sec:
++            return
++        snap = self._activity_buffer.snapshot()
++        if snap["trade_count"] == 0 and snap["blocked_count"] == 0:
++            self._last_summary_monotonic = time.monotonic()
++            return
++        tier = ""
++        if self._goal_status is not None:
++            tier = getattr(self._goal_status, "tier_label", "") or str(
++                getattr(self._goal_status, "tier", "")
++            )
++        crash = bool(self._crash_status and self._crash_status.blocks_new_risk)
++        msg = format_hourly_summary(
++            trade_count=snap["trade_count"],
++            net_pnl=snap["net_pnl"],
++            blocked_count=snap["blocked_count"],
++            top_block_reason=snap["top_block_reason"],
++            portfolio=portfolio,
++            baseline_pnl=baseline_pnl,
++            tier_label=tier,
++            crash_hold=crash,
++        )
++        self.discord.post_important(msg, pin=False, source="TradeBot")
++        self._last_summary_monotonic = time.monotonic()
++
++    def _maybe_discord_major_moves(self, usd_prices: dict[str, float]) -> None:
++        if not self.settings.discord_enabled or self.settings.discord_major_move_pct <= 0:
++            return
++        self._major_moves.refresh_baselines(usd_prices)
++        for asset, price in usd_prices.items():
++            alert = self._major_moves.check(asset, price)
++            if alert:
++                self.discord.post_important(alert, pin=False, source="TradeBot")
+ 
+     def _maybe_whale_watch(self) -> None:
+         if not self.settings.whale_watch_enabled:
+@@ -619,8 +727,7 @@
+                 reason = follow.skip_reason or "no actionable follow"
+                 self._annotate_whale_follow(event, status="skipped", reason=reason)
+                 logger.info("Whale follow skipped (%s): %s", event.pair, reason)
+-                if self.settings.discord_enabled:
+-                    self.discord.post_plain(format_whale_follow_skip(event, reason))
++                self._log_whale_follow_skip(event, reason)
+                 return
+             in_reeval = self.circuit_breaker.in_reevaluation()
+             trade, block_reason = self._try_execute_intent(
+@@ -634,8 +741,7 @@
+             if not trade:
+                 self._annotate_whale_follow(event, status="skipped", reason=block_reason)
+                 logger.info("Whale follow blocked (%s): %s", event.pair, block_reason)
+-                if self.settings.discord_enabled:
+-                    self.discord.post_plain(format_whale_follow_skip(event, block_reason))
++                self._log_whale_follow_skip(event, block_reason)
+                 return
+             self.whale_follow_cooldown.record_follow(event.asset)
+             self._annotate_whale_follow(event, status="followed", reason=follow.intent.reason)
+@@ -657,7 +763,11 @@
+                     baseline_pnl=baseline_pnl,
+                     inferred_direction=follow.inferred_direction,
+                 )
++                verify_tag = self._live_verify_tag(trade, usd_prices)
++                if verify_tag:
++                    msg = f"{msg}\n_{verify_tag}_"
+                 self.discord.post_important(msg, pin=False, source="TradeBot")
++                self._activity_buffer.record_trades([trade])
+             logger.info(
+                 "Whale follow executed: %s -> %s ($%.0f signal)",
+                 trade.get("from_asset"),
+@@ -899,6 +1009,10 @@
+     def _post_strategy_status(self) -> None:
+ 
+         if not self.settings.discord_enabled or not self.discord.config.can_post_status:
++
++            return
++
++        if self.settings.discord_quiet_mode:
+ 
+             return
+ 
+@@ -1131,7 +1245,12 @@
+         return None
+ 
+     def _notify_discord_trades(
+-        self, trades: list[dict], portfolio: float, baseline_pnl: float
++        self,
++        trades: list[dict],
++        portfolio: float,
++        baseline_pnl: float,
++        *,
++        usd_prices: dict[str, float] | None = None,
+     ) -> None:
+         if not self.settings.discord_enabled or not trades:
+             return
+@@ -1139,7 +1258,10 @@
+         for trade in trades:
+             gain = float(trade.get("gain_loss", 0.0))
+             pin = abs(gain) >= threshold
+-            msg = format_trade_executed_alert(trade, portfolio, baseline_pnl)
++            verify_tag = self._live_verify_tag(trade, usd_prices)
++            msg = format_trade_executed_alert(
++                trade, portfolio, baseline_pnl, verify_tag=verify_tag
++            )
+             if pin:
+                 direction = "gain" if gain >= 0 else "loss"
+                 msg = msg.replace(
+@@ -1339,6 +1461,18 @@
+ 
+ 
+ 
++        if command == "trade-summary":
++
++            return self._format_trade_summary_on_demand()
++
++
++
++        if command in ("whale-skips", "watchdog-whale-skips"):
++
++            return self._format_whale_skips_on_demand()
++
++
++
+         if command == "start":
+ 
+             self.runtime.set_trading_active(True)
+@@ -1623,7 +1757,7 @@
+ 
+         adaptive_msg = self.risk.check_adaptive_notification()
+ 
+-        if adaptive_msg and self.settings.discord_enabled:
++        if adaptive_msg and self.settings.discord_enabled and not self.settings.discord_quiet_mode:
+ 
+             self.discord.post_plain(adaptive_msg)
+ 
+@@ -1711,7 +1845,7 @@
+ 
+                     blocked.append(exhausted_msg)
+ 
+-                    if self.settings.discord_enabled:
++                    if self.settings.discord_enabled and not self.settings.discord_quiet_mode:
+ 
+                         self.discord.post_plain(exhausted_msg)
+ 
+@@ -1899,7 +2033,15 @@
+ 
+ 
+ 
+-        self._notify_discord_trades(trades, portfolio, baseline_pnl)
++        self._notify_discord_trades(trades, portfolio, baseline_pnl, usd_prices=usd_prices)
++
++        self._activity_buffer.record_trades(trades)
++
++        self._activity_buffer.record_blocked(blocked)
++
++        self._maybe_discord_hourly_summary(portfolio, baseline_pnl)
++
++        self._maybe_discord_major_moves(usd_prices)
+ 
+         self._maybe_pin_pnl_milestone(portfolio, baseline_pnl)
+ 

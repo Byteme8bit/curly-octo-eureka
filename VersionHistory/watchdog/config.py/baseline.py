@@ -30,7 +30,6 @@ class WatchdogSettings:
     error_burst_count: int
     error_burst_minutes: float
     heartbeat_minutes: float
-    quiet_mode: bool
     error_pin_count: int
     error_pin_window_minutes: float
     bot_root: Path
@@ -52,14 +51,6 @@ def load_settings() -> WatchdogSettings:
         or os.getenv("DISCORD_WEBHOOK", "").strip()
         or os.getenv("ALERT_DISCORD_WEBHOOK", "").strip()
     )
-    quiet = os.getenv("WATCHDOG_QUIET_MODE", os.getenv("DISCORD_QUIET_MODE", "0")) == "1"
-    hb_raw = os.getenv("WATCHDOG_HEARTBEAT_MINUTES")
-    if hb_raw is not None and str(hb_raw).strip() != "":
-        heartbeat_minutes = float(hb_raw)
-    elif quiet:
-        heartbeat_minutes = 0.0
-    else:
-        heartbeat_minutes = 15.0
     return WatchdogSettings(
         enabled=os.getenv("WATCHDOG_ENABLED", "1") == "1",
         poll_seconds=int(os.getenv("WATCHDOG_POLL_SECONDS", "10")),
@@ -73,8 +64,7 @@ def load_settings() -> WatchdogSettings:
         auto_pause_score=int(os.getenv("WATCHDOG_AUTO_PAUSE_SCORE", "25")),
         error_burst_count=int(os.getenv("WATCHDOG_ERROR_BURST_COUNT", "5")),
         error_burst_minutes=float(os.getenv("WATCHDOG_ERROR_BURST_MINUTES", "10")),
-        heartbeat_minutes=heartbeat_minutes,
-        quiet_mode=quiet,
+        heartbeat_minutes=float(os.getenv("WATCHDOG_HEARTBEAT_MINUTES", "15")),
         error_pin_count=int(os.getenv("DISCORD_ERROR_PIN_COUNT", "3")),
         error_pin_window_minutes=float(os.getenv("DISCORD_ERROR_PIN_WINDOW_MINUTES", "30")),
         bot_root=root,
