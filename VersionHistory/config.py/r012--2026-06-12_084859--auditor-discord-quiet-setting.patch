@@ -1,0 +1,20 @@
+--- a/config.py
++++ b/config.py
+@@ -165,6 +165,7 @@
+     auditor_chat_temperature: float
+     auditor_chat_tool_iterations: int
+     auditor_chat_tool_result_max_chars: int
++    auditor_discord_quiet: bool
+     whale_watch_enabled: bool
+     whale_watch_min_usd: float
+     whale_watch_spike_min_usd: float
+@@ -460,6 +461,9 @@
+         auditor_chat_temperature=float(os.getenv("AUDITOR_CHAT_TEMPERATURE", "0.3")),
+         auditor_chat_tool_iterations=int(os.getenv("AUDITOR_CHAT_TOOL_ITERATIONS", "2")),
+         auditor_chat_tool_result_max_chars=int(os.getenv("AUDITOR_CHAT_TOOL_RESULT_MAX_CHARS", "2000")),
++        auditor_discord_quiet=os.getenv(
++            "AUDITOR_DISCORD_QUIET", "1" if discord_quiet_mode else "0"
++        ) == "1",
+         whale_watch_enabled=os.getenv("WHALE_WATCH_ENABLED", "0") == "1",
+         whale_watch_min_usd=float(os.getenv("WHALE_WATCH_MIN_USD", "1000000")),
+         whale_watch_spike_min_usd=float(

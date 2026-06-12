@@ -30,6 +30,7 @@ def engine(tmp_path: Path) -> WatchdogEngine:
         error_burst_count=5,
         error_burst_minutes=10.0,
         heartbeat_minutes=15.0,
+        quiet_mode=False,
         error_pin_count=3,
         error_pin_window_minutes=30.0,
         bot_root=tmp_path,

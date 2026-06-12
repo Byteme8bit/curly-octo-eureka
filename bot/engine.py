@@ -319,7 +319,7 @@ class TradingEngine:
                 chat_temperature=settings.auditor_chat_temperature,
                 chat_tool_iterations=settings.auditor_chat_tool_iterations,
                 chat_tool_result_max_chars=settings.auditor_chat_tool_result_max_chars,
-                discord_quiet=settings.discord_quiet_mode,
+                discord_quiet=settings.auditor_discord_quiet,
             ),
             broker=self.broker,
             governor=self.governor,

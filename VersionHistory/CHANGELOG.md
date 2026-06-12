@@ -1246,3 +1246,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +12 / -0
 - **Patch:** `r010--2026-06-12_084612--quiet-verify-env-vars.patch`
 
+## config.py — r012
+
+- **When:** 2026-06-12 08:49:00 PDT
+- **Reason:** auditor discord quiet setting
+- **Request:** 048
+- **Diff:** +4 / -0
+- **Patch:** `r012--2026-06-12_084859--auditor-discord-quiet-setting.patch`
+
+## bot/engine.py — r017
+
+- **When:** 2026-06-12 08:49:00 PDT
+- **Reason:** auditor discord quiet wiring
+- **Request:** 048
+- **Diff:** +1 / -1
+- **Patch:** `r017--2026-06-12_084900--auditor-discord-quiet-wiring.patch`
+
