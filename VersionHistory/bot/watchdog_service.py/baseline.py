@@ -71,9 +71,7 @@ class WatchdogService:
         self._stop.clear()
         self._engine.begin_session()
         self._engine.prime()
-        startup = self._engine.startup_message()
-        if startup:
-            self._alert(startup, pin=False)
+        self._alert(self._engine.startup_message(), pin=False)
         self._thread = threading.Thread(target=self._loop, name="watchdog", daemon=True)
         self._thread.start()
         logger.info("Watchdog thread started")

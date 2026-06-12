@@ -156,7 +156,13 @@ def pnl_milestone_band(baseline_pnl: float, baseline_portfolio: float, threshold
     return -int((-pnl_pct) // threshold_pct)
 
 
-def format_trade_executed_alert(trade: dict, portfolio: float, baseline_pnl: float) -> str:
+def format_trade_executed_alert(
+    trade: dict,
+    portfolio: float,
+    baseline_pnl: float,
+    *,
+    verify_tag: str = "",
+) -> str:
     gain = float(trade.get("gain_loss", 0.0))
     size_pct = trade.get("size_pct")
     lines = [
@@ -172,6 +178,8 @@ def format_trade_executed_alert(trade: dict, portfolio: float, baseline_pnl: flo
         f"Gain/Loss: {pnl_label_for_trade(trade)}",
         f"Portfolio ${portfolio:,.2f}  (PnL {baseline_pnl:+.2f} from start)",
     ])
+    if verify_tag:
+        lines.append(f"_{verify_tag}_")
     return "\n".join(lines)
 
 

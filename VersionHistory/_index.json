@@ -89,6 +89,16 @@
       "removed": 1,
       "request_id": "046",
       "timestamp": "2026-06-10 19:59:15 PDT"
+    },
+    {
+      "added": 12,
+      "number": 10,
+      "patch": "r010--2026-06-12_084612--quiet-verify-env-vars.patch",
+      "path": ".env.example",
+      "reason": "quiet verify env vars",
+      "removed": 0,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:12 PDT"
     }
   ],
   ".gitignore": [
@@ -257,6 +267,16 @@
       "removed": 0,
       "request_id": "038",
       "timestamp": "2026-06-08 21:44:43 PDT"
+    },
+    {
+      "added": 1,
+      "number": 4,
+      "patch": "r004--2026-06-12_084611--auditor-discord-quiet-flag.patch",
+      "path": "bot/auditor/config.py",
+      "reason": "auditor discord quiet flag",
+      "removed": 0,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:11 PDT"
     }
   ],
   "bot/auditor/proposer.py": [
@@ -323,6 +343,16 @@
       "removed": 0,
       "request_id": "038",
       "timestamp": "2026-06-08 21:44:43 PDT"
+    },
+    {
+      "added": 18,
+      "number": 5,
+      "patch": "r005--2026-06-12_084610--quiet-audit-discord-gate.patch",
+      "path": "bot/auditor_service.py",
+      "reason": "quiet audit discord gate",
+      "removed": 2,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:10 PDT"
     }
   ],
   "bot/data.py": [
@@ -377,6 +407,16 @@
       "removed": 3,
       "request_id": "045",
       "timestamp": "2026-06-10 11:56:19 PDT"
+    },
+    {
+      "added": 9,
+      "number": 5,
+      "patch": "r005--2026-06-12_084609--summary-skips-commands.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "summary skips commands",
+      "removed": 0,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:09 PDT"
     }
   ],
   "bot/display.py": [
@@ -541,6 +581,16 @@
       "removed": 0,
       "request_id": "046",
       "timestamp": "2026-06-10 19:59:16 PDT"
+    },
+    {
+      "added": 151,
+      "number": 16,
+      "patch": "r016--2026-06-12_084609--live-verify-tag-quiet-discord.patch",
+      "path": "bot/engine.py",
+      "reason": "live verify tag quiet discord",
+      "removed": 9,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:09 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -575,6 +625,18 @@
       "removed": 5,
       "request_id": "031",
       "timestamp": "2026-06-01 15:35:19 PDT"
+    }
+  ],
+  "bot/markets.py": [
+    {
+      "added": 3,
+      "number": 1,
+      "patch": "r001--2026-06-12_084610--symbolexists-helper.patch",
+      "path": "bot/markets.py",
+      "reason": "symbol_exists helper",
+      "removed": 0,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:10 PDT"
     }
   ],
   "bot/orchestrator.py": [
@@ -633,6 +695,16 @@
       "removed": 0,
       "request_id": "041",
       "timestamp": "2026-06-09 23:22:17 PDT"
+    },
+    {
+      "added": 9,
+      "number": 3,
+      "patch": "r003--2026-06-12_084609--verify-tag-on-trade-alert.patch",
+      "path": "bot/report.py",
+      "reason": "verify tag on trade alert",
+      "removed": 1,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:09 PDT"
     }
   ],
   "bot/risk.py": [
@@ -763,6 +835,18 @@
       "removed": 2,
       "request_id": "045",
       "timestamp": "2026-06-10 11:56:19 PDT"
+    }
+  ],
+  "bot/watchdog_service.py": [
+    {
+      "added": 3,
+      "number": 1,
+      "patch": "r001--2026-06-12_084610--quiet-startup-message.patch",
+      "path": "bot/watchdog_service.py",
+      "reason": "quiet startup message",
+      "removed": 1,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:10 PDT"
     }
   ],
   "bot/whale_watch.py": [
@@ -897,6 +981,16 @@
       "removed": 1,
       "request_id": "046",
       "timestamp": "2026-06-10 19:59:15 PDT"
+    },
+    {
+      "added": 41,
+      "number": 11,
+      "patch": "r011--2026-06-12_084609--quiet-discord-and-verify-config.patch",
+      "path": "config.py",
+      "reason": "quiet discord and verify config",
+      "removed": 1,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:09 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -1513,6 +1607,30 @@
       "removed": 10,
       "request_id": "046",
       "timestamp": "2026-06-10 19:59:16 PDT"
+    }
+  ],
+  "watchdog/config.py": [
+    {
+      "added": 11,
+      "number": 1,
+      "patch": "r001--2026-06-12_084611--watchdog-quiet-heartbeat.patch",
+      "path": "watchdog/config.py",
+      "reason": "watchdog quiet heartbeat",
+      "removed": 1,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:11 PDT"
+    }
+  ],
+  "watchdog/engine.py": [
+    {
+      "added": 10,
+      "number": 1,
+      "patch": "r001--2026-06-12_084611--suppress-routine-heartbeats.patch",
+      "path": "watchdog/engine.py",
+      "reason": "suppress routine heartbeats",
+      "removed": 0,
+      "request_id": "048",
+      "timestamp": "2026-06-12 08:46:11 PDT"
     }
   ]
 }
