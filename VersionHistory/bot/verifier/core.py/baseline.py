@@ -78,9 +78,7 @@ class Verifier:
             check_correlation(trade, self.settings),
             check_market_reality(trade, self._kraken),
             check_price_plausibility(trade, self._kraken, self.settings),
-            check_fee_realism(
-                trade, self._kraken, self.settings, usd_prices=usd_prices
-            ),
+            check_fee_realism(trade, self._kraken, self.settings),
             check_size_constraints(
                 trade,
                 self.settings,
