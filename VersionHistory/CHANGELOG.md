@@ -1142,3 +1142,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +1 / -1
 - **Patch:** `r001--2026-06-10_195916--cross-ref-046.patch`
 
+## bot/verifier/checks.py — r001
+
+- **When:** 2026-06-12 01:45:45 PDT
+- **Reason:** multi-hop fee usd_prices fix
+- **Request:** 047
+- **Diff:** +22 / -2
+- **Patch:** `r001--2026-06-12_014545--multi-hop-fee-usdprices-fix.patch`
+
+## bot/verifier/core.py — r001
+
+- **When:** 2026-06-12 01:45:45 PDT
+- **Reason:** pass usd_prices to fee check
+- **Request:** 047
+- **Diff:** +3 / -1
+- **Patch:** `r001--2026-06-12_014545--pass-usdprices-to-fee-check.patch`
+

@@ -129,22 +129,16 @@ def check_fee_realism(
     trade: dict,
     kraken: PublicKraken | None,
     settings: VerifierSettings,
-    *,
-    usd_prices: dict[str, float] | None = None,
 ) -> CheckResult:
     applied = float(trade.get("fee_usd", 0))
     symbol = trade.get("symbol", "")
     side = trade.get("side", "buy")
     from_qty = float(trade.get("from_qty", 0))
     quote_qty = float(trade.get("quote_qty", from_qty))
-    legs = trade.get("legs") or []
 
     if kraken is None:
         expected_rate = settings.fee_rate
         source = "env FEE_RATE"
-    elif legs:
-        expected_rate = settings.fee_rate
-        source = "Kraken taker per leg (approx)"
     else:
         expected_rate = kraken.taker_fee(symbol)
         source = f"Kraken taker {symbol}"
@@ -155,22 +149,8 @@ def check_fee_realism(
         notional_quote = from_qty * float(trade.get("price", 0))
 
     # Approximate USD notional for fee comparison.
-    if legs:
-        trade_usd = sum(estimate_trade_usd(leg, usd_prices) for leg in legs)
-        if kraken is not None:
-            expected_fee_usd = sum(
-                estimate_trade_usd(leg, usd_prices) * kraken.taker_fee(leg.get("symbol", symbol))
-                for leg in legs
-            )
-        else:
-            expected_fee_usd = trade_usd * expected_rate if trade_usd > 0 else 0.0
-    else:
-        trade_usd = estimate_trade_usd(trade, usd_prices)
-        expected_fee_usd = 0.0  # set below
-    if not legs:
-        expected_fee_usd = (
-            trade_usd * expected_rate if trade_usd > 0 else notional_quote * expected_rate
-        )
+    trade_usd = estimate_trade_usd(trade)
+    expected_fee_usd = trade_usd * expected_rate if trade_usd > 0 else notional_quote * expected_rate
 
     if expected_fee_usd <= 0:
         return CheckResult("fee_realism", Verdict.UNCERTAIN, "Could not estimate expected fee")

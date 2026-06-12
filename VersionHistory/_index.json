@@ -729,6 +729,30 @@
       "timestamp": "2026-06-10 11:56:19 PDT"
     }
   ],
+  "bot/verifier/checks.py": [
+    {
+      "added": 22,
+      "number": 1,
+      "patch": "r001--2026-06-12_014545--multi-hop-fee-usdprices-fix.patch",
+      "path": "bot/verifier/checks.py",
+      "reason": "multi-hop fee usd_prices fix",
+      "removed": 2,
+      "request_id": "047",
+      "timestamp": "2026-06-12 01:45:45 PDT"
+    }
+  ],
+  "bot/verifier/core.py": [
+    {
+      "added": 3,
+      "number": 1,
+      "patch": "r001--2026-06-12_014545--pass-usdprices-to-fee-check.patch",
+      "path": "bot/verifier/core.py",
+      "reason": "pass usd_prices to fee check",
+      "removed": 1,
+      "request_id": "047",
+      "timestamp": "2026-06-12 01:45:45 PDT"
+    }
+  ],
   "bot/verifier/report.py": [
     {
       "added": 3,
