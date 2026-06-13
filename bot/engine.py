@@ -1782,6 +1782,7 @@ class TradingEngine:
         trades: list[dict] = []
 
         blocked: list[str] = list(result.blocked)
+        activity_blocked: list[str] = []
 
         intents = list(result.intents)
 
@@ -1806,6 +1807,7 @@ class TradingEngine:
         if gov_notes:
 
             blocked.extend(gov_notes)
+            activity_blocked.extend(gov_notes)
 
         if cb_event:
 
@@ -1844,6 +1846,7 @@ class TradingEngine:
                 if exhausted_msg:
 
                     blocked.append(exhausted_msg)
+                    activity_blocked.append(exhausted_msg)
 
                     if self.settings.discord_enabled and not self.settings.discord_quiet_mode:
 
@@ -1853,21 +1856,17 @@ class TradingEngine:
 
                 if in_reevaluation and not intent.is_defensive:
 
-                    blocked.append(
-
-                        f"Re-evaluation mode — blocked {intent.from_asset}->{intent.to_asset}"
-
-                    )
+                    reason = f"Re-evaluation mode — blocked {intent.from_asset}->{intent.to_asset}"
+                    blocked.append(reason)
+                    activity_blocked.append(reason)
 
                     continue
 
                 if crash_hold and not intent.is_defensive:
 
-                    blocked.append(
-
-                        f"Crash hold — blocked {intent.from_asset}->{intent.to_asset}"
-
-                    )
+                    reason = f"Crash hold — blocked {intent.from_asset}->{intent.to_asset}"
+                    blocked.append(reason)
+                    activity_blocked.append(reason)
 
                     continue
 
@@ -1877,7 +1876,9 @@ class TradingEngine:
 
                 if not route:
 
-                    blocked.append(f"No route: {intent.from_asset} -> {intent.to_asset}")
+                    reason = f"No route: {intent.from_asset} -> {intent.to_asset}"
+                    blocked.append(reason)
+                    activity_blocked.append(reason)
 
                     continue
 
@@ -1906,6 +1907,7 @@ class TradingEngine:
                 if not constraint.allowed:
 
                     blocked.append(constraint.reason)
+                    activity_blocked.append(constraint.reason)
 
                     continue
 
@@ -1930,6 +1932,7 @@ class TradingEngine:
                 if not pf.allowed:
 
                     blocked.append(pf.reason)
+                    activity_blocked.append(pf.reason)
 
                     continue
 
@@ -1958,6 +1961,7 @@ class TradingEngine:
                 if not approval.allowed:
 
                     blocked.append(approval.reason)
+                    activity_blocked.append(approval.reason)
 
                     continue
 
@@ -2037,7 +2041,7 @@ class TradingEngine:
 
         self._activity_buffer.record_trades(trades)
 
-        self._activity_buffer.record_blocked(blocked)
+        self._activity_buffer.record_blocked(activity_blocked)
 
         self._maybe_discord_hourly_summary(portfolio, baseline_pnl)
 

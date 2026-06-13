@@ -1,0 +1,46 @@
+--- a/bot/risk.py
++++ b/bot/risk.py
+@@ -156,9 +156,27 @@
+ 
+ 
+ 
++    def _maybe_resume_adaptive(self, idle_hours: float) -> None:
++        """Re-enable adaptive relaxation after a cooldown without a successful trade."""
++        if not self.state.adaptive_suspended:
++            return
++        suspended_at = self._parse(self.state.adaptive_suspended_at)
++        if suspended_at is not None:
++            hours_since = max(0.0, (self._now() - suspended_at).total_seconds() / 3600.0)
++            if hours_since < self.idle_reeval_hours:
++                return
++        elif idle_hours < self.idle_reeval_hours * 2:
++            return
++        self.state.adaptive_suspended = False
++        self.state.adaptive_suspended_at = None
++        self.state.adaptive_relax_attempts = 0
++        self.state.adaptive_alert_sent = False
++        self._save()
++
+     def adaptive_status(self) -> AdaptiveStatus:
+ 
+         idle = self.idle_hours()
++        self._maybe_resume_adaptive(idle)
+ 
+         if self.state.adaptive_suspended:
+ 
+@@ -231,6 +249,7 @@
+         self.state.adaptive_relax_attempts = 0
+ 
+         self.state.adaptive_suspended = True
++        self.state.adaptive_suspended_at = self._now().isoformat()
+ 
+         self.state.adaptive_alert_sent = False
+ 
+@@ -683,6 +702,7 @@
+         self.state.adaptive_relax_attempts = 0
+ 
+         self.state.adaptive_suspended = False
++        self.state.adaptive_suspended_at = None
+ 
+         self.state.trades_this_hour += 1
+ 

@@ -1262,3 +1262,27 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +1 / -1
 - **Patch:** `r017--2026-06-12_084900--auditor-discord-quiet-wiring.patch`
 
+## bot/risk.py — r002
+
+- **When:** 2026-06-12 21:04:05 PDT
+- **Reason:** adaptive suspend cooldown resume
+- **Request:** 049
+- **Diff:** +20 / -0
+- **Patch:** `r002--2026-06-12_210405--adaptive-suspend-cooldown-resume.patch`
+
+## bot/paper_broker.py — r002
+
+- **When:** 2026-06-12 21:04:05 PDT
+- **Reason:** adaptive_suspended_at field
+- **Request:** 049
+- **Diff:** +2 / -0
+- **Patch:** `r002--2026-06-12_210405--adaptivesuspendedat-field.patch`
+
+## bot/engine.py — r018
+
+- **When:** 2026-06-12 21:04:05 PDT
+- **Reason:** execution-only activity blocks
+- **Request:** 049
+- **Diff:** +16 / -12
+- **Patch:** `r018--2026-06-12_210405--execution-only-activity-blocks.patch`
+
