@@ -1,0 +1,18 @@
+--- a/bot/paper_broker.py
++++ b/bot/paper_broker.py
+@@ -24,6 +24,7 @@
+     adaptive_alert_sent: bool = False
+     adaptive_relax_attempts: int = 0
+     adaptive_suspended: bool = False
++    adaptive_suspended_at: str | None = None
+     dominant_strategy: str | None = None
+     dominant_since: str | None = None
+     growth_window_start_at: str | None = None
+@@ -54,6 +55,7 @@
+             adaptive_alert_sent=bool(data.get("adaptive_alert_sent", False)),
+             adaptive_relax_attempts=int(data.get("adaptive_relax_attempts", 0)),
+             adaptive_suspended=bool(data.get("adaptive_suspended", False)),
++            adaptive_suspended_at=data.get("adaptive_suspended_at"),
+             dominant_strategy=data.get("dominant_strategy"),
+             dominant_since=data.get("dominant_since"),
+             growth_window_start_at=data.get("growth_window_start_at"),

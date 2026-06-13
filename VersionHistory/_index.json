@@ -601,6 +601,16 @@
       "removed": 1,
       "request_id": "048",
       "timestamp": "2026-06-12 08:49:00 PDT"
+    },
+    {
+      "added": 16,
+      "number": 18,
+      "patch": "r018--2026-06-12_210405--execution-only-activity-blocks.patch",
+      "path": "bot/engine.py",
+      "reason": "execution-only activity blocks",
+      "removed": 12,
+      "request_id": "049",
+      "timestamp": "2026-06-12 21:04:05 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -671,6 +681,16 @@
       "removed": 1,
       "request_id": "028",
       "timestamp": "2026-05-30 22:52:19 PDT"
+    },
+    {
+      "added": 2,
+      "number": 2,
+      "patch": "r002--2026-06-12_210405--adaptivesuspendedat-field.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "adaptive_suspended_at field",
+      "removed": 0,
+      "request_id": "049",
+      "timestamp": "2026-06-12 21:04:05 PDT"
     }
   ],
   "bot/portfolio_constraints.py": [
@@ -727,6 +747,16 @@
       "removed": 5,
       "request_id": "025",
       "timestamp": "2026-05-30 13:07:54 PDT"
+    },
+    {
+      "added": 20,
+      "number": 2,
+      "patch": "r002--2026-06-12_210405--adaptive-suspend-cooldown-resume.patch",
+      "path": "bot/risk.py",
+      "reason": "adaptive suspend cooldown resume",
+      "removed": 0,
+      "request_id": "049",
+      "timestamp": "2026-06-12 21:04:05 PDT"
     }
   ],
   "bot/singleton.py": [
