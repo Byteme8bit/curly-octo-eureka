@@ -1,0 +1,18 @@
+--- a/dashboard/config.py
++++ b/dashboard/config.py
+@@ -32,6 +32,7 @@
+     whale_watch_state_file: Path
+     goal_state_file: Path
+     live_enabled: bool
++    live_mirror_paper: bool
+     live_state_file: Path
+     live_session_start_file: Path
+     # Watchdog health computation (mirrors watchdog/config defaults)
+@@ -64,6 +65,7 @@
+         whale_watch_state_file=root / ".whale_watch_state.json",
+         goal_state_file=root / os.getenv("GOAL_STATE_FILE", ".tradebot_goals_state.json"),
+         live_enabled=os.getenv("LIVE_ENABLED", "0") == "1",
++        live_mirror_paper=os.getenv("LIVE_MIRROR_PAPER", "0") == "1",
+         live_state_file=root / os.getenv("LIVE_STATE_FILE", ".live_state.json"),
+         live_session_start_file=root / "live_session_start.json",
+         error_burst_count=int(os.getenv("WATCHDOG_ERROR_BURST_COUNT", "5")),

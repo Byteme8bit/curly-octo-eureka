@@ -39,6 +39,13 @@ def _settings(root: Path) -> DashboardSettings:
         backlog_file=root / "BACKLOG.md",
         whale_watch_state_file=root / ".whale_watch_state.json",
         goal_state_file=root / ".tradebot_goals_state.json",
+        live_enabled=False,
+        live_mirror_paper=False,
+        live_state_file=root / ".live_state.json",
+        live_session_start_file=root / "live_session_start.json",
+        live_max_trades=3,
+        live_min_eth_reserve=0.5,
+        live_drawdown_halt_pct=0.10,
         error_burst_count=5,
         error_burst_minutes=10.0,
         auto_pause_score=25,
@@ -170,12 +177,37 @@ def test_overview_includes_summary_and_forecasts():
     from dashboard.app import create_app
 
     client = TestClient(create_app())
-    data = client.get("/api/overview").json()
+    data = client.get("/api/overview?mode=paper").json()
     assert "summary" in data
     assert "forecasts" in data
     assert "timeline" in data
     assert "whales" in data
     assert "goals" in data
+    assert data["mode"] == "paper"
+
+
+def test_overview_query_mode_live():
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+
+    from dashboard.app import create_app
+
+    client = TestClient(create_app())
+    data = client.get("/api/overview?mode=live").json()
+    assert data["mode"] == "live"
+
+
+def test_paper_and_live_tradebot_endpoints():
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+
+    from dashboard.app import create_app
+
+    client = TestClient(create_app())
+    paper = client.get("/api/paper/tradebot").json()
+    live = client.get("/api/live/tradebot").json()
+    assert paper["mode"] == "paper"
+    assert live["mode"] == "live"
 
 
 def test_build_whale_view(tmp_path: Path):
@@ -237,8 +269,10 @@ def test_build_whale_view_includes_follow_status(tmp_path: Path):
     assert "cooldown" in ev["follow_reason"]
 
 
-def test_build_goals_view(tmp_path: Path):
+def test_build_goals_view(tmp_path: Path, monkeypatch):
     state_path = tmp_path / ".tradebot_goals_state.json"
+    paper_path = tmp_path / "paper_portfolio.json"
+    paper_path.write_text(json.dumps({"portfolio_usd": 12000.0}), encoding="utf-8")
     state_path.write_text(
         json.dumps(
             {
@@ -251,10 +285,54 @@ def test_build_goals_view(tmp_path: Path):
         encoding="utf-8",
     )
     cfg = _settings(tmp_path)
-    cfg = cfg.__class__(**{**cfg.__dict__, "goal_state_file": state_path})
+    cfg = cfg.__class__(
+        **{**cfg.__dict__, "goal_state_file": state_path, "paper_portfolio_file": paper_path}
+    )
+    monkeypatch.setenv("GOAL_EVOLUTION_ENABLED", "1")
     view = build_goals_view(cfg)
     assert view["enabled"] is True
     assert view["tier"] == 1
     assert "stat_arb" in view["allowed_strategies"]
     assert view["crash_hold"]["active"] is True
+
+
+def test_build_goals_view_primary_goal(tmp_path: Path, monkeypatch):
+    paper_path = tmp_path / "paper_portfolio.json"
+    paper_path.write_text(json.dumps({"portfolio_usd": 3500.0}), encoding="utf-8")
+    live_state = tmp_path / ".live_state.json"
+    live_state.write_text(
+        json.dumps(
+            {
+                "balances": {"ETH": 0.96, "USD": 18.0},
+                "risk": {"peak_portfolio": 1654.0, "baseline_portfolio": 1654.0},
+                "trades": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    session = tmp_path / "live_session_start.json"
+    session.write_text(
+        json.dumps({"usd_prices": {"ETH": 1681.0, "USD": 1.0}, "baseline_portfolio_usd": 1654.0}),
+        encoding="utf-8",
+    )
+    cfg = _settings(tmp_path)
+    cfg = cfg.__class__(
+        **{
+            **cfg.__dict__,
+            "paper_portfolio_file": paper_path,
+            "live_state_file": live_state,
+            "live_session_start_file": session,
+            "live_enabled": True,
+            "live_mirror_paper": True,
+        }
+    )
+    monkeypatch.setenv("GOAL_EVOLUTION_ENABLED", "1")
+    view = build_goals_view(cfg, mode="live")
+    pg = view["primary_goal"]
+    assert pg["number"] == 1
+    assert pg["target_usd"] == 10_000.0
+    assert view["portfolio_source"] == "live"
+    assert view["live_portfolio_usd"] > 1600
+    assert view["paper_portfolio_usd"] == 3500.0
+    assert pg["progress_pct"] < 20.0
 

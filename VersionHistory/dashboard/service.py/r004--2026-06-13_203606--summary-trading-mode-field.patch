@@ -1,0 +1,18 @@
+--- a/dashboard/service.py
++++ b/dashboard/service.py
+@@ -28,6 +28,7 @@
+     s = watchdog.get("session") or {}
+     pnl = p.get("baseline_pnl")
+     return {
++        "trading_mode": tradebot.get("mode", "paper"),
+         "portfolio_usd": p.get("portfolio_usd"),
+         "baseline_pnl": pnl,
+         "drawdown_pct": p.get("drawdown_pct"),
+@@ -36,6 +37,7 @@
+         "health_score": h.get("score"),
+         "trades_session": s.get("trades_session", 0),
+         "updated_at": p.get("updated_at"),
++        "anchored_at": p.get("anchored_at"),
+     }
+ 
+ 

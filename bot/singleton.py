@@ -33,10 +33,12 @@ Usage (in main.py)::
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 from pathlib import Path
 
 LOCK_FILE: Path = Path(__file__).resolve().parent.parent / "tradebot.lock"
+_VENV_PYTHON = LOCK_FILE.parent / ".venv" / "Scripts" / "python.exe"
 
 
 def _pid_is_running(pid: int) -> bool:
@@ -74,6 +76,41 @@ def _pid_is_running(pid: int) -> bool:
             return False
 
 
+def _windows_process_command_line(pid: int) -> str | None:
+    try:
+        result = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                f"(Get-CimInstance Win32_Process -Filter 'ProcessId={pid}').CommandLine",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    line = result.stdout.strip()
+    return line or None
+
+
+def _pid_is_valid_tradebot_holder(pid: int) -> bool:
+    """Return True when *pid* is a live venv-launched TradeBot main.py process."""
+    if not _pid_is_running(pid):
+        return False
+    if sys.platform != "win32":
+        return True
+
+    cmd = _windows_process_command_line(pid)
+    if not cmd:
+        return True
+
+    venv_marker = str(_VENV_PYTHON).replace("/", "\\").lower()
+    return venv_marker in cmd.lower() and "main.py" in cmd.lower()
+
+
 def acquire_lock(*, take_lock: bool = False) -> None:
     """Acquire the singleton PID lock or abort the process.
 
@@ -102,6 +139,7 @@ def acquire_lock(*, take_lock: bool = False) -> None:
             recorded_pid is not None
             and recorded_pid != current_pid
             and _pid_is_running(recorded_pid)
+            and _pid_is_valid_tradebot_holder(recorded_pid)
         ):
             msg = (
                 f"\n{'=' * 70}\n"

@@ -1,0 +1,12 @@
+--- a/tests/test_dashboard.py
++++ b/tests/test_dashboard.py
+@@ -39,6 +39,9 @@
+         backlog_file=root / "BACKLOG.md",
+         whale_watch_state_file=root / ".whale_watch_state.json",
+         goal_state_file=root / ".tradebot_goals_state.json",
++        live_enabled=False,
++        live_state_file=root / ".live_state.json",
++        live_session_start_file=root / "live_session_start.json",
+         error_burst_count=5,
+         error_burst_minutes=10.0,
+         auto_pause_score=25,

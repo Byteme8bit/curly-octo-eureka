@@ -1,0 +1,24 @@
+--- a/.env.example
++++ b/.env.example
+@@ -266,10 +266,20 @@
+ # ---------------------------------------------------------------------------
+ # Live trading — REAL MONEY on Kraken (default OFF)
+ # Requires KRAKEN_API_KEY + KRAKEN_API_SECRET with Query + Trade permissions.
++# See docs/live-trading.md for full arm/disarm steps.
+ # ---------------------------------------------------------------------------
+ LIVE_ENABLED=0
++# Alias for LIVE_ENABLED:
++# LIVE_TRADING_ENABLED=0
++# Required to arm live — must be exactly this phrase:
++# LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY
++# LIVE_ALLOWED_ASSETS=ETH,ADA
+ # LIVE_STATE_FILE=.live_state.json
+-# LIVE_MAX_USD_PER_TRADE=75
++# Per-trade hard cap (LIVE_MAX_TRADE_USD is an alias):
++# LIVE_MAX_TRADE_USD=50
++# LIVE_MAX_ROUTE_LEGS=1
++# LIVE_ALLOW_TRIANGULAR=0
++# LIVE_MAX_USD_PER_TRADE=50
+ # Stop after N successful live trades (0 = unlimited)
+ # LIVE_MAX_TRADES=0
+ # Hard halt all trading when portfolio drops this much from session peak

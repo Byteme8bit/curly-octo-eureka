@@ -1,0 +1,72 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -352,6 +352,8 @@
+ 
+         self._shutdown_done = False
+ 
++        self._posted_cb_diagnostics: set[str] = set()
++
+         self._restart_requested: bool = False
+ 
+         self._restart_reason: str = ""
+@@ -567,6 +569,15 @@
+ 
+             return
+ 
++        if self.settings.discord_quiet_mode and "circuit breaker diagnostic" in message.lower():
++
++            logger.info(
++                "Watchdog diagnostic suppressed (DISCORD_QUIET_MODE): %s",
++                message.replace("\n", " ")[:160],
++            )
++
++            return
++
+         self.discord.post_important(message, pin=pin, source="WatchDog")
+ 
+     def _log_whale_follow_skip(self, event, reason: str) -> None:
+@@ -2080,22 +2091,21 @@
+ 
+                 )
+ 
+-                if self.settings.discord_enabled:
+-
+-                    headline = "**LIVE HALT — CIRCUIT BREAKER**" if self._live_mode else "**CIRCUIT BREAKER**"
+-
++                live_halt = self._live_mode and not self._mirror_mode
++                post_discord = (
++                    self.settings.discord_enabled
++                    and path.name not in self._posted_cb_diagnostics
++                    and (live_halt or not self.settings.discord_quiet_mode)
++                )
++                if post_discord:
++                    self._posted_cb_diagnostics.add(path.name)
++                    headline = "**LIVE HALT — CIRCUIT BREAKER**" if live_halt else "**CIRCUIT BREAKER**"
+                     self.discord.post_important(
+-
+                         f"{headline} — portfolio ${cb_event.portfolio_value:,.2f}, "
+-
+                         f"drawdown {cb_event.drawdown_pct:.1%} from peak. "
+-
+                         f"Re-evaluation mode — manual `resume-trading` required.\n"
+-
+                         f"Diagnostic: `{path.name}`",
+-
+                         pin=True,
+-
+                     )
+ 
+         if self._mirror_mode and self.live_circuit_breaker is not None and self.live_broker is not None:
+@@ -2113,7 +2123,11 @@
+                     usd_prices,
+                     extra={"strategies": getattr(self.strategy, "name", ""), "scope": "live"},
+                 )
+-                if self.settings.discord_enabled:
++                if (
++                    self.settings.discord_enabled
++                    and path.name not in self._posted_cb_diagnostics
++                ):
++                    self._posted_cb_diagnostics.add(path.name)
+                     self.discord.post_important(
+                         f"**LIVE HALT — CIRCUIT BREAKER** (paper continues) — "
+                         f"Kraken portfolio ${live_cb.portfolio_value:,.2f}, "

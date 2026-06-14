@@ -1,0 +1,194 @@
+--- a/dashboard/static/app.js
++++ b/dashboard/static/app.js
+@@ -3,6 +3,23 @@
+ let refreshMs = 15000;
+ let timer = null;
+ const charts = {};
++
++function detectPageMode() {
++  const path = window.location.pathname.replace(/\/+$/, "") || "/";
++  if (path === "/live") return "live";
++  return "paper";
++}
++
++const PAGE_MODE = detectPageMode();
++
++function apiPath(resource) {
++  return `/api/${PAGE_MODE}/${resource}`;
++}
++
++function legacyApiPath(resource, query = "") {
++  const q = query || `?mode=${PAGE_MODE}`;
++  return `/api/${resource}${q.startsWith("?") ? q : `?${q}`}`;
++}
+ 
+ const CHART_COLORS = {
+   line: "#3d8bfd",
+@@ -88,43 +105,91 @@
+   if (mode === "live") {
+     return `<span class="mode-badge mode-live">LIVE</span>`;
+   }
+-  if (mode === "mirror") {
+-    return `<span class="mode-badge mode-mirror">Paper+LIVE</span>`;
+-  }
+-  return `<span class="mode-badge mode-paper">Paper</span>`;
++  return `<span class="mode-badge mode-paper">PAPER</span>`;
+ }
+ 
+ function modeLabel(mode) {
+   if (mode === "live") return "LIVE";
+-  if (mode === "mirror") return "Paper + LIVE";
+-  return "Paper";
++  return "PAPER";
+ }
+ 
+ function modeClass(mode) {
+   if (mode === "live") return "mode-live-text";
+-  if (mode === "mirror") return "mode-mirror-text";
+   return "mode-paper-text";
++}
++
++function applyPageModeChrome() {
++  document.body.dataset.mode = PAGE_MODE;
++  const title = $("#page-title");
++  if (title) {
++    title.textContent = PAGE_MODE === "live"
++      ? "TradeBot Live (Kraken)"
++      : "TradeBot Paper";
++  }
++  document.title = PAGE_MODE === "live"
++    ? "TradeBot Live Dashboard"
++    : "TradeBot Paper Dashboard";
++  const paperNav = $("#nav-paper");
++  const liveNav = $("#nav-live");
++  if (paperNav) paperNav.classList.toggle("active", PAGE_MODE === "paper");
++  if (liveNav) liveNav.classList.toggle("active", PAGE_MODE === "live");
++}
++
++function showLoadError(message) {
++  const meta = $("#meta-line");
++  if (meta) meta.innerHTML = `<span class="score-bad">Failed to load: ${esc(message)}</span>`;
++  const strip = $("#metric-strip");
++  if (strip) {
++    strip.innerHTML = `<div class="metric metric-error"><span class="metric-label">Error</span><span class="metric-value score-bad">${esc(message)}</span></div>`;
++  }
++}
++
++function updateMirrorNote(data) {
++  const note = $("#mirror-note");
++  if (!note) return;
++  const show = PAGE_MODE === "live" && data.mirror_mode;
++  note.classList.toggle("hidden", !show);
++}
++
++function updateHaltBanner(summary) {
++  const banner = $("#halt-banner");
++  if (!banner) return;
++  if (PAGE_MODE !== "live" || !summary?.halted) {
++    banner.classList.add("hidden");
++    banner.textContent = "";
++    return;
++  }
++  const reasons = (summary.halt_reasons || []).join(" · ") || "Live trading halted";
++  banner.classList.remove("hidden");
++  banner.textContent = `LIVE HALT: ${reasons}`;
+ }
+ 
+ function renderMetricStrip(summary) {
+   const s = summary || {};
+-  const mode = s.trading_mode || "paper";
++  const mode = s.trading_mode || PAGE_MODE;
+   const metrics = [
+     { label: "Mode", value: modeLabel(mode), cls: modeClass(mode) },
+-    { label: "Paper", value: fmtUsd(s.portfolio_usd), cls: "mono" },
+-  ];
+-  if (mode === "mirror" && s.live_portfolio_usd != null) {
+-    metrics.push({ label: "Live (Kraken)", value: fmtUsd(s.live_portfolio_usd), cls: "mono mode-live-text" });
+-  } else if (mode !== "mirror") {
+-    metrics[1] = { label: "Portfolio", value: fmtUsd(s.portfolio_usd), cls: "mono" };
+-  }
+-  metrics.push(
++    { label: "Portfolio", value: fmtUsd(s.portfolio_usd), cls: "mono" },
+     { label: "Session PnL", value: fmtPnl(s.baseline_pnl), cls: `mono ${pnlClass(s.baseline_pnl)}` },
+     { label: "Drawdown", value: fmtPct(s.drawdown_pct, true), cls: `mono ${s.drawdown_pct > 0.05 ? "score-bad" : ""}` },
+     { label: "Cash", value: fmtPct(s.cash_pct, true), cls: "mono" },
+     { label: "Trades", value: String(s.trade_count ?? 0), cls: "mono" },
+     { label: "Health", value: s.health_score != null ? `${s.health_score}/100` : "—", cls: `mono ${scoreClass(s.health_score || 0)}` },
+-  );
++  ];
++  if (mode === "live") {
++    metrics.splice(1, 0,
++      { label: "Peak", value: fmtUsd(s.peak_portfolio_usd), cls: "mono" },
++      { label: "ETH", value: s.eth_balance != null ? `${Number(s.eth_balance).toFixed(4)} / ${s.eth_floor ?? "—"}` : "—", cls: `mono ${s.eth_balance != null && s.eth_floor != null && s.eth_balance < s.eth_floor ? "score-bad" : ""}` },
++      { label: "Live halt", value: s.halted ? "HALTED" : "OK", cls: s.halted ? "score-bad mode-live-text" : "score-good" },
++    );
++    if (s.max_trades > 0) {
++      metrics.push({
++        label: "Live cap",
++        value: `${s.trades_completed ?? 0}/${s.max_trades}`,
++        cls: "mono",
++      });
++    }
++  }
+   return metrics.map((m) => `
+     <div class="metric">
+       <span class="metric-label">${esc(m.label)}</span>
+@@ -527,28 +592,34 @@
+     <ul class="blocked-list">${blocked}</ul>`;
+ }
+ 
++async function fetchJson(url) {
++  const res = await fetch(url);
++  if (!res.ok) {
++    throw new Error(`${res.status} ${res.statusText} (${url})`);
++  }
++  return res.json();
++}
++
+ async function loadChartData() {
+-  const [histRes, tradesRes] = await Promise.all([
+-    fetch("/api/portfolio/history"),
+-    fetch("/api/trades/series"),
++  const [hist, trades] = await Promise.all([
++    fetchJson(apiPath("portfolio/history")),
++    fetchJson(apiPath("trades/series")),
+   ]);
+-  const hist = histRes.ok ? await histRes.json() : { points: [], pnl_deltas: [] };
+-  const trades = tradesRes.ok ? await tradesRes.json() : { buckets: [] };
+   return { hist, trades };
+ }
+ 
+ async function refresh() {
+   try {
+-    const [overviewRes, chartData] = await Promise.all([
+-      fetch("/api/overview"),
++    const [data, chartData] = await Promise.all([
++      fetchJson(apiPath("overview")),
+       loadChartData(),
+     ]);
+-    if (!overviewRes.ok) throw new Error(overviewRes.statusText);
+-    const data = await overviewRes.json();
+     refreshMs = (data.refresh_seconds || 15) * 1000;
+ 
+-    $("#meta-line").innerHTML = `${modeBadge(data.summary?.trading_mode)} Root: ${esc(data.root)} · refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
++    $("#meta-line").innerHTML = `${modeBadge(data.mode || PAGE_MODE)} Root: ${esc(data.root)} · refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
+     $("#metric-strip").innerHTML = renderMetricStrip(data.summary);
++    updateMirrorNote(data);
++    updateHaltBanner(data.summary);
+     const snap = $("#overview-snapshot-panel");
+     if (snap) snap.innerHTML = renderOverviewSnapshot(data);
+ 
+@@ -568,11 +639,12 @@
+     const bl = data.backlog || [];
+     $("#backlog-list").innerHTML = bl.map((l) => `<li>${esc(l)}</li>`).join("") || "<li class='empty'>—</li>";
+   } catch (err) {
+-    $("#meta-line").textContent = "Failed to load: " + err.message;
++    showLoadError(err.message || String(err));
+   }
+ }
+ 
+ function startPolling() {
++  applyPageModeChrome();
+   refresh();
+   if (timer) clearInterval(timer);
+   timer = setInterval(refresh, refreshMs);

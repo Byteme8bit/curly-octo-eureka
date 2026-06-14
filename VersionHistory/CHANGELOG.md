@@ -1286,3 +1286,672 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +16 / -12
 - **Patch:** `r018--2026-06-12_210405--execution-only-activity-blocks.patch`
 
+## bot/risk.py — r003
+
+- **When:** 2026-06-13 00:28:23 PDT
+- **Reason:** 24h idle bypass suspend cooldown
+- **Request:** 050
+- **Diff:** +13 / -7
+- **Patch:** `r003--2026-06-13_002823--24h-idle-bypass-suspend-cooldown.patch`
+
+## bot/engine.py — r019
+
+- **When:** 2026-06-13 00:28:23 PDT
+- **Reason:** adaptive attempt after preflight
+- **Request:** 050
+- **Diff:** +15 / -13
+- **Patch:** `r019--2026-06-13_002823--adaptive-attempt-after-preflight.patch`
+
+## tests/test_adaptive_resume.py — r001
+
+- **When:** 2026-06-13 00:28:24 PDT
+- **Reason:** prolonged idle resume test
+- **Request:** 050
+- **Diff:** +29 / -0
+- **Patch:** `r001--2026-06-13_002824--prolonged-idle-resume-test.patch`
+
+## config.py — r013
+
+- **When:** 2026-06-13 20:21:18 PDT
+- **Reason:** live trading env knobs
+- **Request:** 051
+- **Diff:** +14 / -0
+- **Patch:** `r013--2026-06-13_202118--live-trading-env-knobs.patch`
+
+## bot/engine.py — r020
+
+- **When:** 2026-06-13 20:21:19 PDT
+- **Reason:** wire LiveBroker live halt
+- **Request:** 051
+- **Diff:** +74 / -22
+- **Patch:** `r020--2026-06-13_202119--wire-livebroker-live-halt.patch`
+
+## bot/risk.py — r004
+
+- **When:** 2026-06-13 20:21:19 PDT
+- **Reason:** disable adaptive on live
+- **Request:** 051
+- **Diff:** +14 / -0
+- **Patch:** `r004--2026-06-13_202119--disable-adaptive-on-live.patch`
+
+## bot/report.py — r004
+
+- **When:** 2026-06-13 20:21:19 PDT
+- **Reason:** LIVE trade discord headline
+- **Request:** 051
+- **Diff:** +2 / -1
+- **Patch:** `r004--2026-06-13_202119--live-trade-discord-headline.patch`
+
+## .env.example — r011
+
+- **When:** 2026-06-13 20:21:19 PDT
+- **Reason:** document LIVE_* settings
+- **Request:** 051
+- **Diff:** +13 / -0
+- **Patch:** `r011--2026-06-13_202119--document-live-settings.patch`
+
+## config.py — r014
+
+- **When:** 2026-06-13 20:27:20 PDT
+- **Reason:** live-min-eth-reserve-knob
+- **Request:** 051
+- **Diff:** +2 / -0
+- **Patch:** `r014--2026-06-13_202720--live-min-eth-reserve-knob.patch`
+
+## bot/engine.py — r021
+
+- **When:** 2026-06-13 20:27:20 PDT
+- **Reason:** live-eth-floor-halt-guards
+- **Request:** 051
+- **Diff:** +71 / -2
+- **Patch:** `r021--2026-06-13_202720--live-eth-floor-halt-guards.patch`
+
+## bot/portfolio_constraints.py — r002
+
+- **When:** 2026-06-13 20:27:21 PDT
+- **Reason:** strict-eth-floor-route-check
+- **Request:** 051
+- **Diff:** +47 / -4
+- **Patch:** `r002--2026-06-13_202721--strict-eth-floor-route-check.patch`
+
+## .env.example — r012
+
+- **When:** 2026-06-13 20:27:21 PDT
+- **Reason:** document-live-eth-floor
+- **Request:** 051
+- **Diff:** +2 / -0
+- **Patch:** `r012--2026-06-13_202721--document-live-eth-floor.patch`
+
+## bot/paper_broker.py — r003
+
+- **When:** 2026-06-13 20:31:04 PDT
+- **Reason:** live-trades-completed counter
+- **Request:** 051
+- **Diff:** +2 / -0
+- **Patch:** `r003--2026-06-13_203104--live-trades-completed-counter.patch`
+
+## config.py — r015
+
+- **When:** 2026-06-13 20:31:04 PDT
+- **Reason:** LIVE_MAX_TRADES knob
+- **Request:** 051
+- **Diff:** +2 / -0
+- **Patch:** `r015--2026-06-13_203104--livemaxtrades-knob.patch`
+
+## bot/live_broker.py — r001
+
+- **When:** 2026-06-13 20:31:04 PDT
+- **Reason:** record completed trade
+- **Request:** 051
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-13_203104--record-completed-trade.patch`
+
+## bot/engine.py — r022
+
+- **When:** 2026-06-13 20:31:05 PDT
+- **Reason:** pause after max live trades
+- **Request:** 051
+- **Diff:** +27 / -0
+- **Patch:** `r022--2026-06-13_203105--pause-after-max-live-trades.patch`
+
+## .env.example — r013
+
+- **When:** 2026-06-13 20:31:05 PDT
+- **Reason:** document LIVE_MAX_TRADES
+- **Request:** 051
+- **Diff:** +2 / -0
+- **Patch:** `r013--2026-06-13_203105--document-livemaxtrades.patch`
+
+## bot/data.py — r002
+
+- **When:** 2026-06-13 20:32:01 PDT
+- **Reason:** skip non-tradable KFEE pricing
+- **Request:** 051
+- **Diff:** +28 / -2
+- **Patch:** `r002--2026-06-13_203201--skip-non-tradable-kfee-pricing.patch`
+
+## tests/test_kraken_retry.py — r001
+
+- **When:** 2026-06-13 20:32:06 PDT
+- **Reason:** KFEE skip price tests
+- **Request:** 051
+- **Diff:** +40 / -0
+- **Patch:** `r001--2026-06-13_203206--kfee-skip-price-tests.patch`
+
+## dashboard/config.py — r003
+
+- **When:** 2026-06-13 20:36:06 PDT
+- **Reason:** live-mode dashboard settings
+- **Request:** 051
+- **Diff:** +6 / -0
+- **Patch:** `r003--2026-06-13_203606--live-mode-dashboard-settings.patch`
+
+## dashboard/parsers/tradebot.py — r002
+
+- **When:** 2026-06-13 20:36:06 PDT
+- **Reason:** read-live-state-portfolio
+- **Request:** 051
+- **Diff:** +83 / -37
+- **Patch:** `r002--2026-06-13_203606--read-live-state-portfolio.patch`
+
+## dashboard/service.py — r004
+
+- **When:** 2026-06-13 20:36:06 PDT
+- **Reason:** summary-trading-mode-field
+- **Request:** 051
+- **Diff:** +2 / -0
+- **Patch:** `r004--2026-06-13_203606--summary-trading-mode-field.patch`
+
+## dashboard/parsers/goals.py — r001
+
+- **When:** 2026-06-13 20:36:06 PDT
+- **Reason:** live-portfolio-for-goals
+- **Request:** 051
+- **Diff:** +6 / -1
+- **Patch:** `r001--2026-06-13_203606--live-portfolio-for-goals.patch`
+
+## dashboard/static/app.js — r005
+
+- **When:** 2026-06-13 20:36:07 PDT
+- **Reason:** live-mode-badge-labels
+- **Request:** 051
+- **Diff:** +10 / -1
+- **Patch:** `r005--2026-06-13_203607--live-mode-badge-labels.patch`
+
+## dashboard/static/index.html — r004
+
+- **When:** 2026-06-13 20:36:07 PDT
+- **Reason:** bump-static-cache-version
+- **Request:** 051
+- **Diff:** +2 / -2
+- **Patch:** `r004--2026-06-13_203607--bump-static-cache-version.patch`
+
+## dashboard/static/styles.css — r003
+
+- **When:** 2026-06-13 20:36:07 PDT
+- **Reason:** live-paper-mode-badge-styles
+- **Request:** 051
+- **Diff:** +23 / -1
+- **Patch:** `r003--2026-06-13_203607--live-paper-mode-badge-styles.patch`
+
+## tests/test_dashboard.py — r005
+
+- **When:** 2026-06-13 20:36:07 PDT
+- **Reason:** settings-live-fields
+- **Request:** 051
+- **Diff:** +3 / -0
+- **Patch:** `r005--2026-06-13_203607--settings-live-fields.patch`
+
+## config.py — r016
+
+- **When:** 2026-06-13 20:38:07 PDT
+- **Reason:** live-mirror-paper env knob
+- **Request:** 051
+- **Diff:** +3 / -1
+- **Patch:** `r016--2026-06-13_203807--live-mirror-paper-env-knob.patch`
+
+## bot/engine.py — r023
+
+- **When:** 2026-06-13 20:38:08 PDT
+- **Reason:** paper-shadow live mirror path
+- **Request:** 051
+- **Diff:** +257 / -37
+- **Patch:** `r023--2026-06-13_203808--paper-shadow-live-mirror-path.patch`
+
+## .env.example — r014
+
+- **When:** 2026-06-13 20:38:08 PDT
+- **Reason:** document-live-mirror-paper
+- **Request:** 051
+- **Diff:** +4 / -1
+- **Patch:** `r014--2026-06-13_203808--document-live-mirror-paper.patch`
+
+## dashboard/config.py — r004
+
+- **When:** 2026-06-13 20:38:08 PDT
+- **Reason:** dashboard-mirror-flag
+- **Request:** 051
+- **Diff:** +2 / -0
+- **Patch:** `r004--2026-06-13_203808--dashboard-mirror-flag.patch`
+
+## dashboard/parsers/tradebot.py — r003
+
+- **When:** 2026-06-13 20:38:08 PDT
+- **Reason:** show-paper-and-live-portfolios
+- **Request:** 051
+- **Diff:** +71 / -36
+- **Patch:** `r003--2026-06-13_203808--show-paper-and-live-portfolios.patch`
+
+## dashboard/service.py — r005
+
+- **When:** 2026-06-13 20:38:08 PDT
+- **Reason:** mirror-summary-strip
+- **Request:** 051
+- **Diff:** +4 / -1
+- **Patch:** `r005--2026-06-13_203808--mirror-summary-strip.patch`
+
+## dashboard/static/app.js — r006
+
+- **When:** 2026-06-13 20:38:09 PDT
+- **Reason:** mirror-mode-ui-badge
+- **Request:** 051
+- **Diff:** +24 / -2
+- **Patch:** `r006--2026-06-13_203809--mirror-mode-ui-badge.patch`
+
+## dashboard/static/styles.css — r004
+
+- **When:** 2026-06-13 20:38:09 PDT
+- **Reason:** mirror-mode-badge-style
+- **Request:** 051
+- **Diff:** +6 / -0
+- **Patch:** `r004--2026-06-13_203809--mirror-mode-badge-style.patch`
+
+## tests/test_live_eth_floor.py — r001
+
+- **When:** 2026-06-13 20:38:09 PDT
+- **Reason:** mirror-eth-floor-tests
+- **Request:** 051
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-13_203809--mirror-eth-floor-tests.patch`
+
+## dashboard/static/app.js — r007
+
+- **When:** 2026-06-13 20:50:19 PDT
+- **Reason:** fix metrics.push syntax error
+- **Request:** 051
+- **Diff:** +1 / -1
+- **Patch:** `r007--2026-06-13_205019--fix-metricspush-syntax-error.patch`
+
+## dashboard/static/index.html — r005
+
+- **When:** 2026-06-13 20:50:19 PDT
+- **Reason:** bump static cache version
+- **Request:** 051
+- **Diff:** +2 / -2
+- **Patch:** `r005--2026-06-13_205019--bump-static-cache-version.patch`
+
+## tests/test_dashboard.py — r006
+
+- **When:** 2026-06-13 20:50:19 PDT
+- **Reason:** mirror field and goals patch
+- **Request:** 051
+- **Diff:** +3 / -1
+- **Patch:** `r006--2026-06-13_205019--mirror-field-and-goals-patch.patch`
+
+## tests/test_dashboard_live.py — r001
+
+- **When:** 2026-06-13 20:50:20 PDT
+- **Reason:** add live_mirror_paper field
+- **Request:** 051
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-13_205020--add-livemirrorpaper-field.patch`
+
+## dashboard/config.py — r005
+
+- **When:** 2026-06-13 20:52:54 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +6 / -0
+- **Patch:** `r005--2026-06-13_205254--split-paper-live-dashboards.patch`
+
+## dashboard/parsers/live_portfolio.py — r001
+
+- **When:** 2026-06-13 20:52:54 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-13_205254--split-paper-live-dashboards.patch`
+
+## dashboard/parsers/tradebot.py — r004
+
+- **When:** 2026-06-13 20:52:54 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +124 / -124
+- **Patch:** `r004--2026-06-13_205254--split-paper-live-dashboards.patch`
+
+## dashboard/parsers/series.py — r001
+
+- **When:** 2026-06-13 20:52:55 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +135 / -5
+- **Patch:** `r001--2026-06-13_205255--split-paper-live-dashboards.patch`
+
+## dashboard/service.py — r006
+
+- **When:** 2026-06-13 20:52:55 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +38 / -10
+- **Patch:** `r006--2026-06-13_205255--split-paper-live-dashboards.patch`
+
+## dashboard/parsers/goals.py — r002
+
+- **When:** 2026-06-13 20:52:55 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +3 / -2
+- **Patch:** `r002--2026-06-13_205255--split-paper-live-dashboards.patch`
+
+## dashboard/app.py — r003
+
+- **When:** 2026-06-13 20:52:55 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +79 / -16
+- **Patch:** `r003--2026-06-13_205255--split-paper-live-dashboards.patch`
+
+## dashboard/static/index.html — r006
+
+- **When:** 2026-06-13 20:52:56 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +12 / -3
+- **Patch:** `r006--2026-06-13_205256--split-paper-live-dashboards.patch`
+
+## dashboard/static/app.js — r008
+
+- **When:** 2026-06-13 20:52:56 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +100 / -28
+- **Patch:** `r008--2026-06-13_205256--split-paper-live-dashboards.patch`
+
+## dashboard/static/styles.css — r005
+
+- **When:** 2026-06-13 20:52:56 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +64 / -10
+- **Patch:** `r005--2026-06-13_205256--split-paper-live-dashboards.patch`
+
+## tests/test_dashboard.py — r007
+
+- **When:** 2026-06-13 20:52:56 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +29 / -1
+- **Patch:** `r007--2026-06-13_205256--split-paper-live-dashboards.patch`
+
+## tests/test_dashboard_live.py — r002
+
+- **When:** 2026-06-13 20:52:56 PDT
+- **Reason:** split paper live dashboards
+- **Request:** 051
+- **Diff:** +97 / -1
+- **Patch:** `r002--2026-06-13_205256--split-paper-live-dashboards.patch`
+
+## bot/goal_evolution.py — r001
+
+- **When:** 2026-06-13 21:00:22 PDT
+- **Reason:** primary goal progress helpers
+- **Request:** 051
+- **Diff:** +89 / -1
+- **Patch:** `r001--2026-06-13_210022--primary-goal-progress-helpers.patch`
+
+## bot/engine.py — r024
+
+- **When:** 2026-06-13 21:00:23 PDT
+- **Reason:** live goal tracking discord
+- **Request:** 051
+- **Diff:** +54 / -2
+- **Patch:** `r024--2026-06-13_210023--live-goal-tracking-discord.patch`
+
+## bot/discord_summary.py — r001
+
+- **When:** 2026-06-13 21:00:23 PDT
+- **Reason:** hourly primary goal line
+- **Request:** 051
+- **Diff:** +5 / -1
+- **Patch:** `r001--2026-06-13_210023--hourly-primary-goal-line.patch`
+
+## dashboard/parsers/goals.py — r003
+
+- **When:** 2026-06-13 21:00:23 PDT
+- **Reason:** primary goal mirror live
+- **Request:** 051
+- **Diff:** +253 / -81
+- **Patch:** `r003--2026-06-13_210023--primary-goal-mirror-live.patch`
+
+## dashboard/static/app.js — r009
+
+- **When:** 2026-06-13 21:00:23 PDT
+- **Reason:** goal progress bar UI
+- **Request:** 051
+- **Diff:** +47 / -2
+- **Patch:** `r009--2026-06-13_210023--goal-progress-bar-ui.patch`
+
+## dashboard/static/styles.css — r006
+
+- **When:** 2026-06-13 21:00:24 PDT
+- **Reason:** goal progress bar styles
+- **Request:** 051
+- **Diff:** +65 / -0
+- **Patch:** `r006--2026-06-13_210024--goal-progress-bar-styles.patch`
+
+## dashboard/static/index.html — r007
+
+- **When:** 2026-06-13 21:00:24 PDT
+- **Reason:** goals section heading bump
+- **Request:** 051
+- **Diff:** +3 / -3
+- **Patch:** `r007--2026-06-13_210024--goals-section-heading-bump.patch`
+
+## .env.example — r015
+
+- **When:** 2026-06-13 21:00:24 PDT
+- **Reason:** document goal-1 milestone
+- **Request:** 051
+- **Diff:** +5 / -1
+- **Patch:** `r015--2026-06-13_210024--document-goal-1-milestone.patch`
+
+## tests/test_goal_evolution.py — r001
+
+- **When:** 2026-06-13 21:00:24 PDT
+- **Reason:** primary goal tests
+- **Request:** 051
+- **Diff:** +54 / -0
+- **Patch:** `r001--2026-06-13_210024--primary-goal-tests.patch`
+
+## tests/test_dashboard.py — r008
+
+- **When:** 2026-06-13 21:00:25 PDT
+- **Reason:** mirror goals view test
+- **Request:** 051
+- **Diff:** +46 / -1
+- **Patch:** `r008--2026-06-13_210025--mirror-goals-view-test.patch`
+
+## config.py — r017
+
+- **When:** 2026-06-13 21:30:40 PDT
+- **Reason:** ada-first preferred start assets
+- **Request:** 051
+- **Diff:** +20 / -1
+- **Patch:** `r017--2026-06-13_213040--ada-first-preferred-start-assets.patch`
+
+## bot/orchestrator.py — r002
+
+- **When:** 2026-06-13 21:30:40 PDT
+- **Reason:** ada-first intent tie-break
+- **Request:** 051
+- **Diff:** +9 / -3
+- **Patch:** `r002--2026-06-13_213040--ada-first-intent-tie-break.patch`
+
+## bot/strategies/registry.py — r001
+
+- **When:** 2026-06-13 21:30:41 PDT
+- **Reason:** pass settings to orchestrator
+- **Request:** 051
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-13_213041--pass-settings-to-orchestrator.patch`
+
+## bot/strategies/momentum_rotation.py — r001
+
+- **When:** 2026-06-13 21:30:41 PDT
+- **Reason:** ada-first rotation sources
+- **Request:** 051
+- **Diff:** +13 / -1
+- **Patch:** `r001--2026-06-13_213041--ada-first-rotation-sources.patch`
+
+## bot/engine.py — r025
+
+- **When:** 2026-06-13 21:30:42 PDT
+- **Reason:** ada-first probe funding pick
+- **Request:** 051
+- **Diff:** +15 / -4
+- **Patch:** `r025--2026-06-13_213042--ada-first-probe-funding-pick.patch`
+
+## .env.example — r016
+
+- **When:** 2026-06-13 21:30:43 PDT
+- **Reason:** document preferred start assets
+- **Request:** 051
+- **Diff:** +3 / -1
+- **Patch:** `r016--2026-06-13_213043--document-preferred-start-assets.patch`
+
+## bot/engine.py — r026
+
+- **When:** 2026-06-13 21:32:54 PDT
+- **Reason:** quiet discord mirror trade gates
+- **Request:** 051
+- **Diff:** +27 / -6
+- **Patch:** `r026--2026-06-13_213254--quiet-discord-mirror-trade-gates.patch`
+
+## .env.example — r017
+
+- **When:** 2026-06-13 21:32:54 PDT
+- **Reason:** document quiet discord bundle
+- **Request:** 051
+- **Diff:** +14 / -5
+- **Patch:** `r017--2026-06-13_213254--document-quiet-discord-bundle.patch`
+
+## tests/test_quiet_discord.py — r001
+
+- **When:** 2026-06-13 21:32:54 PDT
+- **Reason:** auditor quiet default test
+- **Request:** 051
+- **Diff:** +2 / -0
+- **Patch:** `r001--2026-06-13_213254--auditor-quiet-default-test.patch`
+
+## watchdog/engine.py — r002
+
+- **When:** 2026-06-13 21:37:37 PDT
+- **Reason:** fix diagnostic dedup flood
+- **Request:** 051
+- **Diff:** +33 / -7
+- **Patch:** `r002--2026-06-13_213737--fix-diagnostic-dedup-flood.patch`
+
+## bot/engine.py — r027
+
+- **When:** 2026-06-13 21:37:37 PDT
+- **Reason:** quiet CB dedup wiring
+- **Request:** 051
+- **Diff:** +25 / -11
+- **Patch:** `r027--2026-06-13_213737--quiet-cb-dedup-wiring.patch`
+
+## bot/engine.py — r028
+
+- **When:** 2026-06-14 03:45:53 PDT
+- **Reason:** trade-diagnosis-json-tick-summary
+- **Request:** 051
+- **Diff:** +78 / -0
+- **Patch:** `r028--2026-06-14_034553--trade-diagnosis-json-tick-summary.patch`
+
+## config.py — r018
+
+- **When:** 2026-06-14 03:45:53 PDT
+- **Reason:** goal-tier0-all-strategies-default
+- **Request:** 051
+- **Diff:** +4 / -1
+- **Patch:** `r018--2026-06-14_034553--goal-tier0-all-strategies-default.patch`
+
+## .env.example — r018
+
+- **When:** 2026-06-14 03:45:53 PDT
+- **Reason:** goal-tier0-all-strategies-doc
+- **Request:** 051
+- **Diff:** +1 / -1
+- **Patch:** `r018--2026-06-14_034553--goal-tier0-all-strategies-doc.patch`
+
+## bot/engine.py — r029
+
+- **When:** 2026-06-14 03:53:21 PDT
+- **Reason:** live confirm route guards
+- **Request:** 051
+- **Diff:** +61 / -5
+- **Patch:** `r029--2026-06-14_035321--live-confirm-route-guards.patch`
+
+## bot/live_broker.py — r002
+
+- **When:** 2026-06-14 03:53:21 PDT
+- **Reason:** skip new file
+- **Diff:** +147 / -2
+- **Patch:** `r002--2026-06-14_035321--skip-new-file.patch`
+
+## bot/live_guards.py — r001
+
+- **When:** 2026-06-14 03:53:21 PDT
+- **Reason:** skip new file
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-14_035321--skip-new-file.patch`
+
+## config.py — r019
+
+- **When:** 2026-06-14 03:53:22 PDT
+- **Reason:** live confirm env knobs
+- **Request:** 051
+- **Diff:** +29 / -2
+- **Patch:** `r019--2026-06-14_035322--live-confirm-env-knobs.patch`
+
+## bot/verifier/live_tag.py — r001
+
+- **When:** 2026-06-14 03:53:22 PDT
+- **Reason:** live fill confirm tag
+- **Request:** 051
+- **Diff:** +9 / -0
+- **Patch:** `r001--2026-06-14_035322--live-fill-confirm-tag.patch`
+
+## .env.example — r019
+
+- **When:** 2026-06-14 03:53:22 PDT
+- **Reason:** live arm docs knobs
+- **Request:** 051
+- **Diff:** +11 / -1
+- **Patch:** `r019--2026-06-14_035322--live-arm-docs-knobs.patch`
+
+## tests/test_live_mirror.py — r001
+
+- **When:** 2026-06-14 03:53:22 PDT
+- **Reason:** mirror guard fixtures
+- **Request:** 051
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-14_035322--mirror-guard-fixtures.patch`
+
+## tests/test_live_guards.py — r001
+
+- **When:** 2026-06-14 03:53:23 PDT
+- **Reason:** skip new file
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-14_035323--skip-new-file.patch`
+

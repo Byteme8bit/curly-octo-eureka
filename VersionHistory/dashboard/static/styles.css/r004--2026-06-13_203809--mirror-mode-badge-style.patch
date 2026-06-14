@@ -1,0 +1,15 @@
+--- a/dashboard/static/styles.css
++++ b/dashboard/static/styles.css
+@@ -81,6 +81,12 @@
+ }
+ .mode-live-text { color: var(--bad); font-weight: 700; }
+ .mode-paper-text { color: var(--muted); }
++.mode-mirror {
++  color: #fff;
++  background: linear-gradient(90deg, var(--surface2) 50%, var(--bad) 50%);
++  border: 1px solid var(--border);
++}
++.mode-mirror-text { color: var(--accent); font-weight: 700; }
+ 
+ .section-nav {
+   display: flex;

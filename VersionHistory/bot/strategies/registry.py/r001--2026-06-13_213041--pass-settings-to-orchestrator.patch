@@ -1,0 +1,8 @@
+--- a/bot/strategies/registry.py
++++ b/bot/strategies/registry.py
+@@ -45,4 +45,4 @@
+ def build_orchestrator(settings: Settings) -> StrategyOrchestrator:
+     strategies = build_strategies(settings)
+     logger.info("Loaded strategies: %s", ", ".join(s.name for s in strategies))
+-    return StrategyOrchestrator(strategies)
++    return StrategyOrchestrator(strategies, settings)

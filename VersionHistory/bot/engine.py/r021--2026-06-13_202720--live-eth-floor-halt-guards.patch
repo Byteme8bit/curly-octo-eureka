@@ -1,0 +1,141 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -181,11 +181,17 @@
+ 
+         self.constraints = PortfolioConstraints(
+ 
+-            min_eth_reserve=settings.min_eth_reserve,
++            min_eth_reserve=(
++                settings.live_min_eth_reserve
++                if settings.live_enabled
++                else settings.min_eth_reserve
++            ),
+ 
+             max_alt_allocation_pct=settings.max_alt_allocation_pct,
+ 
+             min_usd_trade=settings.min_usd_trade,
++
++            strict_eth_floor=settings.live_enabled,
+ 
+         )
+ 
+@@ -633,6 +639,29 @@
+         except OSError as exc:
+             logger.warning("Could not persist whale-follow status: %s", exc)
+ 
++    def _check_live_eth_floor(self, holdings: dict[str, float]) -> bool:
++        """Halt live trading when ETH balance is below LIVE_MIN_ETH_RESERVE."""
++        if not self._live_mode:
++            return False
++        floor = self.settings.live_min_eth_reserve
++        eth = holdings.get("ETH", 0.0)
++        if eth >= floor - 1e-9:
++            return False
++        reason = (
++            f"ETH balance {eth:.4f} below LIVE_MIN_ETH_RESERVE {floor:.2f} — "
++            "all live trading stopped"
++        )
++        self.runtime.set_trading_active(False)
++        if hasattr(self.broker, "halt") and not getattr(self.broker, "halted", False):
++            self.broker.halt(reason)
++        if self.settings.discord_enabled:
++            self.discord.post_important(
++                f"**LIVE HALT — ETH FLOOR**\n{reason}\n"
++                f"{floor:.1f} ETH is untouchable. Manual `resume-trading` after review.",
++                pin=True,
++            )
++        return True
++
+     def _try_execute_intent(
+         self,
+         intent,
+@@ -647,6 +676,13 @@
+         if getattr(self.broker, "halted", False):
+             reason = getattr(self.broker, "halt_reason", "") or "Live trading halted"
+             return None, reason
++        if self._live_mode:
++            eth = holdings.get("ETH", 0.0)
++            floor = self.settings.live_min_eth_reserve
++            if eth < floor - 1e-9:
++                return None, (
++                    f"ETH balance {eth:.4f} below live floor {floor:.2f}"
++                )
+         if in_reevaluation and not intent.is_defensive:
+             return None, "Re-evaluation mode — non-defensive trades blocked"
+         if (
+@@ -671,6 +707,12 @@
+         if not constraint.allowed:
+             return None, constraint.reason
+         intent.size_pct = constraint.size_pct
++        if self._live_mode:
++            route_check = self.constraints.check_route_eth_floor(
++                route, holdings, constraint.size_pct
++            )
++            if not route_check.allowed:
++                return None, route_check.reason
+         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
+         pf = self.preflight.validate(
+             intent,
+@@ -1700,6 +1742,9 @@
+ 
+         holdings = self._holdings()
+ 
++        if self._live_mode:
++            self._check_live_eth_floor(holdings)
++
+ 
+ 
+         portfolio = self.broker.portfolio_value(usd_prices)
+@@ -1882,12 +1927,26 @@
+ 
+         )
+ 
++        if can_trade and self._live_mode and getattr(self.broker, "halted", False):
++            can_trade = False
++
+         if can_trade:
+ 
+             adaptive_active = self.risk.adaptive_status().active
+             edge_qualified = False
+ 
+             for intent in intents:
++
++                if self._live_mode:
++                    eth = holdings.get("ETH", 0.0)
++                    floor = self.settings.live_min_eth_reserve
++                    if eth < floor - 1e-9:
++                        reason = (
++                            f"ETH balance {eth:.4f} below live floor {floor:.2f}"
++                        )
++                        blocked.append(reason)
++                        activity_blocked.append(reason)
++                        continue
+ 
+                 if in_reevaluation and not intent.is_defensive:
+ 
+@@ -1947,6 +2006,15 @@
+                     continue
+ 
+                 intent.size_pct = constraint.size_pct
++
++                if self._live_mode:
++                    route_check = self.constraints.check_route_eth_floor(
++                        route, holdings, constraint.size_pct
++                    )
++                    if not route_check.allowed:
++                        blocked.append(route_check.reason)
++                        activity_blocked.append(route_check.reason)
++                        continue
+ 
+                 trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
+ 
+@@ -2275,7 +2343,8 @@
+         if self._live_mode:
+             startup_text += (
+                 f"\n:warning: **REAL MONEY** — max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
+-                f"halt at {self.settings.live_drawdown_halt_pct:.0%} drawdown from peak"
++                f"halt at {self.settings.live_drawdown_halt_pct:.0%} drawdown from peak, "
++                f"{self.settings.live_min_eth_reserve:.1f} ETH floor (untouchable)"
+             )
+ 
+         if overrides_line:

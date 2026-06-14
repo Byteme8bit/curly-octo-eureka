@@ -1,0 +1,51 @@
+--- a/config.py
++++ b/config.py
+@@ -35,7 +35,8 @@
+ ASSET_SYMBOLS = ASSET_USD_SYMBOLS
+ 
+ DEFAULT_SYMBOLS = ",".join(SYMBOL_ASSETS.keys())
+-DEFAULT_CORE_ASSETS = "ETH,ADA,BTC"
++DEFAULT_CORE_ASSETS = "ADA,ETH,BTC"
++DEFAULT_PREFERRED_START_ASSETS = "ADA"
+ DEFAULT_STRATEGIES = "cross_momentum,triangular_arbitrage,stat_arb"
+ DEFAULT_SAFE_ASSETS = "USD,ETH,BTC"
+ DEFAULT_STAT_ARB_PAIRS = "ETH/BTC,SOL/ETH,LINK/ETH,AVAX/ETH"
+@@ -47,6 +48,7 @@
+     watch_assets: tuple[str, ...]
+     usd_symbols: tuple[str, ...]
+     core_assets: tuple[str, ...]
++    preferred_start_assets: tuple[str, ...]
+     initial_balances: dict[str, float]
+     poll_interval: int
+     fee_rate: float
+@@ -222,6 +224,19 @@
+     return tuple(a.strip() for a in raw.split(",") if a.strip())
+ 
+ 
++def _parse_preferred_start_assets(
++    raw: str | None,
++    core_assets: tuple[str, ...],
++) -> tuple[str, ...]:
++    """Assets to spend first when funding rotations; defaults to CORE_ASSETS order."""
++    if raw and str(raw).strip():
++        return _parse_core_assets(raw)
++    preferred = tuple(a for a in core_assets if a not in ("USD", "BTC", "ETH"))
++    if preferred:
++        return preferred
++    return _parse_core_assets(DEFAULT_PREFERRED_START_ASSETS)
++
++
+ def _parse_initial_balances(raw: str) -> dict[str, float]:
+     balances = {k: float(v) for k, v in json.loads(raw).items()}
+     if "USD" not in balances:
+@@ -328,6 +343,10 @@
+         watch_assets=watch_assets,
+         usd_symbols=usd_symbols,
+         core_assets=_parse_core_assets(os.getenv("CORE_ASSETS", DEFAULT_CORE_ASSETS)),
++        preferred_start_assets=_parse_preferred_start_assets(
++            os.getenv("PREFERRED_START_ASSETS"),
++            _parse_core_assets(os.getenv("CORE_ASSETS", DEFAULT_CORE_ASSETS)),
++        ),
+         initial_balances=_parse_initial_balances(
+             os.getenv("INITIAL_BALANCES", '{"ETH": 1.0, "ADA": 83.0, "USD": 0.0}')
+         ),

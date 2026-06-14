@@ -4,15 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TradeBot Command Center</title>
-  <link rel="stylesheet" href="/static/styles.css?v=042" />
+  <link rel="stylesheet" href="/static/styles.css?v=046" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 </head>
 <body>
   <header class="top-bar">
     <div class="top-bar-inner">
-      <h1>TradeBot Command Center</h1>
+      <h1 id="page-title">TradeBot Command Center</h1>
       <p class="meta" id="meta-line">Loading…</p>
     </div>
+    <nav class="mode-nav" aria-label="Dashboard mode">
+      <a href="/paper" id="nav-paper" class="mode-nav-link">Paper</a>
+      <a href="/live" id="nav-live" class="mode-nav-link">Live</a>
+    </nav>
     <nav class="section-nav" aria-label="Jump to section">
       <a href="#overview">Overview</a>
       <a href="#charts">Charts</a>
@@ -24,6 +28,11 @@
       <a href="#activity">Activity</a>
     </nav>
   </header>
+
+  <div id="mirror-note" class="mirror-note hidden" role="note">
+    Trades execute on Kraken only when paper trade is profitable
+  </div>
+  <div id="halt-banner" class="halt-banner hidden" role="alert"></div>
 
   <div class="layout-body">
     <div class="primary-column">
@@ -66,7 +75,7 @@
         <div id="whales-panel"></div>
       </section>
       <section id="goals" class="panel-section">
-        <h2 class="section-heading">Goals &amp; evolution</h2>
+        <h2 class="section-heading">Goals — portfolio milestones</h2>
         <div id="goals-panel"></div>
       </section>
       <section id="watchdog" class="panel-section">
@@ -97,6 +106,6 @@
     </aside>
   </div>
 
-  <script src="/static/app.js?v=042"></script>
+  <script src="/static/app.js?v=046"></script>
 </body>
 </html>

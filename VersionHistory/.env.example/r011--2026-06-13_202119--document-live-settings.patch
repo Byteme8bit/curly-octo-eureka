@@ -1,0 +1,22 @@
+--- a/.env.example
++++ b/.env.example
+@@ -253,6 +253,19 @@
+ # DASHBOARD_BOT_ROOT=   # defaults to repo root
+ 
+ # ---------------------------------------------------------------------------
++# Live trading — REAL MONEY on Kraken (default OFF)
++# Requires KRAKEN_API_KEY + KRAKEN_API_SECRET with Query + Trade permissions.
++# ---------------------------------------------------------------------------
++LIVE_ENABLED=0
++# LIVE_STATE_FILE=.live_state.json
++# LIVE_MAX_USD_PER_TRADE=75
++# Hard halt all trading when portfolio drops this much from session peak
++LIVE_DRAWDOWN_HALT_PCT=0.10
++# When 1 (default): no adaptive threshold relaxation or idle probes on live
++LIVE_STRICT_PROFIT=1
++# RESET_LIVE_STATE=0
++
++# ---------------------------------------------------------------------------
+ # Whale watch — alert-only monitoring of large Kraken trades + volume spikes.
+ # No extra API keys; uses public Kraken market data the bot already reaches.
+ # Persists to .whale_watch_state.json for the dashboard. Does NOT auto-trade.

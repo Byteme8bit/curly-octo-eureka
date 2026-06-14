@@ -1,0 +1,35 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -1527,17 +1527,28 @@
+                 from_asset="USD", to_asset="ETH", reason="probe into ETH",
+                 size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
+             )
+-        # else trim a sliver of the largest holding that respects the ETH reserve
++        # else trim a sliver of the best funding source that respects the ETH reserve
++        from bot.funding_priority import funding_rank
++
++        probe_pct = max(0.01, self.settings.idle_probe_size_pct)
+         non_usd = {
+             a: q * usd_prices.get(a, 0.0)
+             for a, q in live.items()
+             if a != "USD" and self._probe_respects_eth_reserve(a, holdings)
+         }
+-        if non_usd:
+-            asset = max(non_usd, key=non_usd.get)
++        viable = {
++            a: v
++            for a, v in non_usd.items()
++            if v * probe_pct >= self.settings.min_usd_trade
++        }
++        if viable:
++            asset = min(
++                viable,
++                key=lambda a: (funding_rank(a, self.settings.preferred_start_assets), -viable[a]),
++            )
+             return TradeIntent(
+                 from_asset=asset, to_asset="USD", reason="probe to USD",
+-                size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
++                size_pct=probe_pct, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
+             )
+         return None
+ 

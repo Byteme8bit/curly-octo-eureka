@@ -1,0 +1,11 @@
+--- a/dashboard/static/app.js
++++ b/dashboard/static/app.js
+@@ -124,7 +124,7 @@
+     { label: "Cash", value: fmtPct(s.cash_pct, true), cls: "mono" },
+     { label: "Trades", value: String(s.trade_count ?? 0), cls: "mono" },
+     { label: "Health", value: s.health_score != null ? `${s.health_score}/100` : "—", cls: `mono ${scoreClass(s.health_score || 0)}` },
+-  ];
++  );
+   return metrics.map((m) => `
+     <div class="metric">
+       <span class="metric-label">${esc(m.label)}</span>

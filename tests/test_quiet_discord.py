@@ -18,11 +18,13 @@ def test_quiet_mode_defaults(monkeypatch) -> None:
     monkeypatch.setenv("DISCORD_QUIET_MODE", "1")
     monkeypatch.delenv("DISCORD_HEARTBEAT_MINUTES", raising=False)
     monkeypatch.delenv("DISCORD_TRADE_SUMMARY_INTERVAL_MINUTES", raising=False)
+    monkeypatch.delenv("AUDITOR_DISCORD_QUIET", raising=False)
     s = load_settings()
     assert s.discord_quiet_mode is True
     assert s.discord_heartbeat_minutes == 60
     assert s.discord_trade_summary_interval_minutes == 60
     assert s.discord_whale_skip_to_discord is False
+    assert s.auditor_discord_quiet is True
 
 
 def test_whale_follow_skip_log_roundtrip(tmp_path: Path) -> None:

@@ -104,6 +104,8 @@ def format_hourly_summary(
     baseline_pnl: float,
     tier_label: str = "",
     crash_hold: bool = False,
+    primary_goal_headline: str = "",
+    primary_goal_progress_pct: float | None = None,
 ) -> str:
     lines = [
         "**TradeBot hourly summary**",
@@ -114,7 +116,9 @@ def format_hourly_summary(
         short = top_block_reason[:120] + ("…" if len(top_block_reason) > 120 else "")
         lines.append(f"Top block reason: {short}")
     lines.append(f"Portfolio ${portfolio:,.2f}  (PnL {baseline_pnl:+.2f} from start)")
-    if tier_label:
+    if primary_goal_headline and primary_goal_progress_pct is not None:
+        lines.append(f"Primary goal: {primary_goal_headline} ({primary_goal_progress_pct:.1f}%)")
+    elif tier_label:
         lines.append(f"Goal tier: {tier_label}")
     if crash_hold:
         lines.append("Crash hold: **active**")

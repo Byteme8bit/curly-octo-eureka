@@ -1,0 +1,48 @@
+--- a/config.py
++++ b/config.py
+@@ -202,6 +202,11 @@
+     crash_hold_watchdog_drawdown_pct: float
+     crash_hold_min_minutes: float
+     live_enabled: bool
++    live_trading_confirm: str
++    live_allowed_assets: tuple[str, ...]
++    live_allow_triangular: bool
++    live_max_route_legs: int
++    live_max_usd_per_route: float
+     live_state_file: Path
+     live_max_usd_per_trade: float
+     live_drawdown_halt_pct: float
+@@ -559,9 +564,31 @@
+             os.getenv("CRASH_HOLD_WATCHDOG_DRAWDOWN_PCT", "0.10")
+         ),
+         crash_hold_min_minutes=float(os.getenv("CRASH_HOLD_MIN_MINUTES", "30")),
+-        live_enabled=os.getenv("LIVE_ENABLED", "0") == "1",
++        live_enabled=(
++            os.getenv("LIVE_TRADING_ENABLED", os.getenv("LIVE_ENABLED", "0")) == "1"
++        ),
++        live_trading_confirm=os.getenv("LIVE_TRADING_CONFIRM", ""),
++        live_allowed_assets=_parse_core_assets(
++            os.getenv("LIVE_ALLOWED_ASSETS", "ETH,ADA")
++        ),
++        live_allow_triangular=os.getenv("LIVE_ALLOW_TRIANGULAR", "0") == "1",
++        live_max_route_legs=int(os.getenv("LIVE_MAX_ROUTE_LEGS", "1")),
++        live_max_usd_per_route=float(
++            os.getenv(
++                "LIVE_MAX_ROUTE_USD",
++                os.getenv(
++                    "LIVE_MAX_TRADE_USD",
++                    os.getenv("LIVE_MAX_USD_PER_TRADE", "50"),
++                ),
++            )
++        ),
+         live_state_file=ROOT / os.getenv("LIVE_STATE_FILE", ".live_state.json"),
+-        live_max_usd_per_trade=float(os.getenv("LIVE_MAX_USD_PER_TRADE", "75")),
++        live_max_usd_per_trade=float(
++            os.getenv(
++                "LIVE_MAX_TRADE_USD",
++                os.getenv("LIVE_MAX_USD_PER_TRADE", "50"),
++            )
++        ),
+         live_drawdown_halt_pct=float(os.getenv("LIVE_DRAWDOWN_HALT_PCT", "0.10")),
+         live_min_eth_reserve=float(os.getenv("LIVE_MIN_ETH_RESERVE", "0.5")),
+         live_max_trades=int(os.getenv("LIVE_MAX_TRADES", "0")),

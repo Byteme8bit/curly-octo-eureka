@@ -78,11 +78,15 @@ class RiskManager:
 
         save_callback,
 
+        adaptive_enabled: bool = True,
+
     ):
 
         self.state = risk_state
 
         self.fee_rate = fee_rate
+
+        self.adaptive_enabled = adaptive_enabled
 
         self.drawdown_hibernate_pct = drawdown_hibernate_pct
 
@@ -156,9 +160,20 @@ class RiskManager:
 
 
 
+    def _clear_adaptive_suspend(self) -> None:
+        self.state.adaptive_suspended = False
+        self.state.adaptive_suspended_at = None
+        self.state.adaptive_relax_attempts = 0
+        self.state.adaptive_alert_sent = False
+        self._save()
+
     def _maybe_resume_adaptive(self, idle_hours: float) -> None:
         """Re-enable adaptive relaxation after a cooldown without a successful trade."""
         if not self.state.adaptive_suspended:
+            return
+        # Prolonged flat period — resume immediately instead of waiting out cooldown.
+        if idle_hours >= 24.0:
+            self._clear_adaptive_suspend()
             return
         suspended_at = self._parse(self.state.adaptive_suspended_at)
         if suspended_at is not None:
@@ -167,15 +182,21 @@ class RiskManager:
                 return
         elif idle_hours < self.idle_reeval_hours * 2:
             return
-        self.state.adaptive_suspended = False
-        self.state.adaptive_suspended_at = None
-        self.state.adaptive_relax_attempts = 0
-        self.state.adaptive_alert_sent = False
-        self._save()
+        self._clear_adaptive_suspend()
 
     def adaptive_status(self) -> AdaptiveStatus:
 
         idle = self.idle_hours()
+
+        if not self.adaptive_enabled:
+            return AdaptiveStatus(
+                active=False,
+                idle_hours=idle,
+                relax_factor=1.0,
+                fee_floor_1hop=fee_floor_edge(self.fee_rate, 1),
+                relax_attempts=0,
+            )
+
         self._maybe_resume_adaptive(idle)
 
         if self.state.adaptive_suspended:
@@ -701,8 +722,7 @@ class RiskManager:
 
         self.state.adaptive_relax_attempts = 0
 
-        self.state.adaptive_suspended = False
-        self.state.adaptive_suspended_at = None
+        self._clear_adaptive_suspend()
 
         self.state.trades_this_hour += 1
 

@@ -1,0 +1,85 @@
+--- a/dashboard/static/styles.css
++++ b/dashboard/static/styles.css
+@@ -75,18 +75,72 @@
+   box-shadow: 0 0 8px rgba(245, 101, 101, 0.35);
+ }
+ .mode-paper {
+-  color: var(--muted);
+-  background: var(--surface2);
+-  border: 1px solid var(--border);
++  color: #d7f5e8;
++  background: linear-gradient(135deg, #1e4d6b 0%, #1a6b4f 100%);
++  border: 1px solid #3dd68c;
++  box-shadow: 0 0 8px rgba(61, 214, 140, 0.25);
+ }
+ .mode-live-text { color: var(--bad); font-weight: 700; }
+-.mode-paper-text { color: var(--muted); }
+-.mode-mirror {
+-  color: #fff;
+-  background: linear-gradient(90deg, var(--surface2) 50%, var(--bad) 50%);
+-  border: 1px solid var(--border);
+-}
+-.mode-mirror-text { color: var(--accent); font-weight: 700; }
++.mode-paper-text { color: var(--good); font-weight: 700; }
++
++.mode-nav {
++  display: flex;
++  gap: 0.35rem;
++  margin-right: 0.5rem;
++}
++
++.mode-nav-link {
++  color: var(--muted);
++  text-decoration: none;
++  font-size: 0.78rem;
++  font-weight: 600;
++  letter-spacing: 0.04em;
++  text-transform: uppercase;
++  padding: 0.3rem 0.65rem;
++  border: 1px solid var(--border);
++  border-radius: 4px;
++}
++
++.mode-nav-link:hover { color: var(--text); border-color: var(--accent); }
++
++.mode-nav-link.active[data-mode],
++.mode-nav-link.active {
++  color: var(--text);
++  border-color: var(--accent);
++  background: rgba(61, 139, 253, 0.12);
++}
++
++body[data-mode="paper"] #nav-paper.active {
++  border-color: var(--good);
++  background: rgba(61, 214, 140, 0.12);
++}
++
++body[data-mode="live"] #nav-live.active {
++  border-color: var(--bad);
++  background: rgba(245, 101, 101, 0.12);
++}
++
++.mirror-note,
++.halt-banner {
++  padding: 0.55rem 1.25rem;
++  font-size: 0.82rem;
++  border-bottom: 1px solid var(--border);
++}
++
++.mirror-note {
++  background: rgba(61, 139, 253, 0.08);
++  color: var(--muted);
++}
++
++.halt-banner {
++  background: rgba(245, 101, 101, 0.15);
++  color: #ffc9c9;
++  font-weight: 600;
++}
++
++.hidden { display: none !important; }
++
++.metric-error { grid-column: 1 / -1; }
+ 
+ .section-nav {
+   display: flex;

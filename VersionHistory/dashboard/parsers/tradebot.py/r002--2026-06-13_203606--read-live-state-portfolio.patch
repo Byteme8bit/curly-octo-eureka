@@ -1,0 +1,164 @@
+--- a/dashboard/parsers/tradebot.py
++++ b/dashboard/parsers/tradebot.py
+@@ -9,6 +9,7 @@
+ 
+ from dashboard.config import DashboardSettings
+ from dashboard.io_util import newest_files, read_text, tail_lines
++from dashboard.parsers.live_portfolio import load_live_portfolio
+ 
+ _TICK_HEADER = re.compile(
+     r"^MARKET CHECK - (.+)$",
+@@ -159,10 +160,75 @@
+ 
+ 
+ def build_tradebot_view(settings: DashboardSettings) -> dict:
+-    portfolio_log = PaperPortfolioLog(settings.paper_portfolio_file)
+-    snap = portfolio_log.load()
+-    if snap is None and settings.paper_state_file.exists():
+-        snap = portfolio_log.bootstrap_from_state(settings.paper_state_file)
++    mode = "paper"
++    live_trades: list[dict] = []
++
++    if settings.live_enabled:
++        live = load_live_portfolio(settings)
++        if live:
++            mode = "live"
++            portfolio = {
++                k: live[k]
++                for k in (
++                    "mode",
++                    "updated_at",
++                    "anchored_at",
++                    "portfolio_usd",
++                    "baseline_portfolio_usd",
++                    "peak_portfolio_usd",
++                    "baseline_pnl",
++                    "drawdown_pct",
++                    "cash_usd",
++                    "cash_pct",
++                    "trade_count",
++                    "holdings",
++                )
++            }
++            live_trades = live.get("live_trades") or []
++        else:
++            live = None
++            portfolio = None
++    else:
++        live = None
++        portfolio = None
++
++    if portfolio is None:
++        portfolio_log = PaperPortfolioLog(settings.paper_portfolio_file)
++        snap = portfolio_log.load()
++        if snap is None and settings.paper_state_file.exists():
++            snap = portfolio_log.bootstrap_from_state(settings.paper_state_file)
++
++        portfolio = None
++        if snap:
++            cash_usd = sum(
++                row["usd_value"]
++                for asset, row in snap.holdings.items()
++                if asset == "USD"
++            )
++            total = snap.portfolio_usd or 0.0
++            cash_pct = round(cash_usd / total, 4) if total > 0 else None
++            portfolio = {
++                "mode": "paper",
++                "updated_at": snap.updated_at,
++                "portfolio_usd": snap.portfolio_usd,
++                "baseline_pnl": snap.baseline_pnl,
++                "drawdown_pct": snap.drawdown_pct,
++                "cash_usd": round(cash_usd, 2),
++                "cash_pct": cash_pct,
++                "trade_count": 0,
++                "holdings": [
++                    {
++                        "asset": asset,
++                        "qty": row["qty"],
++                        "usd_price": row["usd_price"],
++                        "usd_value": row["usd_value"],
++                    }
++                    for asset, row in sorted(
++                        snap.holdings.items(),
++                        key=lambda x: -x[1]["usd_value"],
++                    )
++                ],
++            }
+ 
+     receipts = []
+     for path in newest_files(settings.receipts_dir, "*.txt", limit=15):
+@@ -170,43 +236,21 @@
+         if row:
+             receipts.append(row)
+ 
++    if mode == "live":
++        trade_count = portfolio.get("trade_count", 0) if portfolio else 0
++        recent_trades = live_trades[:15] if live_trades else receipts[:15]
++    else:
++        trade_count = len(receipts)
++        if portfolio is not None:
++            portfolio = {**portfolio, "trade_count": trade_count}
++        recent_trades = receipts
++
+     log_text = _load_window_logs(settings.log_dir)
+     ticks = _extract_ticks_from_log(log_text)
+     latest = ticks[-1] if ticks else None
+ 
+     discord_lines = tail_lines(settings.discord_chat_log, max_lines=400)
+     strategy_focus = _strategy_focus(latest, discord_lines)
+-
+-    portfolio = None
+-    if snap:
+-        cash_usd = sum(
+-            row["usd_value"]
+-            for asset, row in snap.holdings.items()
+-            if asset == "USD"
+-        )
+-        total = snap.portfolio_usd or 0.0
+-        cash_pct = round(cash_usd / total, 4) if total > 0 else None
+-        portfolio = {
+-            "updated_at": snap.updated_at,
+-            "portfolio_usd": snap.portfolio_usd,
+-            "baseline_pnl": snap.baseline_pnl,
+-            "drawdown_pct": snap.drawdown_pct,
+-            "cash_usd": round(cash_usd, 2),
+-            "cash_pct": cash_pct,
+-            "trade_count": len(receipts),
+-            "holdings": [
+-                {
+-                    "asset": asset,
+-                    "qty": row["qty"],
+-                    "usd_price": row["usd_price"],
+-                    "usd_value": row["usd_value"],
+-                }
+-                for asset, row in sorted(
+-                    snap.holdings.items(),
+-                    key=lambda x: -x[1]["usd_value"],
+-                )
+-            ],
+-        }
+ 
+     blocked_all: list[str] = []
+     if latest:
+@@ -216,16 +260,18 @@
+     runtime_tail = tail_lines(settings.runtime_log, max_lines=40)
+ 
+     return {
++        "mode": mode,
+         "portfolio": portfolio,
+         "latest_tick": latest,
+         "pnl_trend": _pnl_trend(ticks),
+         "recent_ticks": ticks[-5:],
+-        "recent_trades": receipts,
++        "recent_trades": recent_trades,
+         "blocked_opportunities": blocked_all[:20],
+         "strategy_focus": strategy_focus,
+         "runtime_log_tail": runtime_tail,
+         "sources": {
+-            "portfolio": str(settings.paper_portfolio_file),
++            "portfolio": str(settings.live_state_file if mode == "live" else settings.paper_portfolio_file),
++            "session_anchor": str(settings.live_session_start_file) if mode == "live" else None,
+             "logs": str(settings.log_dir),
+             "receipts": str(settings.receipts_dir),
+         },

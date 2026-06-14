@@ -4,6 +4,23 @@ let refreshMs = 15000;
 let timer = null;
 const charts = {};
 
+function detectPageMode() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  if (path === "/live") return "live";
+  return "paper";
+}
+
+const PAGE_MODE = detectPageMode();
+
+function apiPath(resource) {
+  return `/api/${PAGE_MODE}/${resource}`;
+}
+
+function legacyApiPath(resource, query = "") {
+  const q = query || `?mode=${PAGE_MODE}`;
+  return `/api/${resource}${q.startsWith("?") ? q : `?${q}`}`;
+}
+
 const CHART_COLORS = {
   line: "#3d8bfd",
   lineFill: "rgba(61, 139, 253, 0.12)",
@@ -84,9 +101,74 @@ function defaultChartOptions(extra = {}) {
   };
 }
 
+function modeBadge(mode) {
+  if (mode === "live") {
+    return `<span class="mode-badge mode-live">LIVE</span>`;
+  }
+  return `<span class="mode-badge mode-paper">PAPER</span>`;
+}
+
+function modeLabel(mode) {
+  if (mode === "live") return "LIVE";
+  return "PAPER";
+}
+
+function modeClass(mode) {
+  if (mode === "live") return "mode-live-text";
+  return "mode-paper-text";
+}
+
+function applyPageModeChrome() {
+  document.body.dataset.mode = PAGE_MODE;
+  const title = $("#page-title");
+  if (title) {
+    title.textContent = PAGE_MODE === "live"
+      ? "TradeBot Live (Kraken)"
+      : "TradeBot Paper";
+  }
+  document.title = PAGE_MODE === "live"
+    ? "TradeBot Live Dashboard"
+    : "TradeBot Paper Dashboard";
+  const paperNav = $("#nav-paper");
+  const liveNav = $("#nav-live");
+  if (paperNav) paperNav.classList.toggle("active", PAGE_MODE === "paper");
+  if (liveNav) liveNav.classList.toggle("active", PAGE_MODE === "live");
+}
+
+function showLoadError(message) {
+  const meta = $("#meta-line");
+  if (meta) meta.innerHTML = `<span class="score-bad">Failed to load: ${esc(message)}</span>`;
+  const strip = $("#metric-strip");
+  if (strip) {
+    strip.innerHTML = `<div class="metric metric-error"><span class="metric-label">Error</span><span class="metric-value score-bad">${esc(message)}</span></div>`;
+  }
+}
+
+function updateMirrorNote(data) {
+  const note = $("#mirror-note");
+  if (!note) return;
+  const show = PAGE_MODE === "live" && data.mirror_mode;
+  note.classList.toggle("hidden", !show);
+}
+
+function updateHaltBanner(summary) {
+  const banner = $("#halt-banner");
+  if (!banner) return;
+  if (PAGE_MODE !== "live" || !summary?.halted) {
+    banner.classList.add("hidden");
+    banner.textContent = "";
+    return;
+  }
+  const reasons = (summary.halt_reasons || []).join(" · ") || "Live trading halted";
+  banner.classList.remove("hidden");
+  banner.textContent = `LIVE HALT: ${reasons}`;
+}
+
 function renderMetricStrip(summary) {
   const s = summary || {};
+  const mode = s.trading_mode || PAGE_MODE;
   const metrics = [
+    { label: "Mode", value: modeLabel(mode), cls: modeClass(mode) },
     { label: "Portfolio", value: fmtUsd(s.portfolio_usd), cls: "mono" },
     { label: "Session PnL", value: fmtPnl(s.baseline_pnl), cls: `mono ${pnlClass(s.baseline_pnl)}` },
     { label: "Drawdown", value: fmtPct(s.drawdown_pct, true), cls: `mono ${s.drawdown_pct > 0.05 ? "score-bad" : ""}` },
@@ -94,6 +176,20 @@ function renderMetricStrip(summary) {
     { label: "Trades", value: String(s.trade_count ?? 0), cls: "mono" },
     { label: "Health", value: s.health_score != null ? `${s.health_score}/100` : "—", cls: `mono ${scoreClass(s.health_score || 0)}` },
   ];
+  if (mode === "live") {
+    metrics.splice(1, 0,
+      { label: "Peak", value: fmtUsd(s.peak_portfolio_usd), cls: "mono" },
+      { label: "ETH", value: s.eth_balance != null ? `${Number(s.eth_balance).toFixed(4)} / ${s.eth_floor ?? "—"}` : "—", cls: `mono ${s.eth_balance != null && s.eth_floor != null && s.eth_balance < s.eth_floor ? "score-bad" : ""}` },
+      { label: "Live halt", value: s.halted ? "HALTED" : "OK", cls: s.halted ? "score-bad mode-live-text" : "score-good" },
+    );
+    if (s.max_trades > 0) {
+      metrics.push({
+        label: "Live cap",
+        value: `${s.trades_completed ?? 0}/${s.max_trades}`,
+        cls: "mono",
+      });
+    }
+  }
   return metrics.map((m) => `
     <div class="metric">
       <span class="metric-label">${esc(m.label)}</span>
@@ -357,11 +453,44 @@ function renderWhales(wh) {
     ${renderCompactTable(["Time", "Asset", "Dir", "USD", "Source", "Follow"], rows)}`;
 }
 
+function renderGoalProgressBar(pg, portfolioUsd) {
+  if (!pg || pg.achieved || pg.number == null) {
+    return "";
+  }
+  const pct = Math.min(100, Math.max(0, pg.progress_pct ?? 0));
+  const current = pg.current_usd ?? portfolioUsd ?? 0;
+  const target = pg.target_usd ?? 0;
+  return `
+    <div class="goal-primary-card">
+      <div class="goal-primary-header">
+        <h3 class="goal-primary-title">${esc(pg.headline || `Goal ${pg.number}: $${target.toLocaleString()} portfolio`)}</h3>
+        <span class="goal-primary-pct mono">${pct.toFixed(1)}%</span>
+      </div>
+      <div class="goal-progress-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+        <div class="goal-progress-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="goal-primary-meta">
+        <span class="mono">${esc(fmtUsd(current))}</span>
+        <span class="muted">→</span>
+        <span class="mono">${esc(fmtUsd(target))}</span>
+        ${pg.remaining_usd != null ? `<span class="muted">(${esc(fmtUsd(pg.remaining_usd))} to go)</span>` : ""}
+      </div>
+      ${pg.unlock_summary ? `<p class="goal-unlock muted small">Unlocks at goal: <strong>${esc(pg.unlock_summary)}</strong></p>` : ""}
+    </div>`;
+}
+
 function renderGoalsPanel(goals) {
   const g = goals || {};
   if (!g.enabled) {
     return `<p class="muted">Goal evolution disabled — set <code>GOAL_EVOLUTION_ENABLED=1</code>.</p>`;
   }
+  const pg = g.primary_goal || {};
+  const primaryBlock = renderGoalProgressBar(pg, g.portfolio_usd);
+  const mirrorNote = g.mirror_mode && g.paper_portfolio_usd != null && g.live_portfolio_usd != null
+    ? `<p class="muted small">Mirror mode — primary goal tracks <strong>live</strong> Kraken portfolio (${esc(fmtUsd(g.live_portfolio_usd))}); paper reference ${esc(fmtUsd(g.paper_portfolio_usd))}.</p>`
+    : g.portfolio_source === "live"
+      ? `<p class="muted small">Tracking live Kraken portfolio for milestones.</p>`
+      : "";
   const crash = g.crash_hold || {};
   const crashBadge = crash.active
     ? `<span class="badge score-bad">Crash hold</span>`
@@ -374,10 +503,12 @@ function renderGoalsPanel(goals) {
     ? (g.achieved_tiers || []).join(", ")
     : "0";
   return `
+    ${primaryBlock}
+    ${mirrorNote}
     <div class="mini-stats">
-      <div><span class="muted">Tier</span><span class="mono">${esc(g.tier_label)} (${g.tier ?? 0})</span></div>
+      <div><span class="muted">Current tier</span><span class="mono">${esc(g.tier_label)} (${g.tier ?? 0})</span></div>
       <div><span class="muted">Portfolio</span><span class="mono">${fmtUsd(g.portfolio_usd)}</span></div>
-      <div><span class="muted">Next goal</span><span class="mono">${next}</span></div>
+      <div><span class="muted">Next milestone</span><span class="mono">${next}</span></div>
       <div><span class="muted">Mode</span>${crashBadge}</div>
       <div><span class="muted">Achieved tiers</span><span class="mono">${esc(achieved)}</span></div>
     </div>
@@ -390,6 +521,16 @@ function renderGoalsSnapshotCard(goals) {
   const g = goals || {};
   if (!g.enabled) {
     return `<span class="muted">Goals off</span>`;
+  }
+  const pg = g.primary_goal || {};
+  if (pg.number != null && !pg.achieved) {
+    const pct = pg.progress_pct ?? 0;
+    return `
+      <div class="goal-snapshot-headline">${esc(pg.headline || `Goal ${pg.number}`)}</div>
+      <div class="goal-progress-track goal-progress-compact" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+        <div class="goal-progress-fill" style="width:${Math.min(100, pct)}%"></div>
+      </div>
+      <div class="mono small">${pct.toFixed(1)}% · ${esc(fmtUsd(g.portfolio_usd))} / ${esc(fmtUsd(pg.target_usd))}</div>`;
   }
   const crash = g.crash_hold || {};
   const next = g.next_threshold_usd != null ? fmtUsd(g.next_threshold_usd) : "Max";
@@ -496,28 +637,34 @@ function renderTradebotDetail(tb) {
     <ul class="blocked-list">${blocked}</ul>`;
 }
 
+async function fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText} (${url})`);
+  }
+  return res.json();
+}
+
 async function loadChartData() {
-  const [histRes, tradesRes] = await Promise.all([
-    fetch("/api/portfolio/history"),
-    fetch("/api/trades/series"),
+  const [hist, trades] = await Promise.all([
+    fetchJson(apiPath("portfolio/history")),
+    fetchJson(apiPath("trades/series")),
   ]);
-  const hist = histRes.ok ? await histRes.json() : { points: [], pnl_deltas: [] };
-  const trades = tradesRes.ok ? await tradesRes.json() : { buckets: [] };
   return { hist, trades };
 }
 
 async function refresh() {
   try {
-    const [overviewRes, chartData] = await Promise.all([
-      fetch("/api/overview"),
+    const [data, chartData] = await Promise.all([
+      fetchJson(apiPath("overview")),
       loadChartData(),
     ]);
-    if (!overviewRes.ok) throw new Error(overviewRes.statusText);
-    const data = await overviewRes.json();
     refreshMs = (data.refresh_seconds || 15) * 1000;
 
-    $("#meta-line").textContent = `Root: ${data.root} · refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
+    $("#meta-line").innerHTML = `${modeBadge(data.mode || PAGE_MODE)} Root: ${esc(data.root)} · refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
     $("#metric-strip").innerHTML = renderMetricStrip(data.summary);
+    updateMirrorNote(data);
+    updateHaltBanner(data.summary);
     const snap = $("#overview-snapshot-panel");
     if (snap) snap.innerHTML = renderOverviewSnapshot(data);
 
@@ -537,11 +684,12 @@ async function refresh() {
     const bl = data.backlog || [];
     $("#backlog-list").innerHTML = bl.map((l) => `<li>${esc(l)}</li>`).join("") || "<li class='empty'>—</li>";
   } catch (err) {
-    $("#meta-line").textContent = "Failed to load: " + err.message;
+    showLoadError(err.message || String(err));
   }
 }
 
 function startPolling() {
+  applyPageModeChrome();
   refresh();
   if (timer) clearInterval(timer);
   timer = setInterval(refresh, refreshMs);

@@ -1,0 +1,15 @@
+--- a/.env.example
++++ b/.env.example
+@@ -265,8 +265,11 @@
+ LIVE_DRAWDOWN_HALT_PCT=0.10
+ # Untouchable ETH floor — live trading halts if balance drops below this
+ LIVE_MIN_ETH_RESERVE=0.5
+-# When 1 (default): no adaptive threshold relaxation or idle probes on live
++# When 1 (default): no adaptive threshold relaxation or idle probes on live-only mode
+ LIVE_STRICT_PROFIT=1
++# Paper shadow + live mirror: paper runs in .paper_state.json; profitable paper
++# trades mirror to Kraken when live gates pass (requires LIVE_ENABLED=1 + API keys).
++# LIVE_MIRROR_PAPER=0
+ # RESET_LIVE_STATE=0
+ 
+ # ---------------------------------------------------------------------------

@@ -69,6 +69,15 @@ def build_live_verify_tag(
     skip_kraken: bool = False,
 ) -> LiveVerifyResult:
     """Run lightweight live-viability checks and return a Discord footer line."""
+    if trade.get("live") and trade.get("order_id"):
+        oid = trade["order_id"]
+        symbol = trade.get("symbol", "")
+        return LiveVerifyResult(
+            tag=f"✓ Live fill confirmed on Kraken ({symbol} order {oid})",
+            verdict=Verdict.CONFIRM,
+            source="Kraken exchange fill",
+        )
+
     source = "Kraken public fees + ticker"
     route_symbols = _route_symbols(trade)
     symbol = trade.get("symbol", route_symbols[0] if route_symbols else "")

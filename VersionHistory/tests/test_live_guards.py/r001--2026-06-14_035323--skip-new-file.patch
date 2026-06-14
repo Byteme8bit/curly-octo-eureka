@@ -1,0 +1,3 @@
+--- a/tests/test_live_guards.py
++++ b/tests/test_live_guards.py
+# initial baseline - no previous state available

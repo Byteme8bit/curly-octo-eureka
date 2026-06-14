@@ -1,0 +1,3 @@
+--- a/tests/test_live_mirror.py
++++ b/tests/test_live_mirror.py
+# initial baseline - no previous state available

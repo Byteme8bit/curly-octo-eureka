@@ -1,0 +1,51 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -1838,19 +1838,7 @@
+         if can_trade:
+ 
+             adaptive_active = self.risk.adaptive_status().active
+-
+-            if adaptive_active and intents:
+-
+-                exhausted_msg = self.risk.record_adaptive_attempt()
+-
+-                if exhausted_msg:
+-
+-                    blocked.append(exhausted_msg)
+-                    activity_blocked.append(exhausted_msg)
+-
+-                    if self.settings.discord_enabled and not self.settings.discord_quiet_mode:
+-
+-                        self.discord.post_plain(exhausted_msg)
++            edge_qualified = False
+ 
+             for intent in intents:
+ 
+@@ -1936,6 +1924,7 @@
+ 
+                     continue
+ 
++                edge_qualified = True
+                 intent.edge = pf.net_return_pct
+ 
+ 
+@@ -2002,6 +1991,19 @@
+                     self.auditor.note_trade(trade)
+ 
+                     break
++
++            if adaptive_active and not trades and edge_qualified:
++
++                exhausted_msg = self.risk.record_adaptive_attempt()
++
++                if exhausted_msg:
++
++                    blocked.append(exhausted_msg)
++                    activity_blocked.append(exhausted_msg)
++
++                    if self.settings.discord_enabled and not self.settings.discord_quiet_mode:
++
++                        self.discord.post_plain(exhausted_msg)
+ 
+             self._maybe_force_probe(intents, result, holdings, usd_prices, portfolio, trades)
+ 

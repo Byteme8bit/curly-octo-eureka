@@ -1,0 +1,13 @@
+--- a/.env.example
++++ b/.env.example
+@@ -5,7 +5,9 @@
+ # USD pairs for momentum scoring (cross pairs auto-discovered from Kraken)
+ SYMBOLS=BTC/USD,ETH/USD,SOL/USD,ADA/USD,XRP/USD,DOT/USD,LINK/USD,AVAX/USD,ATOM/USD,LTC/USD,DOGE/USD,UNI/USD,AAVE/USD,ARB/USD,OP/USD,POL/USD
+ 
+-CORE_ASSETS=ETH,ADA,BTC
++CORE_ASSETS=ADA,ETH,BTC
++# Spend these assets first when funding rotations (ADA before ETH reserve)
++PREFERRED_START_ASSETS=ADA
+ 
+ INITIAL_BALANCES={"ETH": 1.0, "ADA": 83.0, "USD": 0.0}
+ RESET_PAPER_STATE=0

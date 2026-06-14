@@ -1,0 +1,35 @@
+--- a/bot/risk.py
++++ b/bot/risk.py
+@@ -78,11 +78,15 @@
+ 
+         save_callback,
+ 
++        adaptive_enabled: bool = True,
++
+     ):
+ 
+         self.state = risk_state
+ 
+         self.fee_rate = fee_rate
++
++        self.adaptive_enabled = adaptive_enabled
+ 
+         self.drawdown_hibernate_pct = drawdown_hibernate_pct
+ 
+@@ -183,6 +187,16 @@
+     def adaptive_status(self) -> AdaptiveStatus:
+ 
+         idle = self.idle_hours()
++
++        if not self.adaptive_enabled:
++            return AdaptiveStatus(
++                active=False,
++                idle_hours=idle,
++                relax_factor=1.0,
++                fee_floor_1hop=fee_floor_edge(self.fee_rate, 1),
++                relax_attempts=0,
++            )
++
+         self._maybe_resume_adaptive(idle)
+ 
+         if self.state.adaptive_suspended:

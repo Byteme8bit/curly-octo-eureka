@@ -1,0 +1,37 @@
+--- a/.env.example
++++ b/.env.example
+@@ -85,11 +85,20 @@
+ # Comma-separated Discord user IDs allowed to send commands (required for commands)
+ DISCORD_ALLOWED_USER_IDS=
+ DISCORD_HEARTBEAT_MINUTES=30
+-# Quiet Discord: fewer heartbeats, hourly trade summaries, skip routine audit/whale noise
++# Quiet Discord — fewer heartbeats, no paper-trade spam, skip routine audit/whale/adaptive noise.
++# Recommended bundle when chat is noisy (restart bot after changing):
++#   DISCORD_QUIET_MODE=1
++#   WATCHDOG_QUIET_MODE=1
++#   DISCORD_HEARTBEAT_MINUTES=120
++#   DISCORD_TRADE_SUMMARY_INTERVAL_MINUTES=0
++#   DISCORD_MAJOR_MOVE_PCT=0
++#   WHALE_WATCH_DISCORD_ALERTS=0
++# Keeps: LIVE trades, LIVE HALT, circuit breaker, errors (cooldown), crash-hold alerts.
+ # DISCORD_QUIET_MODE=1
++# AUDITOR_DISCORD_QUIET=1   # defaults on when DISCORD_QUIET_MODE=1
+ # DISCORD_WHALE_SKIP_TO_DISCORD=0
+-# DISCORD_TRADE_SUMMARY_INTERVAL_MINUTES=60
+-# DISCORD_MAJOR_MOVE_PCT=0.05
++# DISCORD_TRADE_SUMMARY_INTERVAL_MINUTES=60   # 0 = off; quiet default is 60 if unset
++# DISCORD_MAJOR_MOVE_PCT=0.05   # set 0 to disable price-move alerts
+ # DISCORD_MAJOR_MOVE_COOLDOWN_MINUTES=60
+ # Real-time live-viability tag on trade Discord posts (independent verifier still via WatchDog -verify)
+ TRADE_VERIFY_DISCORD_TAG=1
+@@ -154,8 +163,8 @@
+ WATCHDOG_ERROR_BURST_COUNT=5
+ WATCHDOG_ERROR_BURST_MINUTES=10
+ WATCHDOG_HEARTBEAT_MINUTES=15
+-# WATCHDOG_QUIET_MODE=1
+-# When quiet (or WATCHDOG_QUIET_MODE=1), routine "all normal" heartbeats are suppressed
++# WATCHDOG_QUIET_MODE=1   # also inherits DISCORD_QUIET_MODE=1 when unset
++# When quiet, routine "all normal" heartbeats and Watchdog startup spam are suppressed
+ 
+ # === Auditor (analyst bot) ===
+ # Audits past trades, fetches crypto news headlines, proposes tier-2 knob

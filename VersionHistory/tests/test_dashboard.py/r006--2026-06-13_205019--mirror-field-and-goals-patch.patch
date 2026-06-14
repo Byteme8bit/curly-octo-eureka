@@ -1,0 +1,27 @@
+--- a/tests/test_dashboard.py
++++ b/tests/test_dashboard.py
+@@ -40,6 +40,7 @@
+         whale_watch_state_file=root / ".whale_watch_state.json",
+         goal_state_file=root / ".tradebot_goals_state.json",
+         live_enabled=False,
++        live_mirror_paper=False,
+         live_state_file=root / ".live_state.json",
+         live_session_start_file=root / "live_session_start.json",
+         error_burst_count=5,
+@@ -240,7 +241,7 @@
+     assert "cooldown" in ev["follow_reason"]
+ 
+ 
+-def test_build_goals_view(tmp_path: Path):
++def test_build_goals_view(tmp_path: Path, monkeypatch):
+     state_path = tmp_path / ".tradebot_goals_state.json"
+     state_path.write_text(
+         json.dumps(
+@@ -255,6 +256,7 @@
+     )
+     cfg = _settings(tmp_path)
+     cfg = cfg.__class__(**{**cfg.__dict__, "goal_state_file": state_path})
++    monkeypatch.setenv("GOAL_EVOLUTION_ENABLED", "1")
+     view = build_goals_view(cfg)
+     assert view["enabled"] is True
+     assert view["tier"] == 1

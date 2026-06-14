@@ -1,0 +1,11 @@
+--- a/.env.example
++++ b/.env.example
+@@ -327,7 +327,7 @@
+ GOAL_EVOLUTION_ENABLED=1
+ # GOAL_STATE_FILE=.tradebot_goals_state.json
+ GOAL_MILESTONES_USD=10000,100000,1000000
+-GOAL_TIER0_STRATEGIES=cross_momentum
++GOAL_TIER0_STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage
+ GOAL_TIER1_STRATEGIES=cross_momentum,stat_arb
+ GOAL_TIER2_STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage
+ GOAL_TIER3_STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage

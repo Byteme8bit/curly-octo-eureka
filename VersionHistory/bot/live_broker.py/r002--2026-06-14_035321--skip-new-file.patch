@@ -1,0 +1,230 @@
+--- a/bot/live_broker.py
++++ b/bot/live_broker.py
+@@ -9,7 +9,8 @@
+ 
+ import ccxt
+ 
+-from bot.markets import PairInfo, TradeRoute
++from bot.live_guards import LIVE_SYNC_ASSETS, check_live_route
++from bot.markets import PairInfo, RouteLeg, TradeRoute
+ from bot.paper_broker import PaperBroker, PaperState, RiskState
+ from bot.strategies.base import Signal
+ 
+@@ -26,17 +27,31 @@
+         state_file: Path,
+         min_usd_trade: float = 5.0,
+         max_usd_per_trade: float = 100.0,
++        max_usd_per_route: float = 100.0,
++        allowed_assets: tuple[str, ...] = ("ETH", "ADA"),
++        allow_triangular: bool = False,
++        max_route_legs: int = 1,
+         reset: bool = False,
+     ):
+         self.exchange = exchange
+         self.fee_rate = fee_rate
+         self.min_usd_trade = min_usd_trade
+         self.max_usd_per_trade = max_usd_per_trade
++        self.max_usd_per_route = max_usd_per_route
++        self.allowed_assets = allowed_assets
++        self.allow_triangular = allow_triangular
++        self.max_route_legs = max_route_legs
+         self.state_file = state_file
+         self.halted = False
+         self.halt_reason = ""
+         self.state = self._load_or_create(reset)
+         self.sync_from_exchange()
++
++    def _route_guard_kwargs(self) -> dict:
++        return {
++            "allow_triangular": self.allow_triangular,
++            "max_route_legs": self.max_route_legs,
++        }
+ 
+     def _load_or_create(self, reset: bool) -> PaperState:
+         if reset and self.state_file.exists():
+@@ -92,6 +107,8 @@
+             return
+         totals = raw.get("total") or {}
+         for asset, qty in totals.items():
++            if asset not in LIVE_SYNC_ASSETS:
++                continue
+             if qty and float(qty) > 0:
+                 self.state.balances[asset] = float(qty)
+             elif asset in self.state.balances:
+@@ -136,6 +153,39 @@
+             self.save()
+         return trade
+ 
++    def _estimate_leg_usd(
++        self,
++        leg: RouteLeg,
++        size_pct: float,
++        price: float,
++        usd_prices: dict[str, float],
++    ) -> float:
++        if leg.side == Signal.BUY:
++            quote_bal = self.balance(leg.from_asset)
++            quote_spend = quote_bal * size_pct
++            return quote_spend * self._asset_usd(leg.from_asset, usd_prices)
++        base_bal = self.balance(leg.from_asset)
++        base_qty = base_bal * size_pct
++        return base_qty * self._asset_usd(leg.from_asset, usd_prices)
++
++    def _cap_route_size_pct(
++        self,
++        route: TradeRoute,
++        prices: dict[str, float],
++        usd_prices: dict[str, float],
++        size_pct: float,
++    ) -> float:
++        if not route.legs or self.max_usd_per_route <= 0:
++            return size_pct
++        first = route.legs[0]
++        price = prices.get(first.pair.symbol, 0.0)
++        if price <= 0:
++            return size_pct
++        est_usd = self._estimate_leg_usd(first, size_pct, price, usd_prices)
++        if est_usd <= self.max_usd_per_route:
++            return size_pct
++        return size_pct * (self.max_usd_per_route / est_usd)
++
+     def execute_path(
+         self,
+         route: TradeRoute,
+@@ -150,8 +200,17 @@
+             return None
+         if not route.legs:
+             return None
++        allowed, block_reason = check_live_route(
++            route,
++            self.allowed_assets,
++            **self._route_guard_kwargs(),
++        )
++        if not allowed:
++            logger.warning("Live path blocked: %s", block_reason)
++            return None
+ 
+         self.sync_from_exchange()
++        size_pct = self._cap_route_size_pct(route, prices, usd_prices, size_pct)
+         leg_trades: list[dict] = []
+         for index, leg in enumerate(route.legs):
+             price = prices.get(leg.pair.symbol, 0.0)
+@@ -169,14 +228,29 @@
+                 msg = (
+                     f"Live leg {index + 1}/{route.hops} failed on {leg.pair.symbol}: {exc}"
+                 )
++                if leg_trades:
++                    rollback_ok = self._rollback_legs(
++                        leg_trades, prices, usd_prices, path_reason=reason
++                    )
++                    if not rollback_ok:
++                        msg += f" — rollback failed after {len(leg_trades)} leg(s)"
+                 self.halt(msg)
+                 return None
+             if not trade:
+                 if index > 0:
+-                    self.halt(
++                    rollback_ok = self._rollback_legs(
++                        leg_trades, prices, usd_prices, path_reason=reason
++                    )
++                    msg = (
+                         f"Live path stalled after leg {index}/{route.hops} — "
+                         f"holdings may be mid-route ({route.path})"
+                     )
++                    if rollback_ok:
++                        msg += " — rolled back completed legs"
++                        logger.warning(msg)
++                    else:
++                        msg += " — rollback failed"
++                        self.halt(msg)
+                 return None
+             leg_trades.append(trade)
+ 
+@@ -193,6 +267,55 @@
+         self.save()
+         return combined
+ 
++    def _rollback_legs(
++        self,
++        leg_trades: list[dict],
++        prices: dict[str, float],
++        usd_prices: dict[str, float],
++        *,
++        path_reason: str,
++    ) -> bool:
++        """Best-effort reverse of completed legs (newest first). Returns True if all reversed."""
++        ok = True
++        for trade in reversed(leg_trades):
++            pair, reverse_side = self._reverse_leg(trade)
++            price = prices.get(pair.symbol, trade.get("price", 0.0))
++            try:
++                undone = self._execute_leg(
++                    pair,
++                    reverse_side,
++                    price,
++                    usd_prices,
++                    reason=f"[rollback] {path_reason}",
++                    size_pct=1.0,
++                    skip_route_check=True,
++                )
++            except ccxt.BaseError as exc:
++                logger.error("Live rollback leg failed on %s: %s", pair.symbol, exc)
++                ok = False
++                continue
++            if not undone:
++                logger.error("Live rollback leg returned None on %s", pair.symbol)
++                ok = False
++        return ok
++
++    @staticmethod
++    def _reverse_leg(trade: dict) -> tuple[PairInfo, Signal]:
++        symbol = trade["symbol"]
++        if trade["side"] == "buy":
++            pair = PairInfo(
++                symbol=symbol,
++                base=trade["to_asset"],
++                quote=trade["from_asset"],
++            )
++            return pair, Signal.SELL
++        pair = PairInfo(
++            symbol=symbol,
++            base=trade["from_asset"],
++            quote=trade["to_asset"],
++        )
++        return pair, Signal.BUY
++
+     def _cap_size_pct(self, trade_usd: float, size_pct: float) -> float:
+         if trade_usd <= 0 or self.max_usd_per_trade <= 0:
+             return size_pct
+@@ -208,9 +331,31 @@
+         usd_prices: dict[str, float],
+         reason: str = "",
+         size_pct: float = 1.0,
++        *,
++        skip_route_check: bool = False,
+     ) -> dict | None:
+         if self.halted or side == Signal.HOLD:
+             return None
++
++        if not skip_route_check:
++            single_leg = TradeRoute(
++                legs=(
++                    RouteLeg(
++                        pair=pair,
++                        side=side,
++                        from_asset=pair.quote if side == Signal.BUY else pair.base,
++                        to_asset=pair.base if side == Signal.BUY else pair.quote,
++                    ),
++                )
++            )
++            allowed, block_reason = check_live_route(
++                single_leg,
++                self.allowed_assets,
++                **self._route_guard_kwargs(),
++            )
++            if not allowed:
++                logger.warning("Live leg blocked: %s", block_reason)
++                return None
+ 
+         size_pct = max(0.0, min(1.0, size_pct))
+         if size_pct <= 0 or price <= 0:

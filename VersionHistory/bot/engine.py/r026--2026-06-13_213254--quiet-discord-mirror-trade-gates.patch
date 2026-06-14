@@ -1,0 +1,84 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -667,7 +667,11 @@
+         self._last_summary_monotonic = time.monotonic()
+ 
+     def _maybe_discord_major_moves(self, usd_prices: dict[str, float]) -> None:
+-        if not self.settings.discord_enabled or self.settings.discord_major_move_pct <= 0:
++        if (
++            not self.settings.discord_enabled
++            or self.settings.discord_quiet_mode
++            or self.settings.discord_major_move_pct <= 0
++        ):
+             return
+         self._major_moves.refresh_baselines(usd_prices)
+         for asset, price in usd_prices.items():
+@@ -927,7 +931,10 @@
+                 baseline_pnl=baseline_pnl,
+                 drawdown=drawdown,
+             )
+-            if self.settings.discord_enabled:
++            if (
++                self.settings.discord_enabled
++                and not self.settings.discord_quiet_mode
++            ):
+                 msg = format_whale_follow_alert(
+                     event,
+                     trade,
+@@ -1116,7 +1123,11 @@
+             trading_active=self.runtime.is_trading_active(),
+         )
+         if self.settings.discord_enabled:
+-            if self._goal_status.newly_achieved and self._goal_status.achievement_message:
++            if (
++                not self.settings.discord_quiet_mode
++                and self._goal_status.newly_achieved
++                and self._goal_status.achievement_message
++            ):
+                 self.discord.post_important(self._goal_status.achievement_message, pin=True)
+             if self._crash_status.newly_activated and self._crash_status.activate_message:
+                 self.discord.post_important(self._crash_status.activate_message, pin=True)
+@@ -1437,7 +1448,7 @@
+         self.auditor.note_trade(trade)
+         if self._live_mode and not self._mirror_mode:
+             self._after_live_trade()
+-        if self.settings.discord_enabled:
++        if self.settings.discord_enabled and not self.settings.discord_quiet_mode:
+             self.discord.post_important(
+                 "\U0001F0CF **Forced probe trade** \u2014 no setup cleared the bar while "
+                 "idle, so I took a small one to keep things active. Paper test; may lose fees.",
+@@ -1562,6 +1573,12 @@
+     ) -> None:
+         if not self.settings.discord_enabled or not trades:
+             return
++        if self._mirror_mode:
++            return
++        if self.settings.discord_quiet_mode:
++            trades = [t for t in trades if t.get("live")]
++            if not trades:
++                return
+         threshold = self.settings.discord_pin_trade_usd
+         for trade in trades:
+             gain = float(trade.get("gain_loss", 0.0))
+@@ -1583,7 +1600,7 @@
+ 
+     def _maybe_pin_pnl_milestone(self, portfolio: float, baseline_pnl: float) -> None:
+ 
+-        if not self.settings.discord_enabled:
++        if not self.settings.discord_enabled or self.settings.discord_quiet_mode:
+ 
+             return
+ 
+@@ -2675,7 +2692,11 @@
+             self._instance_started_at = format_pacific()
+ 
+         self.discord.post_plain(f"Monitoring exchange since {self._instance_started_at}")
+-        if self._goal_status and self.settings.goal_evolution_enabled:
++        if (
++            not self.settings.discord_quiet_mode
++            and self._goal_status
++            and self.settings.goal_evolution_enabled
++        ):
+             goal_line = format_primary_goal_discord(self._goal_status)
+             if goal_line:
+                 self.discord.post_plain(goal_line)

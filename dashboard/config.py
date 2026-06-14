@@ -31,6 +31,13 @@ class DashboardSettings:
     backlog_file: Path
     whale_watch_state_file: Path
     goal_state_file: Path
+    live_enabled: bool
+    live_mirror_paper: bool
+    live_state_file: Path
+    live_session_start_file: Path
+    live_max_trades: int
+    live_min_eth_reserve: float
+    live_drawdown_halt_pct: float
     # Watchdog health computation (mirrors watchdog/config defaults)
     error_burst_count: int
     error_burst_minutes: float
@@ -60,6 +67,13 @@ def load_settings() -> DashboardSettings:
         backlog_file=root / "BACKLOG.md",
         whale_watch_state_file=root / ".whale_watch_state.json",
         goal_state_file=root / os.getenv("GOAL_STATE_FILE", ".tradebot_goals_state.json"),
+        live_enabled=os.getenv("LIVE_ENABLED", "0") == "1",
+        live_mirror_paper=os.getenv("LIVE_MIRROR_PAPER", "0") == "1",
+        live_state_file=root / os.getenv("LIVE_STATE_FILE", ".live_state.json"),
+        live_session_start_file=root / "live_session_start.json",
+        live_max_trades=int(os.getenv("LIVE_MAX_TRADES", "0")),
+        live_min_eth_reserve=float(os.getenv("LIVE_MIN_ETH_RESERVE", "0.5")),
+        live_drawdown_halt_pct=float(os.getenv("LIVE_DRAWDOWN_HALT_PCT", "0.10")),
         error_burst_count=int(os.getenv("WATCHDOG_ERROR_BURST_COUNT", "5")),
         error_burst_minutes=float(os.getenv("WATCHDOG_ERROR_BURST_MINUTES", "10")),
         auto_pause_score=int(os.getenv("WATCHDOG_AUTO_PAUSE_SCORE", "25")),

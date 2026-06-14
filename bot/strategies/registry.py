@@ -45,4 +45,4 @@ def build_strategies(settings: Settings) -> list[Strategy]:
 def build_orchestrator(settings: Settings) -> StrategyOrchestrator:
     strategies = build_strategies(settings)
     logger.info("Loaded strategies: %s", ", ".join(s.name for s in strategies))
-    return StrategyOrchestrator(strategies)
+    return StrategyOrchestrator(strategies, settings)

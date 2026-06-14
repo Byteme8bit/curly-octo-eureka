@@ -1,0 +1,189 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -25,6 +25,7 @@
+ from bot.local_time import format_pacific
+ from bot.markets import MarketRegistry
+ from bot.paper_broker import PaperBroker
++from bot.live_broker import LiveBroker
+ from bot.paper_portfolio import PaperPortfolioLog
+ from bot.portfolio_constraints import PortfolioConstraints
+ from bot.preflight import PreFlightValidator
+@@ -86,27 +87,43 @@
+ 
+         self.portfolio_log = PaperPortfolioLog(settings.paper_portfolio_file)
+ 
+-        self.broker = PaperBroker(
+-
+-            initial_balances=settings.initial_balances,
++        if settings.live_enabled:
++            if not settings.api_key or not settings.api_secret:
++                raise ValueError(
++                    "LIVE_ENABLED=1 requires KRAKEN_API_KEY and KRAKEN_API_SECRET in .env"
++                )
++            self.broker = LiveBroker(
++                exchange=self.data.exchange,
++                fee_rate=settings.fee_rate,
++                state_file=settings.live_state_file,
++                min_usd_trade=settings.min_usd_trade,
++                max_usd_per_trade=settings.live_max_usd_per_trade,
++                reset=settings.reset_live_state,
++            )
++            self._live_mode = True
++        else:
++            self.broker = PaperBroker(
++                initial_balances=settings.initial_balances,
++                fee_rate=settings.fee_rate,
++                state_file=settings.state_file,
++                min_usd_trade=settings.min_usd_trade,
++                reset=settings.reset_paper_state,
++            )
++            self._live_mode = False
++
++        _drawdown_limit = (
++            settings.live_drawdown_halt_pct
++            if settings.live_enabled
++            else settings.drawdown_hibernate_pct
++        )
++
++        self.risk = RiskManager(
++
++            risk_state=self.broker.risk,
+ 
+             fee_rate=settings.fee_rate,
+ 
+-            state_file=settings.state_file,
+-
+-            min_usd_trade=settings.min_usd_trade,
+-
+-            reset=settings.reset_paper_state,
+-
+-        )
+-
+-        self.risk = RiskManager(
+-
+-            risk_state=self.broker.risk,
+-
+-            fee_rate=settings.fee_rate,
+-
+-            drawdown_hibernate_pct=settings.drawdown_hibernate_pct,
++            drawdown_hibernate_pct=_drawdown_limit,
+ 
+             hibernate_hours=settings.hibernate_hours,
+ 
+@@ -129,6 +146,10 @@
+             stat_arb_zscore_threshold=settings.stat_arb_zscore_threshold,
+ 
+             save_callback=self.broker.save,
++
++            adaptive_enabled=not (
++                settings.live_enabled and settings.live_strict_profit
++            ),
+ 
+         )
+ 
+@@ -150,7 +171,7 @@
+ 
+             risk_state=self.broker.risk,
+ 
+-            drawdown_limit_pct=settings.drawdown_hibernate_pct,
++            drawdown_limit_pct=_drawdown_limit,
+ 
+             save_callback=self.broker.save,
+ 
+@@ -623,6 +644,9 @@
+         in_reevaluation: bool = False,
+     ) -> tuple[dict | None, str]:
+         """Run portfolio, preflight, and risk gates then execute one intent."""
++        if getattr(self.broker, "halted", False):
++            reason = getattr(self.broker, "halt_reason", "") or "Live trading halted"
++            return None, reason
+         if in_reevaluation and not intent.is_defensive:
+             return None, "Re-evaluation mode — non-defensive trades blocked"
+         if (
+@@ -1073,6 +1097,8 @@
+ 
+ 
+     def _maybe_force_probe(self, intents, result, holdings, usd_prices, portfolio, trades) -> None:
++        if self._live_mode:
++            return
+         """Guaranteed-activity valve. If nothing traded this tick and the bot has
+         been idle past ``idle_probe_force_minutes``, take ONE small trade that
+         ignores the edge/fee gates so there is visible action. Paper-only — this
+@@ -1667,6 +1693,9 @@
+ 
+         usd_prices = self._usd_prices()
+ 
++        if self._live_mode:
++            self.broker.sync_from_exchange()
++
+         candles = self.data.fetch_all_candles()
+ 
+         holdings = self._holdings()
+@@ -1675,6 +1704,14 @@
+ 
+         portfolio = self.broker.portfolio_value(usd_prices)
+ 
++        if self._live_mode and self.broker.risk.peak_portfolio <= 0:
++            self.broker.risk.peak_portfolio = portfolio
++            self.broker.risk.baseline_portfolio = portfolio
++            self.broker.save()
++
++        if self._live_mode and getattr(self.broker, "halted", False):
++            self.runtime.set_trading_active(False)
++
+         self.governor.set_portfolio_snapshot(portfolio)
+ 
+         self.governor.update_growth(portfolio)
+@@ -1693,7 +1730,7 @@
+ 
+         cb_event = None
+ 
+-        if self.settings.circuit_breaker_enabled:
++        if self.settings.circuit_breaker_enabled or self._live_mode:
+ 
+             cb_event = self.circuit_breaker.check(portfolio)
+ 
+@@ -1703,6 +1740,14 @@
+ 
+                 self.broker.save()
+ 
++                if self._live_mode:
++                    self.runtime.set_trading_active(False)
++                    if hasattr(self.broker, "halt"):
++                        self.broker.halt(
++                            f"Drawdown {cb_event.drawdown_pct:.1%} from peak — "
++                            "all live trading stopped"
++                        )
++
+                 path = self.circuit_breaker.dump_diagnostics(
+ 
+                     cb_event, holdings, usd_prices,
+@@ -1713,9 +1758,11 @@
+ 
+                 if self.settings.discord_enabled:
+ 
++                    headline = "**LIVE HALT — CIRCUIT BREAKER**" if self._live_mode else "**CIRCUIT BREAKER**"
++
+                     self.discord.post_important(
+ 
+-                        f"**CIRCUIT BREAKER** — portfolio ${cb_event.portfolio_value:,.2f}, "
++                        f"{headline} — portfolio ${cb_event.portfolio_value:,.2f}, "
+ 
+                         f"drawdown {cb_event.drawdown_pct:.1%} from peak. "
+ 
+@@ -2222,9 +2269,14 @@
+         overrides_line = self._active_overrides_line()
+ 
+         startup_text = (
+-            f"**Trading bot started and active**\n"
++            f"**{'LIVE' if self._live_mode else 'Paper'} trading bot started and active**\n"
+             f"Started {self._instance_started_at}"
+         )
++        if self._live_mode:
++            startup_text += (
++                f"\n:warning: **REAL MONEY** — max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
++                f"halt at {self.settings.live_drawdown_halt_pct:.0%} drawdown from peak"
++            )
+ 
+         if overrides_line:
+             startup_text = f"{startup_text}\n{overrides_line}"

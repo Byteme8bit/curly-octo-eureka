@@ -165,8 +165,9 @@ def format_trade_executed_alert(
 ) -> str:
     gain = float(trade.get("gain_loss", 0.0))
     size_pct = trade.get("size_pct")
+    headline = "**LIVE trade executed**" if trade.get("live") else "**Trade executed**"
     lines = [
-        "**Trade executed**",
+        headline,
         trade_narrative(trade),
         trade_rationale(trade),
         format_trade_route(trade),

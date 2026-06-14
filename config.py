@@ -35,7 +35,8 @@ ASSET_USD_SYMBOLS: dict[str, str] = {asset: f"{asset}/USD" for asset in WATCH_AS
 ASSET_SYMBOLS = ASSET_USD_SYMBOLS
 
 DEFAULT_SYMBOLS = ",".join(SYMBOL_ASSETS.keys())
-DEFAULT_CORE_ASSETS = "ETH,ADA,BTC"
+DEFAULT_CORE_ASSETS = "ADA,ETH,BTC"
+DEFAULT_PREFERRED_START_ASSETS = "ADA"
 DEFAULT_STRATEGIES = "cross_momentum,triangular_arbitrage,stat_arb"
 DEFAULT_SAFE_ASSETS = "USD,ETH,BTC"
 DEFAULT_STAT_ARB_PAIRS = "ETH/BTC,SOL/ETH,LINK/ETH,AVAX/ETH"
@@ -47,6 +48,7 @@ class Settings:
     watch_assets: tuple[str, ...]
     usd_symbols: tuple[str, ...]
     core_assets: tuple[str, ...]
+    preferred_start_assets: tuple[str, ...]
     initial_balances: dict[str, float]
     poll_interval: int
     fee_rate: float
@@ -199,6 +201,20 @@ class Settings:
     crash_hold_momentum_asset_ratio: float
     crash_hold_watchdog_drawdown_pct: float
     crash_hold_min_minutes: float
+    live_enabled: bool
+    live_trading_confirm: str
+    live_allowed_assets: tuple[str, ...]
+    live_allow_triangular: bool
+    live_max_route_legs: int
+    live_max_usd_per_route: float
+    live_state_file: Path
+    live_max_usd_per_trade: float
+    live_drawdown_halt_pct: float
+    live_min_eth_reserve: float
+    live_max_trades: int
+    live_strict_profit: bool
+    reset_live_state: bool
+    live_mirror_paper: bool
 
 
 def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
@@ -211,6 +227,19 @@ def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
 
 def _parse_core_assets(raw: str) -> tuple[str, ...]:
     return tuple(a.strip() for a in raw.split(",") if a.strip())
+
+
+def _parse_preferred_start_assets(
+    raw: str | None,
+    core_assets: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Assets to spend first when funding rotations; defaults to CORE_ASSETS order."""
+    if raw and str(raw).strip():
+        return _parse_core_assets(raw)
+    preferred = tuple(a for a in core_assets if a not in ("USD", "BTC", "ETH"))
+    if preferred:
+        return preferred
+    return _parse_core_assets(DEFAULT_PREFERRED_START_ASSETS)
 
 
 def _parse_initial_balances(raw: str) -> dict[str, float]:
@@ -319,6 +348,10 @@ def load_settings() -> Settings:
         watch_assets=watch_assets,
         usd_symbols=usd_symbols,
         core_assets=_parse_core_assets(os.getenv("CORE_ASSETS", DEFAULT_CORE_ASSETS)),
+        preferred_start_assets=_parse_preferred_start_assets(
+            os.getenv("PREFERRED_START_ASSETS"),
+            _parse_core_assets(os.getenv("CORE_ASSETS", DEFAULT_CORE_ASSETS)),
+        ),
         initial_balances=_parse_initial_balances(
             os.getenv("INITIAL_BALANCES", '{"ETH": 1.0, "ADA": 83.0, "USD": 0.0}')
         ),
@@ -487,7 +520,10 @@ def load_settings() -> Settings:
             os.getenv("GOAL_MILESTONES_USD", "10000,100000,1000000")
         ),
         goal_tier0_strategies=_parse_strategies(
-            os.getenv("GOAL_TIER0_STRATEGIES", "cross_momentum")
+            os.getenv(
+                "GOAL_TIER0_STRATEGIES",
+                "cross_momentum,stat_arb,triangular_arbitrage",
+            )
         ),
         goal_tier1_strategies=_parse_strategies(
             os.getenv("GOAL_TIER1_STRATEGIES", "cross_momentum,stat_arb")
@@ -528,6 +564,39 @@ def load_settings() -> Settings:
             os.getenv("CRASH_HOLD_WATCHDOG_DRAWDOWN_PCT", "0.10")
         ),
         crash_hold_min_minutes=float(os.getenv("CRASH_HOLD_MIN_MINUTES", "30")),
+        live_enabled=(
+            os.getenv("LIVE_TRADING_ENABLED", os.getenv("LIVE_ENABLED", "0")) == "1"
+        ),
+        live_trading_confirm=os.getenv("LIVE_TRADING_CONFIRM", ""),
+        live_allowed_assets=_parse_core_assets(
+            os.getenv("LIVE_ALLOWED_ASSETS", "ETH,ADA")
+        ),
+        live_allow_triangular=os.getenv("LIVE_ALLOW_TRIANGULAR", "0") == "1",
+        live_max_route_legs=int(os.getenv("LIVE_MAX_ROUTE_LEGS", "1")),
+        live_max_usd_per_route=float(
+            os.getenv(
+                "LIVE_MAX_ROUTE_USD",
+                os.getenv(
+                    "LIVE_MAX_TRADE_USD",
+                    os.getenv("LIVE_MAX_USD_PER_TRADE", "50"),
+                ),
+            )
+        ),
+        live_state_file=ROOT / os.getenv("LIVE_STATE_FILE", ".live_state.json"),
+        live_max_usd_per_trade=float(
+            os.getenv(
+                "LIVE_MAX_TRADE_USD",
+                os.getenv("LIVE_MAX_USD_PER_TRADE", "50"),
+            )
+        ),
+        live_drawdown_halt_pct=float(os.getenv("LIVE_DRAWDOWN_HALT_PCT", "0.10")),
+        live_min_eth_reserve=float(os.getenv("LIVE_MIN_ETH_RESERVE", "0.5")),
+        live_max_trades=int(os.getenv("LIVE_MAX_TRADES", "0")),
+        live_strict_profit=os.getenv("LIVE_STRICT_PROFIT", "1") == "1",
+        reset_live_state=os.getenv("RESET_LIVE_STATE", "0") == "1",
+        live_mirror_paper=os.getenv("LIVE_MIRROR_PAPER", "0") == "1",
     )
     _apply_runtime_overrides(fields)
+    if fields["live_enabled"] and not fields["live_mirror_paper"]:
+        fields["state_file"] = fields["live_state_file"]
     return Settings(**fields)

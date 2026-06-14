@@ -1,0 +1,57 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -662,6 +662,29 @@
+             )
+         return True
+ 
++    def _after_live_trade(self) -> None:
++        """Pause live trading when LIVE_MAX_TRADES limit is reached."""
++        if not self._live_mode:
++            return
++        record = getattr(self.broker, "record_completed_trade", None)
++        if not callable(record):
++            return
++        count = record()
++        limit = self.settings.live_max_trades
++        if limit <= 0 or count < limit:
++            return
++        self.runtime.set_trading_active(False)
++        if hasattr(self.broker, "halt") and not getattr(self.broker, "halted", False):
++            self.broker.halt(f"Live trade limit reached ({count}/{limit})")
++        msg = f"{limit} live trades complete — paused"
++        logger.info(msg)
++        if self.settings.discord_enabled:
++            self.discord.post_important(
++                f"**{msg}**\nUse `-start` in Discord to resume when ready.",
++                pin=True,
++                source="TradeBot",
++            )
++
+     def _try_execute_intent(
+         self,
+         intent,
+@@ -757,6 +780,7 @@
+         )
+         self.risk.record_trade()
+         self.auditor.note_trade(trade)
++        self._after_live_trade()
+         return trade, ""
+ 
+     def _maybe_whale_follow(self, event) -> None:
+@@ -1208,6 +1232,7 @@
+         )
+         self.risk.record_trade()
+         self.auditor.note_trade(trade)
++        self._after_live_trade()
+         if self.settings.discord_enabled:
+             self.discord.post_important(
+                 "\U0001F0CF **Forced probe trade** \u2014 no setup cleared the bar while "
+@@ -2105,6 +2130,8 @@
+ 
+                     self.auditor.note_trade(trade)
+ 
++                    self._after_live_trade()
++
+                     break
+ 
+             if adaptive_active and not trades and edge_qualified:
