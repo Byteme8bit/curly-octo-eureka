@@ -1955,3 +1955,83 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +0 / -0
 - **Patch:** `r001--2026-06-14_035323--skip-new-file.patch`
 
+## bot/risk.py — r005
+
+- **When:** 2026-06-14 04:14:19 PDT
+- **Reason:** negative net profit floor
+- **Request:** 052
+- **Diff:** +3 / -2
+- **Patch:** `r005--2026-06-14_041419--negative-net-profit-floor.patch`
+
+## bot/engine.py — r030
+
+- **When:** 2026-06-14 04:14:20 PDT
+- **Reason:** probe uses effective min net
+- **Request:** 052
+- **Diff:** +1 / -1
+- **Patch:** `r030--2026-06-14_041420--probe-uses-effective-min-net.patch`
+
+## bot/auditor/report.py — r001
+
+- **When:** 2026-06-14 12:49:04 PDT
+- **Reason:** dual paper live PnL labels
+- **Request:** 053
+- **Diff:** +133 / -10
+- **Patch:** `r001--2026-06-14_124904--dual-paper-live-pnl-labels.patch`
+
+## bot/auditor_service.py — r006
+
+- **When:** 2026-06-14 12:49:04 PDT
+- **Reason:** load live audit context
+- **Request:** 053
+- **Diff:** +53 / -1
+- **Patch:** `r006--2026-06-14_124904--load-live-audit-context.patch`
+
+## bot/engine.py — r031
+
+- **When:** 2026-06-14 12:49:04 PDT
+- **Reason:** auditor live broker provider
+- **Request:** 053
+- **Diff:** +1 / -0
+- **Patch:** `r031--2026-06-14_124904--auditor-live-broker-provider.patch`
+
+## dashboard/parsers/auditor.py — r002
+
+- **When:** 2026-06-14 12:49:04 PDT
+- **Reason:** parse dual PnL headlines
+- **Request:** 053
+- **Diff:** +10 / -0
+- **Patch:** `r002--2026-06-14_124904--parse-dual-pnl-headlines.patch`
+
+## config.py — r020
+
+- **When:** 2026-06-14 12:49:05 PDT
+- **Reason:** PROP_ENABLED stub flag
+- **Request:** 053
+- **Diff:** +2 / -0
+- **Patch:** `r020--2026-06-14_124905--propenabled-stub-flag.patch`
+
+## .env.example — r020
+
+- **When:** 2026-06-14 12:49:05 PDT
+- **Reason:** document PROP_ENABLED stub
+- **Request:** 053
+- **Diff:** +4 / -0
+- **Patch:** `r020--2026-06-14_124905--document-propenabled-stub.patch`
+
+## docs/live-trading.md — r001
+
+- **When:** 2026-06-14 12:49:05 PDT
+- **Reason:** link kraken prop doc
+- **Request:** 053
+- **Diff:** +18 / -6
+- **Patch:** `r001--2026-06-14_124905--link-kraken-prop-doc.patch`
+
+## tests/test_auditor.py — r004
+
+- **When:** 2026-06-14 12:49:05 PDT
+- **Reason:** live PnL labeling tests
+- **Request:** 053
+- **Diff:** +115 / -1
+- **Patch:** `r004--2026-06-14_124905--live-pnl-labeling-tests.patch`
+

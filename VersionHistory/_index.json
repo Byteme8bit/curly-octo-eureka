@@ -189,6 +189,16 @@
       "removed": 1,
       "request_id": "051",
       "timestamp": "2026-06-14 03:53:22 PDT"
+    },
+    {
+      "added": 4,
+      "number": 20,
+      "patch": "r020--2026-06-14_124905--document-propenabled-stub.patch",
+      "path": ".env.example",
+      "reason": "document PROP_ENABLED stub",
+      "removed": 0,
+      "request_id": "053",
+      "timestamp": "2026-06-14 12:49:05 PDT"
     }
   ],
   ".gitignore": [
@@ -381,6 +391,18 @@
       "timestamp": "2026-06-01 07:13:30 PDT"
     }
   ],
+  "bot/auditor/report.py": [
+    {
+      "added": 133,
+      "number": 1,
+      "patch": "r001--2026-06-14_124904--dual-paper-live-pnl-labels.patch",
+      "path": "bot/auditor/report.py",
+      "reason": "dual paper live PnL labels",
+      "removed": 10,
+      "request_id": "053",
+      "timestamp": "2026-06-14 12:49:04 PDT"
+    }
+  ],
   "bot/auditor/state.py": [
     {
       "added": 0,
@@ -443,6 +465,16 @@
       "removed": 2,
       "request_id": "048",
       "timestamp": "2026-06-12 08:46:10 PDT"
+    },
+    {
+      "added": 53,
+      "number": 6,
+      "patch": "r006--2026-06-14_124904--load-live-audit-context.patch",
+      "path": "bot/auditor_service.py",
+      "reason": "load live audit context",
+      "removed": 1,
+      "request_id": "053",
+      "timestamp": "2026-06-14 12:49:04 PDT"
     }
   ],
   "bot/data.py": [
@@ -833,6 +865,26 @@
       "removed": 5,
       "request_id": "051",
       "timestamp": "2026-06-14 03:53:21 PDT"
+    },
+    {
+      "added": 1,
+      "number": 30,
+      "patch": "r030--2026-06-14_041420--probe-uses-effective-min-net.patch",
+      "path": "bot/engine.py",
+      "reason": "probe uses effective min net",
+      "removed": 1,
+      "request_id": "052",
+      "timestamp": "2026-06-14 04:14:20 PDT"
+    },
+    {
+      "added": 1,
+      "number": 31,
+      "patch": "r031--2026-06-14_124904--auditor-live-broker-provider.patch",
+      "path": "bot/engine.py",
+      "reason": "auditor live broker provider",
+      "removed": 0,
+      "request_id": "053",
+      "timestamp": "2026-06-14 12:49:04 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1085,6 +1137,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-13 20:21:19 PDT"
+    },
+    {
+      "added": 3,
+      "number": 5,
+      "patch": "r005--2026-06-14_041419--negative-net-profit-floor.patch",
+      "path": "bot/risk.py",
+      "reason": "negative net profit floor",
+      "removed": 2,
+      "request_id": "052",
+      "timestamp": "2026-06-14 04:14:19 PDT"
     }
   ],
   "bot/singleton.py": [
@@ -1475,6 +1537,16 @@
       "removed": 2,
       "request_id": "051",
       "timestamp": "2026-06-14 03:53:22 PDT"
+    },
+    {
+      "added": 2,
+      "number": 20,
+      "patch": "r020--2026-06-14_124905--propenabled-stub-flag.patch",
+      "path": "config.py",
+      "reason": "PROP_ENABLED stub flag",
+      "removed": 0,
+      "request_id": "053",
+      "timestamp": "2026-06-14 12:49:05 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -1603,6 +1675,16 @@
       "removed": 0,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:32 PDT"
+    },
+    {
+      "added": 10,
+      "number": 2,
+      "patch": "r002--2026-06-14_124904--parse-dual-pnl-headlines.patch",
+      "path": "dashboard/parsers/auditor.py",
+      "reason": "parse dual PnL headlines",
+      "removed": 0,
+      "request_id": "053",
+      "timestamp": "2026-06-14 12:49:04 PDT"
     }
   ],
   "dashboard/parsers/goals.py": [
@@ -2051,6 +2133,18 @@
       "timestamp": "2026-06-10 11:56:19 PDT"
     }
   ],
+  "docs/live-trading.md": [
+    {
+      "added": 18,
+      "number": 1,
+      "patch": "r001--2026-06-14_124905--link-kraken-prop-doc.patch",
+      "path": "docs/live-trading.md",
+      "reason": "link kraken prop doc",
+      "removed": 6,
+      "request_id": "053",
+      "timestamp": "2026-06-14 12:49:05 PDT"
+    }
+  ],
   "feature_logs/020_auditor-autoapply.md": [
     {
       "added": 0,
@@ -2199,6 +2293,16 @@
       "removed": 5,
       "request_id": "038",
       "timestamp": "2026-06-08 21:44:43 PDT"
+    },
+    {
+      "added": 115,
+      "number": 4,
+      "patch": "r004--2026-06-14_124905--live-pnl-labeling-tests.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "live PnL labeling tests",
+      "removed": 1,
+      "request_id": "053",
+      "timestamp": "2026-06-14 12:49:05 PDT"
     }
   ],
   "tests/test_auditor_chat.py": [

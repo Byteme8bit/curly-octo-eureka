@@ -16,6 +16,7 @@ from typing import Callable
 
 from bot.auditor.analyzer import analyze_trades
 from bot.auditor.config import AuditorConfig
+from bot.auditor.context import build_audit_goal_view, load_live_audit_snapshot
 from bot.auditor.forecaster import forecast_pnl
 from bot.auditor.news_client import NewsClient
 from bot.auditor.proposer import (
@@ -62,6 +63,7 @@ class AuditorService:
         news_client: NewsClient | None = None,
         clock: Callable[[], object] = pacific_now,
         request_restart: Callable[[str], None] | None = None,
+        live_broker_provider: Callable[[], object | None] | None = None,
     ) -> None:
         self.settings = settings
         self.config = auditor_config
@@ -74,6 +76,7 @@ class AuditorService:
         self._news_client = news_client
         self._clock = clock
         self._request_restart = request_restart
+        self._live_broker_provider = live_broker_provider
         self.state = AuditorState.load(self.config.state_file)
 
         self._lock = threading.Lock()
@@ -567,6 +570,27 @@ class AuditorService:
             self.settings,
             usd_prices=usd_prices,
         )
+
+        live_broker = self._resolve_live_broker()
+        live_snapshot = load_live_audit_snapshot(
+            self.settings,
+            live_broker=live_broker,
+            portfolio_log=self.portfolio_log,
+        )
+        live_insights = None
+        if live_snapshot is not None and live_snapshot.trades:
+            live_insights = analyze_trades(
+                live_snapshot.trades,
+                live_snapshot.holdings,
+                self.settings,
+                usd_prices=usd_prices,
+            )
+        goal_view = build_audit_goal_view(
+            self.settings,
+            live_snapshot=live_snapshot,
+            portfolio_log=self.portfolio_log,
+        )
+
         forecast = forecast_pnl(insights, trades)
 
         headlines = []
@@ -599,11 +623,24 @@ class AuditorService:
             ttl_minutes=self.config.proposals_ttl_minutes,
         )
 
-        markdown_path = self._write_markdown(insights, forecast, headlines, proposals, trigger=trigger)
+        markdown_path = self._write_markdown(
+            insights,
+            forecast,
+            headlines,
+            proposals,
+            trigger=trigger,
+            live_snapshot=live_snapshot,
+            live_insights=live_insights,
+            goal_view=goal_view,
+        )
         summary = render_discord_summary(
             insights, forecast, headlines, proposals,
             markdown_path=markdown_path,
             trigger=trigger,
+            live_snapshot=live_snapshot,
+            live_insights=live_insights,
+            goal_view=goal_view,
+            live_enabled=bool(getattr(self.settings, "live_enabled", False)),
         )
 
         for proposal in proposals:
@@ -822,6 +859,9 @@ class AuditorService:
         proposals,
         *,
         trigger: str,
+        live_snapshot=None,
+        live_insights=None,
+        goal_view=None,
     ) -> Path | None:
         try:
             now = self._clock()
@@ -833,6 +873,9 @@ class AuditorService:
                 insights, forecast, headlines, proposals,
                 settings=self.settings,
                 trigger=trigger,
+                live_snapshot=live_snapshot,
+                live_insights=live_insights,
+                goal_view=goal_view,
             )
             target.write_text(body, encoding="utf-8")
             return target
@@ -866,6 +909,15 @@ class AuditorService:
             self.discord.post_important(text, pin=False, source="Auditor")
         except Exception:  # noqa: BLE001
             logger.exception("Auditor failed to post summary to Discord")
+
+    def _resolve_live_broker(self):
+        if self._live_broker_provider is None:
+            return None
+        try:
+            return self._live_broker_provider()
+        except Exception:  # noqa: BLE001
+            logger.exception("Live broker provider failed")
+            return None
 
     def _snapshot_inputs(self) -> tuple[list[dict], dict[str, float], dict[str, float] | None]:
         trades: list[dict] = []
