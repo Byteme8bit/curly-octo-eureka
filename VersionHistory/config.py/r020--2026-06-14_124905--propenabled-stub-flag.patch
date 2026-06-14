@@ -1,0 +1,18 @@
+--- a/config.py
++++ b/config.py
+@@ -215,6 +215,7 @@
+     live_strict_profit: bool
+     reset_live_state: bool
+     live_mirror_paper: bool
++    prop_enabled: bool
+ 
+ 
+ def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
+@@ -595,6 +596,7 @@
+         live_strict_profit=os.getenv("LIVE_STRICT_PROFIT", "1") == "1",
+         reset_live_state=os.getenv("RESET_LIVE_STATE", "0") == "1",
+         live_mirror_paper=os.getenv("LIVE_MIRROR_PAPER", "0") == "1",
++        prop_enabled=os.getenv("PROP_ENABLED", "0") == "1",
+     )
+     _apply_runtime_overrides(fields)
+     if fields["live_enabled"] and not fields["live_mirror_paper"]:

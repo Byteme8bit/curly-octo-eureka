@@ -20,15 +20,10 @@ KRAKEN_API_SECRET=your_secret
 LIVE_ENABLED=1
 LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY
 
-# Restrict live to your holdings (default: single-hop */USD only)
+# Restrict live to your holdings (v1: single-hop */USD only)
 LIVE_ALLOWED_ASSETS=ETH,ADA
 LIVE_MAX_TRADE_USD=50
 LIVE_MAX_USD_PER_TRADE=50
-
-# Optional: sequential multi-hop (ETH/ADA/USD + BTC bridge only)
-# LIVE_ALLOW_TRIANGULAR=1
-# LIVE_MAX_ROUTE_LEGS=3
-# LIVE_MAX_ROUTE_USD=50
 
 # Recommended: paper shadow + live mirror
 LIVE_MIRROR_PAPER=1
@@ -46,16 +41,10 @@ Restart TradeBot after editing `.env`:
 ## What happens when armed
 
 - **Balance sync** — on each live tick, `LiveBroker` calls `fetch_balance()` and syncs ETH, ADA, USD, and BTC as the source of truth (`.live_state.json`).
-- **Paper mirror mode** (`LIVE_MIRROR_PAPER=1`) — paper runs in `.paper_state.json`; profitable paper trades can mirror to Kraken when live gates pass.
-- **Restrictions (default)**:
-  - Single-hop **ETH/USD** and **ADA/USD** market orders
-  - Multi-hop blocked unless `LIVE_ALLOW_TRIANGULAR=1`
-- **Triangular live** (`LIVE_ALLOW_TRIANGULAR=1`):
-  - Legs execute **sequentially** on Kraken (not atomic like paper)
-  - Allowed assets: ETH, ADA, USD (+ BTC as bridge only)
-  - Caps: `LIVE_MAX_ROUTE_LEGS`, `LIVE_MAX_TRADE_USD` per leg, `LIVE_MAX_ROUTE_USD` route total
-  - Mid-route failure: rollback completed legs; halt + Discord alert if unwind fails
-- **Shared safety**:
+- **Paper mirror mode** (`LIVE_MIRROR_PAPER=1`) — paper runs in `.paper_state.json`; profitable single-leg paper trades can mirror to Kraken when live gates pass.
+- **Restrictions (v1)**:
+  - Only **ETH/USD** and **ADA/USD** market orders
+  - **No multi-hop / triangular** routes on live
   - Hard cap per trade (`LIVE_MAX_TRADE_USD`)
   - ETH floor (`LIVE_MIN_ETH_RESERVE`) — live halts if ETH drops below reserve
   - Drawdown halt (`LIVE_DRAWDOWN_HALT_PCT`) — circuit breaker stops live trading
@@ -94,12 +83,11 @@ Restart the bot. Paper simulation continues with no Kraken orders.
 | Confirm phrase set | `LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY` |
 | Trade cap | `LIVE_MAX_TRADE_USD` ≤ 50 to start |
 | Allowed pairs | `LIVE_ALLOWED_ASSETS=ETH,ADA` |
-| Triangular live | default OFF; set `LIVE_ALLOW_TRIANGULAR=1` to enable sequential multi-hop |
+| No triangular live | enforced in engine + `LiveBroker` |
 | API withdraw disabled | Kraken key permissions |
 | Secrets not in git | `.env` is local only |
 
 ## Related docs
 
 - [path-to-live-trading.md](path-to-live-trading.md) — phased rollout checklist
-- [kraken-prop.md](kraken-prop.md) — Trade Prop eval accounts (not supported; spot only)
 - [feature_logs/051_live-kraken-trading.md](../feature_logs/051_live-kraken-trading.md) — implementation log

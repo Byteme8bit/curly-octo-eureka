@@ -1,0 +1,132 @@
+--- a/tests/test_auditor.py
++++ b/tests/test_auditor.py
+@@ -33,6 +33,7 @@
+     render_discord_summary,
+     render_markdown_report,
+ )
++from bot.auditor.context import AuditGoalView, LiveAuditSnapshot
+ from bot.auditor.runtime_overrides import (
+     apply_proposal,
+     list_overrides,
+@@ -655,7 +656,120 @@
+     assert "Auditor -confirm" in md  # confirm syntax surfaced
+ 
+ 
+-def test_render_discord_summary_uses_source_when_sentiment_unknown() -> None:
++def test_render_markdown_live_mode_labels_paper_vs_live_pnl() -> None:
++    insights = analyze_trades([_trade(gain=100.0, fee=1.0)] * 5, {"ETH": 1.0}, _settings_stub())
++    forecast = forecast_pnl(insights, [_trade(gain=100.0)] * 5)
++    live_snapshot = LiveAuditSnapshot(
++        portfolio_usd=1644.0,
++        baseline_portfolio_usd=1654.0,
++        session_pnl=-10.0,
++        trades=[_trade(gain=-0.23, fee=0.04)],
++        holdings={"ETH": 0.87, "USD": 149.0},
++        live_trades_completed=5,
++    )
++    live_insights = analyze_trades(live_snapshot.trades, live_snapshot.holdings, _settings_stub())
++    goal = AuditGoalView(
++        enabled=True,
++        portfolio_usd=1644.0,
++        portfolio_source="live",
++        primary_goal={
++            "headline": "Goal 1: $10,000 portfolio (Growth)",
++            "target_usd": 10000.0,
++            "progress_pct": 16.4,
++            "remaining_usd": 8356.0,
++            "achieved": False,
++        },
++    )
++    md = render_markdown_report(
++        insights,
++        forecast,
++        [],
++        [],
++        settings=_settings_stub(live_enabled=True),
++        live_snapshot=live_snapshot,
++        live_insights=live_insights,
++        goal_view=goal,
++    )
++    assert "### Paper PnL (simulation)" in md
++    assert "### Live Kraken PnL (real spot wallet)" in md
++    assert "$495.00" in md
++    assert "$1,644.00" in md
++    assert "## Portfolio goals" in md
++    assert "need $8,356 more" in md
++    assert "paper simulation pace continues" in md
++    assert "Portfolio goals" in md or "## Portfolio goals" in md
++
++
++def test_render_discord_live_mode_separates_paper_and_live() -> None:
++    insights = analyze_trades([_trade(gain=50.0)] * 3, {"ETH": 1.0}, _settings_stub())
++    forecast = forecast_pnl(insights, [_trade(gain=50.0)] * 3)
++    live_snapshot = LiveAuditSnapshot(
++        portfolio_usd=1644.0,
++        baseline_portfolio_usd=1654.0,
++        session_pnl=-10.0,
++        trades=[_trade(gain=-0.5, fee=0.1)],
++        holdings={"ETH": 0.87, "USD": 149.0},
++        live_trades_completed=5,
++    )
++    live_insights = analyze_trades(live_snapshot.trades, live_snapshot.holdings, _settings_stub())
++    summary = render_discord_summary(
++        insights,
++        forecast,
++        [],
++        [],
++        live_enabled=True,
++        live_snapshot=live_snapshot,
++        live_insights=live_insights,
++        goal_view=AuditGoalView(
++            enabled=True,
++            portfolio_usd=1644.0,
++            portfolio_source="live",
++            primary_goal={
++                "headline": "Goal 1: $10,000 portfolio (Growth)",
++                "target_usd": 10000.0,
++                "progress_pct": 16.4,
++                "remaining_usd": 8356.0,
++                "achieved": False,
++            },
++        ),
++    )
++    assert "**Paper** (sim):" in summary
++    assert "**Live Kraken spot:**" in summary
++    assert "Next milestone:" in summary
++    assert "Forecast (paper pace)" in summary
++    assert "paper simulation pace continues" in summary
++
++
++def test_load_live_audit_snapshot_from_state_file(tmp_path: Path) -> None:
++    from bot.auditor.context import load_live_audit_snapshot
++
++    live_path = tmp_path / ".live_state.json"
++    live_path.write_text(
++        json.dumps({
++            "balances": {"ETH": 0.5, "USD": 100.0},
++            "trades": [{"gain_loss": 1.0, "fee_usd": 0.1, "live": True, "time": "2026-06-14T12:00:00+00:00"}],
++            "risk": {"baseline_portfolio": 1500.0, "live_trades_completed": 2},
++        }),
++        encoding="utf-8",
++    )
++    paper_path = tmp_path / "paper_portfolio.json"
++    paper_path.write_text(
++        json.dumps({"portfolio_usd": 9000.0, "holdings": {"ETH": {"usd_price": 2000.0}}}),
++        encoding="utf-8",
++    )
++    settings = _settings_stub(
++        live_enabled=True,
++        live_state_file=str(live_path),
++        paper_portfolio_file=str(paper_path),
++    )
++    settings.live_state_file = live_path
++    settings.paper_portfolio_file = paper_path
++    snap = load_live_audit_snapshot(settings)
++    assert snap is not None
++    assert snap.portfolio_usd == pytest.approx(1100.0)
++    assert snap.live_trades_completed == 2
++    assert len(snap.trades) == 1
++
+     """RSS feeds carry source but no sentiment — we should show the publication name
+     instead of the visually-noisy `[unknown]` tag."""
+     from bot.auditor.report import _format_news_tag

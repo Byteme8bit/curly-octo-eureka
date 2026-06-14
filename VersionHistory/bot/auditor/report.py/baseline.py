@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from bot.auditor.analyzer import PortfolioInsights, StrategyPerformance
-from bot.auditor.context import AuditGoalView, LiveAuditSnapshot, format_goal_summary_line, format_goal_summary_markdown
 from bot.auditor.forecaster import ForecastBand
 from bot.auditor.news_client import NewsHeadline
 from bot.auditor.proposer import ConfigProposal
@@ -66,64 +65,6 @@ def _format_news_tag(headline) -> str:
     return "[news]"
 
 
-def _forecast_explainer(forecast: list[ForecastBand], *, paper_only: bool = True) -> str:
-    if not forecast:
-        return ""
-    scope = "paper simulation pace" if paper_only else "recent trade pace"
-    low = any(b.confidence < 0.3 for b in forecast if b.horizon in ("7d", "30d"))
-    base = f"_If {scope} continues"
-    if low:
-        return (
-            f"{base}, the table below shows projected net PnL by horizon. "
-            "7d/30d figures are extrapolations with **low confidence** — directional only, not targets._"
-        )
-    return (
-        f"{base}, the table below shows projected net PnL by horizon. "
-        "Confidence drops as the horizon lengthens._"
-    )
-
-
-def _headline_block(title: str, insights: PortfolioInsights, *, trade_label: str | None = None) -> list[str]:
-    lines = [f"### {title}", ""]
-    if trade_label:
-        lines.append(f"- **Trades:** {trade_label}")
-    lines.append(
-        f"- **Net PnL:** {_money(insights.net_pnl)} "
-        f"(gross {_money(insights.total_pnl)} − fees {_money(insights.total_fees)})"
-    )
-    lines.append(f"- **Win rate:** {insights.win_rate:.1%}")
-    lines.append(f"- **Max drawdown (equity-curve):** {_money(insights.drawdown_max)}")
-    lines.append(f"- **Defensive / circuit-breaker trades:** {insights.recent_circuit_breaker_events}")
-    lines.append("")
-    return lines
-
-
-def _live_headline_block(snapshot: LiveAuditSnapshot, live_insights: PortfolioInsights | None) -> list[str]:
-    lines = ["### Live Kraken PnL (real spot wallet)", ""]
-    lines.append(f"- **Portfolio value:** {_money(snapshot.portfolio_usd)}")
-    if snapshot.baseline_portfolio_usd > 0:
-        lines.append(
-            f"- **Session PnL:** {_money(snapshot.session_pnl)} "
-            f"(vs baseline {_money(snapshot.baseline_portfolio_usd)})"
-        )
-    lines.append(f"- **Live trades completed:** {snapshot.live_trades_completed}")
-    if live_insights and live_insights.total_trades > 0:
-        lines.append(
-            f"- **Net PnL (live trades):** {_money(live_insights.net_pnl)} "
-            f"(gross {_money(live_insights.total_pnl)} − fees {_money(live_insights.total_fees)})"
-        )
-        lines.append(f"- **Live trade win rate:** {live_insights.win_rate:.1%}")
-    else:
-        lines.append("- **Net PnL (live trades):** _No live fills recorded yet._")
-    lines.append("")
-    lines.append(
-        "_Kraken Trade Prop evaluation accounts are separate products and are **not** "
-        "included here — see `docs/kraken-prop.md`._"
-    )
-    lines.append("")
-    return lines
-
-
 def _strategy_row(p: StrategyPerformance) -> str:
     pairs = ", ".join(p.pairs_used[:3]) + ("…" if len(p.pairs_used) > 3 else "")
     drag = f"{p.fee_drag_ratio:.2f}x" if p.fee_drag_ratio != float("inf") else "∞"
@@ -143,9 +84,6 @@ def render_markdown_report(
     settings,
     trigger: str = "manual",
     extra_refs: dict[str, str] | None = None,
-    live_snapshot: LiveAuditSnapshot | None = None,
-    live_insights: PortfolioInsights | None = None,
-    goal_view: AuditGoalView | None = None,
 ) -> str:
     """Full markdown report. Sections match the feature spec verbatim."""
 
@@ -164,33 +102,11 @@ def render_markdown_report(
     # 2) Headline numbers
     lines.append("## Headline numbers")
     lines.append("")
-    live_mode = bool(getattr(settings, "live_enabled", False))
-    if live_mode:
-        lines.append(
-            "> **Paper PnL** below is from the simulation (`.paper_state.json`). "
-            "When `LIVE_ENABLED=1`, **Live Kraken PnL** reflects your real spot wallet only."
-        )
-        lines.append("")
-        lines.extend(
-            _headline_block(
-                "Paper PnL (simulation)",
-                insights,
-                trade_label=str(insights.total_trades),
-            )
-        )
-        if live_snapshot is not None:
-            lines.extend(_live_headline_block(live_snapshot, live_insights))
-        else:
-            lines.append("### Live Kraken PnL (real spot wallet)")
-            lines.append("")
-            lines.append("_Live state unavailable — check `.live_state.json` and Kraken API keys._")
-            lines.append("")
-    else:
-        lines.extend(_headline_block("Paper PnL (simulation)", insights))
-
-    goal_md = format_goal_summary_markdown(goal_view)
-    if goal_md:
-        lines.extend(goal_md)
+    lines.append(f"- **Net PnL:** {_money(insights.net_pnl)} (gross {_money(insights.total_pnl)} − fees {_money(insights.total_fees)})")
+    lines.append(f"- **Win rate:** {insights.win_rate:.1%}")
+    lines.append(f"- **Max drawdown (equity-curve):** {_money(insights.drawdown_max)}")
+    lines.append(f"- **Defensive / circuit-breaker trades:** {insights.recent_circuit_breaker_events}")
+    lines.append("")
 
     # 3) Strategy attribution
     lines.append("## Strategy attribution")
@@ -217,9 +133,6 @@ def render_markdown_report(
     # 4) Concentration & ETH reserve
     lines.append("## Concentration & ETH reserve")
     lines.append("")
-    if live_mode:
-        lines.append("_Holdings below are from the **paper simulation** portfolio._")
-        lines.append("")
     if insights.by_asset_concentration:
         for asset, share in sorted(insights.by_asset_concentration.items(), key=lambda x: -x[1]):
             lines.append(f"- `{asset}`: {_pct(share)}")
@@ -243,13 +156,6 @@ def render_markdown_report(
     # 5) Forecast
     lines.append("## Forecast")
     lines.append("")
-    if live_mode:
-        lines.append("_Forecast uses **paper trade history** (simulation pace), not live Kraken fills._")
-        lines.append("")
-    explainer = _forecast_explainer(forecast, paper_only=True)
-    if explainer:
-        lines.append(explainer)
-        lines.append("")
     if forecast:
         lines.append("| Horizon | Method | Expected | 10th %ile | 90th %ile | Confidence |")
         lines.append("|---|---|---:|---:|---:|---:|")
@@ -308,8 +214,6 @@ def render_markdown_report(
         "Receipts dir": str(getattr(settings, "receipts_dir", "receipts")),
         "Log dir": str(getattr(settings, "log_dir", "logs")),
     }
-    if live_mode:
-        refs["Live state file"] = str(getattr(settings, "live_state_file", ".live_state.json"))
     if extra_refs:
         refs.update(extra_refs)
     for label, value in refs.items():
@@ -327,38 +231,15 @@ def render_discord_summary(
     *,
     markdown_path: Path | None = None,
     trigger: str = "manual",
-    live_snapshot: LiveAuditSnapshot | None = None,
-    live_insights: PortfolioInsights | None = None,
-    goal_view: AuditGoalView | None = None,
-    live_enabled: bool = False,
 ) -> str:
     """Discord-safe summary; stays under ``DISCORD_MAX_LEN`` chars."""
 
     parts: list[str] = []
     parts.append(f"**Auditor report** _(trigger: `{trigger}`)_")
-    if live_enabled:
-        parts.append(
-            f"• **Paper** (sim): {insights.total_trades} trades · win {insights.win_rate:.0%} · "
-            f"net PnL {_money(insights.net_pnl)}"
-        )
-        if live_snapshot is not None:
-            live_line = (
-                f"• **Live Kraken spot:** portfolio {_money(live_snapshot.portfolio_usd)} · "
-                f"{live_snapshot.live_trades_completed} live trades"
-            )
-            if live_insights and live_insights.total_trades > 0:
-                live_line += f" · net PnL {_money(live_insights.net_pnl)}"
-            if live_snapshot.baseline_portfolio_usd > 0:
-                live_line += f" · session {_money(live_snapshot.session_pnl)}"
-            parts.append(live_line)
-        goal_line = format_goal_summary_line(goal_view)
-        if goal_line:
-            parts.append(f"• {goal_line}")
-    else:
-        parts.append(
-            f"• {insights.total_trades} trades · win rate {insights.win_rate:.0%} · "
-            f"net PnL {_money(insights.net_pnl)} (fees {_money(insights.total_fees)})"
-        )
+    parts.append(
+        f"• {insights.total_trades} trades · win rate {insights.win_rate:.0%} · "
+        f"net PnL {_money(insights.net_pnl)} (fees {_money(insights.total_fees)})"
+    )
     eth = insights.eth_reserve_status
     eth_status = "ok" if eth.get("healthy") else "below floor"
     parts.append(
@@ -377,16 +258,12 @@ def render_discord_summary(
         parts.append(f"• Strategies: {rendered}")
 
     if forecast:
-        prefix = "**Forecast (paper pace)** " if live_enabled else "**Forecast** "
         rendered = " · ".join(
             f"{b.horizon}: {_money(b.expected_pnl)} [{_money(b.lower_band)}…{_money(b.upper_band)}] "
             f"({b.method.replace('_', ' ')}, conf {b.confidence:.2f})"
             for b in forecast
         )
-        parts.append(prefix + rendered)
-        note = _forecast_explainer(forecast, paper_only=True).strip("_")
-        if note:
-            parts.append(f"_{note}_")
+        parts.append("**Forecast** " + rendered)
 
     if headlines:
         parts.append("**News:**")

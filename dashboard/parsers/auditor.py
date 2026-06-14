@@ -35,6 +35,14 @@ def _parse_report_summary(path: Path) -> dict | None:
     m2 = re.search(r"\*\*Net PnL:\*\*\s*(\$[^\n]+)", raw)
     if m2:
         net_pnl = m2.group(1).strip()
+    paper_pnl = ""
+    m3 = re.search(r"### Paper PnL \(simulation\)[\s\S]*?\*\*Net PnL:\*\*\s*(\$[^\n]+)", raw)
+    if m3:
+        paper_pnl = m3.group(1).strip()
+    live_pnl = ""
+    m4 = re.search(r"### Live Kraken PnL[\s\S]*?\*\*Portfolio value:\*\*\s*(\$[^\n]+)", raw)
+    if m4:
+        live_pnl = m4.group(1).strip()
     proposals = len(re.findall(r"^###\s+`", raw, re.MULTILINE))
     news: list[str] = []
     news_m = _NEWS_SECTION.search(raw)
@@ -48,6 +56,8 @@ def _parse_report_summary(path: Path) -> dict | None:
         "title": title,
         "trigger": trigger,
         "net_pnl": net_pnl,
+        "paper_net_pnl": paper_pnl or net_pnl,
+        "live_portfolio_usd": live_pnl,
         "proposal_count": proposals,
         "news_headlines": news[:8],
         "forecast_bands": forecast_bands,

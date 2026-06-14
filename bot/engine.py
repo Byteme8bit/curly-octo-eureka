@@ -434,6 +434,7 @@ class TradingEngine:
             portfolio_log=self.portfolio_log,
             watchdog_state_provider=lambda: None,
             request_restart=self.request_restart,
+            live_broker_provider=lambda: self.live_broker,
         )
 
         self.whale_watcher = WhaleWatcher(
