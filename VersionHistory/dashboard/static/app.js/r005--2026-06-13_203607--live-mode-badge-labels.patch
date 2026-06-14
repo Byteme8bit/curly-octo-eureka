@@ -1,0 +1,30 @@
+--- a/dashboard/static/app.js
++++ b/dashboard/static/app.js
+@@ -84,9 +84,18 @@
+   };
+ }
+ 
++function modeBadge(mode) {
++  if (mode === "live") {
++    return `<span class="mode-badge mode-live">LIVE</span>`;
++  }
++  return `<span class="mode-badge mode-paper">Paper</span>`;
++}
++
+ function renderMetricStrip(summary) {
+   const s = summary || {};
++  const mode = s.trading_mode || "paper";
+   const metrics = [
++    { label: "Mode", value: mode === "live" ? "LIVE" : "Paper", cls: mode === "live" ? "mode-live-text" : "mode-paper-text" },
+     { label: "Portfolio", value: fmtUsd(s.portfolio_usd), cls: "mono" },
+     { label: "Session PnL", value: fmtPnl(s.baseline_pnl), cls: `mono ${pnlClass(s.baseline_pnl)}` },
+     { label: "Drawdown", value: fmtPct(s.drawdown_pct, true), cls: `mono ${s.drawdown_pct > 0.05 ? "score-bad" : ""}` },
+@@ -516,7 +525,7 @@
+     const data = await overviewRes.json();
+     refreshMs = (data.refresh_seconds || 15) * 1000;
+ 
+-    $("#meta-line").textContent = `Root: ${data.root} · refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
++    $("#meta-line").innerHTML = `${modeBadge(data.summary?.trading_mode)} Root: ${esc(data.root)} · refresh ${data.refresh_seconds}s · ${new Date().toLocaleTimeString()}`;
+     $("#metric-strip").innerHTML = renderMetricStrip(data.summary);
+     const snap = $("#overview-snapshot-panel");
+     if (snap) snap.innerHTML = renderOverviewSnapshot(data);

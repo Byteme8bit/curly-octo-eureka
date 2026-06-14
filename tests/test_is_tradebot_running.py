@@ -19,7 +19,9 @@ def test_tradebot_is_running_true_when_pid_live(tmp_path, monkeypatch):
     lock = tmp_path / "tradebot.lock"
     lock.write_text("4242", encoding="utf-8")
     monkeypatch.setattr(running_mod, "LOCK_FILE", lock)
-    with patch.object(running_mod, "_pid_is_running", return_value=True):
+    with patch.object(running_mod, "_pid_is_running", return_value=True), patch.object(
+        running_mod, "_pid_is_valid_tradebot_holder", return_value=True
+    ):
         assert tradebot_is_running() is True
 
 

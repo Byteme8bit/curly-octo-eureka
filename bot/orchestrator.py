@@ -7,7 +7,8 @@ import logging
 import pandas as pd
 
 from bot.strategies.base import Signal, Strategy, StrategyContext, StrategyResult, TradeIntent
-from config import SYMBOL_ASSETS
+from bot.funding_priority import funding_rank
+from config import SYMBOL_ASSETS, Settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +18,9 @@ class StrategyOrchestrator(Strategy):
 
     name = "orchestrator"
 
-    def __init__(self, strategies: list[Strategy]):
+    def __init__(self, strategies: list[Strategy], settings: Settings):
         self.strategies = strategies
+        self.preferred_start_assets = settings.preferred_start_assets
 
     def evaluate(
         self,
@@ -89,7 +91,11 @@ class StrategyOrchestrator(Strategy):
                 "cross_momentum",
             ):
                 edge += 0.0005
-            return (edge, intent.is_defensive)
+            return (
+                edge,
+                intent.is_defensive,
+                -funding_rank(intent.from_asset, self.preferred_start_assets),
+            )
 
         all_intents.sort(key=_rank, reverse=True)
 

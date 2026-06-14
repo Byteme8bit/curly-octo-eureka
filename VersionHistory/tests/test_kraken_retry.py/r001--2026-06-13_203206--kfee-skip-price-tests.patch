@@ -1,0 +1,46 @@
+--- a/tests/test_kraken_retry.py
++++ b/tests/test_kraken_retry.py
+@@ -94,3 +94,43 @@
+         with pytest.raises(ValueError):
+             data.fetch_ticker("BTC/USD")
+         assert exchange.fetch_ticker.call_count == 1
++
++
++def test_fetch_usd_prices_skips_kfee(fake_settings):
++    from bot.data import KrakenData
++
++    with patch("bot.data.ccxt.kraken") as kraken_cls:
++        exchange = MagicMock()
++        exchange.markets = {
++            "ETH/USD": {"base": "ETH", "quote": "USD"},
++            "BTC/USD": {"base": "BTC", "quote": "USD"},
++        }
++        exchange.fetch_tickers.return_value = {
++            "ETH/USD": {"last": 3000.0},
++            "BTC/USD": {"last": 60000.0},
++        }
++        kraken_cls.return_value = exchange
++
++        data = KrakenData(fake_settings)
++        prices = data.fetch_usd_prices(["USD", "ETH", "KFEE", "BTC"])
++
++        assert prices == {"USD": 1.0, "ETH": 3000.0, "BTC": 60000.0}
++        called_symbols = exchange.fetch_tickers.call_args[0][0]
++        assert "KFEE/USD" not in called_symbols
++
++
++def test_fetch_usd_prices_skips_asset_without_market(fake_settings):
++    from bot.data import KrakenData
++
++    with patch("bot.data.ccxt.kraken") as kraken_cls:
++        exchange = MagicMock()
++        exchange.markets = {"ETH/USD": {"base": "ETH", "quote": "USD"}}
++        exchange.fetch_tickers.return_value = {"ETH/USD": {"last": 3000.0}}
++        kraken_cls.return_value = exchange
++
++        data = KrakenData(fake_settings)
++        prices = data.fetch_usd_prices(["ETH", "NOPE"])
++
++        assert prices == {"USD": 1.0, "ETH": 3000.0}
++        called_symbols = exchange.fetch_tickers.call_args[0][0]
++        assert "NOPE/USD" not in called_symbols

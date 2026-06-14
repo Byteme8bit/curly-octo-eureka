@@ -1,0 +1,89 @@
+--- a/bot/portfolio_constraints.py
++++ b/bot/portfolio_constraints.py
+@@ -4,7 +4,8 @@
+ 
+ from dataclasses import dataclass
+ 
+-from bot.strategies.base import TradeIntent
++from bot.markets import TradeRoute
++from bot.strategies.base import Signal, TradeIntent
+ 
+ CORE_UNCAPPED = frozenset({"ETH", "BTC", "USD"})
+ 
+@@ -28,11 +29,14 @@
+         max_alt_allocation_pct: float,
+         min_usd_trade: float,
+         overweight_edge_multiplier: float = 1.25,
++        *,
++        strict_eth_floor: bool = False,
+     ):
+         self.min_eth_reserve = min_eth_reserve
+         self.max_alt_allocation_pct = max_alt_allocation_pct
+         self.min_usd_trade = min_usd_trade
+         self.overweight_edge_multiplier = overweight_edge_multiplier
++        self.strict_eth_floor = strict_eth_floor
+ 
+     def portfolio_value(self, holdings: dict[str, float], prices: dict[str, float]) -> float:
+         total = holdings.get("USD", 0.0)
+@@ -67,6 +71,42 @@
+         max_sell = balance - self.min_eth_reserve
+         max_pct = max_sell / balance
+         return max(0.0, min(size_pct, max_pct))
++
++    def check_route_eth_floor(
++        self,
++        route: TradeRoute,
++        holdings: dict[str, float],
++        size_pct: float,
++    ) -> ConstraintResult:
++        """Simulate route legs; block if any ETH sell drops below the reserve."""
++        balances = {k: float(v) for k, v in holdings.items()}
++        floor = self.min_eth_reserve
++        for index, leg in enumerate(route.legs):
++            leg_pct = size_pct if index == 0 else 1.0
++            from_asset = leg.from_asset
++            from_bal = balances.get(from_asset, 0.0)
++            if from_bal <= 0:
++                return ConstraintResult(
++                    False,
++                    size_pct,
++                    f"Route leg {index + 1} insufficient {from_asset} balance",
++                )
++            trade_qty = from_bal * leg_pct
++            balances[from_asset] = from_bal - trade_qty
++            if leg.from_asset == "ETH":
++                remaining = balances.get("ETH", 0.0)
++                if remaining < floor - 1e-9:
++                    return ConstraintResult(
++                        False,
++                        size_pct,
++                        (
++                            f"ETH reserve — route {route.path} would leave "
++                            f"{remaining:.4f} ETH (floor {floor:.2f})"
++                        ),
++                    )
++            if leg.to_asset == "ETH" and leg.side == Signal.BUY:
++                balances["ETH"] = balances.get("ETH", 0.0) + trade_qty
++        return ConstraintResult(True, size_pct, "")
+ 
+     def allows_alt_overweight(self, intent: TradeIntent, *, required_edge: float) -> bool:
+         """Strategy-backed exception to the alt concentration cap."""
+@@ -120,12 +160,15 @@
+ 
+         # Closed-loop intents (from_asset == to_asset, e.g. ETH→UNI→AAVE→ETH) borrow
+         # ETH as an intermediate and return it atomically — net ETH balance is unchanged
+-        # after the loop, so the reserve check must NOT deduct from the holding.
++        # after the loop, so the reserve check must NOT deduct from the holding (paper).
++        # Live mode uses strict_eth_floor: any ETH leg that sells must stay above reserve.
+         is_closed_loop = intent.from_asset == intent.to_asset
+-        if not is_closed_loop:
++        if self.strict_eth_floor or not is_closed_loop:
+             size_pct = self.clamp_eth_sell_size(intent.from_asset, size_pct, holdings)
+ 
+-        if not is_closed_loop and intent.from_asset == "ETH" and size_pct <= 0:
++        if intent.from_asset == "ETH" and size_pct <= 0 and (
++            not is_closed_loop or self.strict_eth_floor
++        ):
+             reserve = self.min_eth_reserve
+             bal = holdings.get("ETH", 0.0)
+             return ConstraintResult(

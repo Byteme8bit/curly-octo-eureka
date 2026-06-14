@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -21,10 +22,12 @@ from bot.discord_bot import (
 )
 from bot.display import TerminalDisplay
 from bot.fee_engine import FeeEngine
-from bot.goal_evolution import build_manager_from_settings
+from bot.goal_evolution import build_manager_from_settings, format_primary_goal_discord
 from bot.local_time import format_pacific
 from bot.markets import MarketRegistry
 from bot.paper_broker import PaperBroker
+from bot.live_broker import LiveBroker
+from bot.live_guards import LIVE_CONFIRM_PHRASE, is_live_armed, check_live_route
 from bot.paper_portfolio import PaperPortfolioLog
 from bot.portfolio_constraints import PortfolioConstraints
 from bot.preflight import PreFlightValidator
@@ -86,19 +89,89 @@ class TradingEngine:
 
         self.portfolio_log = PaperPortfolioLog(settings.paper_portfolio_file)
 
-        self.broker = PaperBroker(
+        self._mirror_mode = bool(settings.live_mirror_paper and settings.live_enabled)
+        self.live_broker: LiveBroker | None = None
 
-            initial_balances=settings.initial_balances,
+        if settings.live_enabled and not is_live_armed(
+            live_enabled=settings.live_enabled,
+            live_trading_confirm=settings.live_trading_confirm,
+        ):
+            raise ValueError(
+                "LIVE_ENABLED=1 requires LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY in .env"
+            )
 
-            fee_rate=settings.fee_rate,
+        if self._mirror_mode:
+            if not settings.api_key or not settings.api_secret:
+                raise ValueError(
+                    "LIVE_MIRROR_PAPER=1 requires KRAKEN_API_KEY and KRAKEN_API_SECRET in .env"
+                )
+            self.paper_broker = PaperBroker(
+                initial_balances=settings.initial_balances,
+                fee_rate=settings.fee_rate,
+                state_file=settings.state_file,
+                min_usd_trade=settings.min_usd_trade,
+                reset=settings.reset_paper_state,
+            )
+            self.live_broker = LiveBroker(
+                exchange=self.data.exchange,
+                fee_rate=settings.fee_rate,
+                state_file=settings.live_state_file,
+                min_usd_trade=settings.min_usd_trade,
+                max_usd_per_trade=settings.live_max_usd_per_trade,
+                max_usd_per_route=settings.live_max_usd_per_route,
+                allowed_assets=settings.live_allowed_assets,
+                allow_triangular=settings.live_allow_triangular,
+                max_route_legs=settings.live_max_route_legs,
+                reset=settings.reset_live_state,
+            )
+            self.broker = self.paper_broker
+            self._live_mode = True
+        elif settings.live_enabled:
+            if not settings.api_key or not settings.api_secret:
+                raise ValueError(
+                    "LIVE_ENABLED=1 requires KRAKEN_API_KEY and KRAKEN_API_SECRET in .env"
+                )
+            self.broker = LiveBroker(
+                exchange=self.data.exchange,
+                fee_rate=settings.fee_rate,
+                state_file=settings.live_state_file,
+                min_usd_trade=settings.min_usd_trade,
+                max_usd_per_trade=settings.live_max_usd_per_trade,
+                max_usd_per_route=settings.live_max_usd_per_route,
+                allowed_assets=settings.live_allowed_assets,
+                allow_triangular=settings.live_allow_triangular,
+                max_route_legs=settings.live_max_route_legs,
+                reset=settings.reset_live_state,
+            )
+            self._live_mode = True
+        else:
+            self.broker = PaperBroker(
+                initial_balances=settings.initial_balances,
+                fee_rate=settings.fee_rate,
+                state_file=settings.state_file,
+                min_usd_trade=settings.min_usd_trade,
+                reset=settings.reset_paper_state,
+            )
+            self._live_mode = False
 
-            state_file=settings.state_file,
+        if self._live_mode:
+            assets = ",".join(self.settings.live_allowed_assets)
+            logger.critical(
+                "!!! LIVE TRADING ARMED — REAL MONEY ON KRAKEN !!! "
+                "confirm=%s max=$%.0f/trade allowed=%s mirror=%s",
+                LIVE_CONFIRM_PHRASE,
+                self.settings.live_max_usd_per_trade,
+                assets,
+                self._mirror_mode,
+            )
 
-            min_usd_trade=settings.min_usd_trade,
-
-            reset=settings.reset_paper_state,
-
-        )
+        _live_execution = settings.live_enabled and not self._mirror_mode
+        if self._mirror_mode:
+            _drawdown_limit = settings.drawdown_hibernate_pct
+        elif settings.live_enabled:
+            _drawdown_limit = settings.live_drawdown_halt_pct
+        else:
+            _drawdown_limit = settings.drawdown_hibernate_pct
 
         self.risk = RiskManager(
 
@@ -106,7 +179,7 @@ class TradingEngine:
 
             fee_rate=settings.fee_rate,
 
-            drawdown_hibernate_pct=settings.drawdown_hibernate_pct,
+            drawdown_hibernate_pct=_drawdown_limit,
 
             hibernate_hours=settings.hibernate_hours,
 
@@ -130,6 +203,12 @@ class TradingEngine:
 
             save_callback=self.broker.save,
 
+            adaptive_enabled=not (
+                settings.live_enabled
+                and settings.live_strict_profit
+                and not self._mirror_mode
+            ),
+
         )
 
         self.fee_engine = FeeEngine(
@@ -150,7 +229,7 @@ class TradingEngine:
 
             risk_state=self.broker.risk,
 
-            drawdown_limit_pct=settings.drawdown_hibernate_pct,
+            drawdown_limit_pct=_drawdown_limit,
 
             save_callback=self.broker.save,
 
@@ -158,14 +237,40 @@ class TradingEngine:
 
         )
 
+        self.live_circuit_breaker = None
+        if self._mirror_mode and self.live_broker is not None:
+            self.live_circuit_breaker = CircuitBreaker(
+                risk_state=self.live_broker.risk,
+                drawdown_limit_pct=settings.live_drawdown_halt_pct,
+                save_callback=self.live_broker.save,
+                diagnostic_dir=settings.diagnostic_dir,
+            )
+
         self.constraints = PortfolioConstraints(
 
-            min_eth_reserve=settings.min_eth_reserve,
+            min_eth_reserve=(
+                settings.live_min_eth_reserve
+                if _live_execution
+                else settings.min_eth_reserve
+            ),
 
             max_alt_allocation_pct=settings.max_alt_allocation_pct,
 
             min_usd_trade=settings.min_usd_trade,
 
+            strict_eth_floor=_live_execution,
+
+        )
+
+        self._live_constraints = (
+            PortfolioConstraints(
+                min_eth_reserve=settings.live_min_eth_reserve,
+                max_alt_allocation_pct=settings.max_alt_allocation_pct,
+                min_usd_trade=settings.min_usd_trade,
+                strict_eth_floor=True,
+            )
+            if self._mirror_mode
+            else None
         )
 
         self.governor = StrategyGovernor(
@@ -275,6 +380,8 @@ class TradingEngine:
         self._last_pinned_pnl_band: int = 0
 
         self._shutdown_done = False
+
+        self._posted_cb_diagnostics: set[str] = set()
 
         self._restart_requested: bool = False
 
@@ -491,6 +598,15 @@ class TradingEngine:
 
             return
 
+        if self.settings.discord_quiet_mode and "circuit breaker diagnostic" in message.lower():
+
+            logger.info(
+                "Watchdog diagnostic suppressed (DISCORD_QUIET_MODE): %s",
+                message.replace("\n", " ")[:160],
+            )
+
+            return
+
         self.discord.post_important(message, pin=pin, source="WatchDog")
 
     def _log_whale_follow_skip(self, event, reason: str) -> None:
@@ -520,10 +636,16 @@ class TradingEngine:
         snap = self._activity_buffer.snapshot()
         portfolio_view = self._refresh_market_view()
         tier = ""
+        pg_headline = ""
+        pg_pct = None
         if self._goal_status is not None:
             tier = getattr(self._goal_status, "tier_label", "") or str(
                 getattr(self._goal_status, "tier", "")
             )
+            pg = getattr(self._goal_status, "primary_goal", None) or {}
+            if pg and not pg.get("achieved"):
+                pg_headline = str(pg.get("headline", ""))
+                pg_pct = pg.get("progress_pct")
         crash = bool(self._crash_status and self._crash_status.blocks_new_risk)
         body = format_hourly_summary(
             trade_count=snap["trade_count"],
@@ -534,6 +656,8 @@ class TradingEngine:
             baseline_pnl=portfolio_view.baseline_pnl,
             tier_label=tier,
             crash_hold=crash,
+            primary_goal_headline=pg_headline,
+            primary_goal_progress_pct=pg_pct,
         )
         return f"{body}\n\n_Updated {format_pacific()}_"
 
@@ -556,10 +680,16 @@ class TradingEngine:
             self._last_summary_monotonic = time.monotonic()
             return
         tier = ""
+        pg_headline = ""
+        pg_pct = None
         if self._goal_status is not None:
             tier = getattr(self._goal_status, "tier_label", "") or str(
                 getattr(self._goal_status, "tier", "")
             )
+            pg = getattr(self._goal_status, "primary_goal", None) or {}
+            if pg and not pg.get("achieved"):
+                pg_headline = str(pg.get("headline", ""))
+                pg_pct = pg.get("progress_pct")
         crash = bool(self._crash_status and self._crash_status.blocks_new_risk)
         msg = format_hourly_summary(
             trade_count=snap["trade_count"],
@@ -570,12 +700,18 @@ class TradingEngine:
             baseline_pnl=baseline_pnl,
             tier_label=tier,
             crash_hold=crash,
+            primary_goal_headline=pg_headline,
+            primary_goal_progress_pct=pg_pct,
         )
         self.discord.post_important(msg, pin=False, source="TradeBot")
         self._last_summary_monotonic = time.monotonic()
 
     def _maybe_discord_major_moves(self, usd_prices: dict[str, float]) -> None:
-        if not self.settings.discord_enabled or self.settings.discord_major_move_pct <= 0:
+        if (
+            not self.settings.discord_enabled
+            or self.settings.discord_quiet_mode
+            or self.settings.discord_major_move_pct <= 0
+        ):
             return
         self._major_moves.refresh_baselines(usd_prices)
         for asset, price in usd_prices.items():
@@ -612,6 +748,68 @@ class TradingEngine:
         except OSError as exc:
             logger.warning("Could not persist whale-follow status: %s", exc)
 
+    def _check_live_eth_floor(self, holdings: dict[str, float]) -> bool:
+        """Halt live trading when ETH balance is below LIVE_MIN_ETH_RESERVE."""
+        if not self._live_mode:
+            return False
+        floor = self.settings.live_min_eth_reserve
+        eth = holdings.get("ETH", 0.0)
+        if eth >= floor - 1e-9:
+            return False
+        reason = (
+            f"ETH balance {eth:.4f} below LIVE_MIN_ETH_RESERVE {floor:.2f} — "
+            "all live trading stopped"
+        )
+        live_broker = self.live_broker if self._mirror_mode else self.broker
+        if self._mirror_mode:
+            if hasattr(live_broker, "halt") and not getattr(live_broker, "halted", False):
+                live_broker.halt(reason)
+            if self.settings.discord_enabled:
+                self.discord.post_important(
+                    f"**LIVE HALT — ETH FLOOR** (paper continues)\n{reason}\n"
+                    f"{floor:.1f} ETH is untouchable on Kraken. Manual review before live mirror resumes.",
+                    pin=True,
+                )
+            return True
+        self.runtime.set_trading_active(False)
+        if hasattr(live_broker, "halt") and not getattr(live_broker, "halted", False):
+            live_broker.halt(reason)
+        if self.settings.discord_enabled:
+            self.discord.post_important(
+                f"**LIVE HALT — ETH FLOOR**\n{reason}\n"
+                f"{floor:.1f} ETH is untouchable. Manual `resume-trading` after review.",
+                pin=True,
+            )
+        return True
+
+    def _after_live_trade(self) -> None:
+        """Pause live trading when LIVE_MAX_TRADES limit is reached."""
+        if not self._live_mode:
+            return
+        live_broker = self.live_broker if self._mirror_mode else self.broker
+        record = getattr(live_broker, "record_completed_trade", None)
+        if not callable(record):
+            return
+        count = record()
+        limit = self.settings.live_max_trades
+        if limit <= 0 or count < limit:
+            return
+        if not self._mirror_mode:
+            self.runtime.set_trading_active(False)
+        if hasattr(live_broker, "halt") and not getattr(live_broker, "halted", False):
+            live_broker.halt(f"Live trade limit reached ({count}/{limit})")
+        msg = f"{limit} live trades complete — live mirror paused"
+        if not self._mirror_mode:
+            msg = f"{limit} live trades complete — paused"
+        logger.info(msg)
+        if self.settings.discord_enabled:
+            suffix = " (paper continues)" if self._mirror_mode else ""
+            self.discord.post_important(
+                f"**{msg}**{suffix}\nUse `-start` in Discord to resume when ready.",
+                pin=True,
+                source="TradeBot",
+            )
+
     def _try_execute_intent(
         self,
         intent,
@@ -623,6 +821,16 @@ class TradingEngine:
         in_reevaluation: bool = False,
     ) -> tuple[dict | None, str]:
         """Run portfolio, preflight, and risk gates then execute one intent."""
+        if not self._mirror_mode and getattr(self.broker, "halted", False):
+            reason = getattr(self.broker, "halt_reason", "") or "Live trading halted"
+            return None, reason
+        if self._live_mode and not self._mirror_mode:
+            eth = holdings.get("ETH", 0.0)
+            floor = self.settings.live_min_eth_reserve
+            if eth < floor - 1e-9:
+                return None, (
+                    f"ETH balance {eth:.4f} below live floor {floor:.2f}"
+                )
         if in_reevaluation and not intent.is_defensive:
             return None, "Re-evaluation mode — non-defensive trades blocked"
         if (
@@ -636,6 +844,15 @@ class TradingEngine:
         )
         if not route:
             return None, f"No route: {intent.from_asset} -> {intent.to_asset}"
+        if self._live_mode and not self._mirror_mode:
+            live_ok, live_reason = check_live_route(
+                route,
+                self.settings.live_allowed_assets,
+                allow_triangular=self.settings.live_allow_triangular,
+                max_route_legs=self.settings.live_max_route_legs,
+            )
+            if not live_ok:
+                return None, live_reason
         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
         required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
         constraint = self.constraints.validate_intent(
@@ -647,6 +864,12 @@ class TradingEngine:
         if not constraint.allowed:
             return None, constraint.reason
         intent.size_pct = constraint.size_pct
+        if self._live_mode and not self._mirror_mode:
+            route_check = self.constraints.check_route_eth_floor(
+                route, holdings, constraint.size_pct
+            )
+            if not route_check.allowed:
+                return None, route_check.reason
         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
         pf = self.preflight.validate(
             intent,
@@ -691,6 +914,8 @@ class TradingEngine:
         )
         self.risk.record_trade()
         self.auditor.note_trade(trade)
+        if self._live_mode and not self._mirror_mode:
+            self._after_live_trade()
         return trade, ""
 
     def _maybe_whale_follow(self, event) -> None:
@@ -755,7 +980,10 @@ class TradingEngine:
                 baseline_pnl=baseline_pnl,
                 drawdown=drawdown,
             )
-            if self.settings.discord_enabled:
+            if (
+                self.settings.discord_enabled
+                and not self.settings.discord_quiet_mode
+            ):
                 msg = format_whale_follow_alert(
                     event,
                     trade,
@@ -782,6 +1010,11 @@ class TradingEngine:
 
         return dict(self.broker.state.balances)
 
+    def _live_holdings(self) -> dict[str, float]:
+        if self._mirror_mode and self.live_broker is not None:
+            return dict(self.live_broker.state.balances)
+        return self._holdings()
+
     def _write_portfolio_file(
         self,
         *,
@@ -801,6 +1034,76 @@ class TradingEngine:
             )
         except OSError as exc:
             logger.warning("Could not write portfolio file: %s", exc)
+
+    def _write_trade_diagnosis(
+        self,
+        *,
+        portfolio: float,
+        result,
+        blocked: list[str],
+        trades: list[dict],
+        can_trade: bool,
+    ) -> None:
+        """Persist one tick summary for offline trade-frequency diagnosis."""
+        adaptive = self.risk.adaptive_status()
+        ranked = sorted(
+            result.opportunities,
+            key=lambda o: o.edge - o.required_edge,
+            reverse=True,
+        )[:5]
+        best = [
+            {
+                "route": f"{op.from_asset}->{op.to_asset}",
+                "category": op.category,
+                "edge": round(op.edge, 6),
+                "required_edge": round(op.required_edge, 6),
+                "gap": round(op.required_edge - op.edge, 6),
+                "meets_threshold": op.edge >= op.required_edge,
+                "path": op.path,
+            }
+            for op in ranked
+        ]
+        live_broker = self.live_broker
+        payload = {
+            "timestamp_utc": datetime.utcnow().isoformat() + "Z",
+            "timestamp_pacific": format_pacific(),
+            "decision": "TRADE" if trades else "HOLD",
+            "trading_active": self.runtime.is_trading_active(),
+            "risk_paused": self.risk.is_paused(),
+            "mirror_mode": self._mirror_mode,
+            "live_enabled": self._live_mode,
+            "live_halted": bool(live_broker and live_broker.halted),
+            "live_halt_reason": getattr(live_broker, "halt_reason", None) if live_broker else None,
+            "live_trades_completed": (
+                int(live_broker.risk.live_trades_completed) if live_broker else 0
+            ),
+            "live_max_trades": self.settings.live_max_trades,
+            "can_trade": can_trade,
+            "reevaluation_mode": self.circuit_breaker.in_reevaluation(),
+            "adaptive": {
+                "active": adaptive.active,
+                "idle_hours": round(adaptive.idle_hours, 2),
+                "relax_factor": round(adaptive.relax_factor, 3),
+                "suspended": adaptive.suspended,
+                "relax_attempts": adaptive.relax_attempts,
+            },
+            "thresholds": {
+                "min_trade_edge": self.settings.min_trade_edge,
+                "required_edge_1hop": round(self.risk.path_edge(1), 6),
+                "swap_edge_1hop": round(self.risk.swap_edge(), 6),
+                "min_net_profit_pct": self.risk.effective_min_net_profit(),
+            },
+            "best_opportunities": best,
+            "blocked": blocked[:12],
+            "portfolio_usd": round(portfolio, 2),
+            "paper_trades_session": int(self.broker.risk.total_trades),
+        }
+        path = self.settings.log_dir / "trade_diagnosis.json"
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        except OSError as exc:
+            logger.warning("Could not write trade diagnosis: %s", exc)
 
     def _seed_portfolio_snapshot(self) -> None:
         """Ensure ``paper_portfolio.json`` exists before the first tick."""
@@ -907,6 +1210,18 @@ class TradingEngine:
 
 
 
+    def _goal_tracking_portfolio(self) -> float:
+        """Portfolio USD used for milestone goals (live in mirror/live mode, else paper)."""
+        try:
+            usd_prices = self._usd_prices()
+        except Exception:  # noqa: BLE001
+            return 0.0
+        if self._mirror_mode and self.live_broker is not None:
+            return self.live_broker.portfolio_value(usd_prices)
+        if self._live_mode:
+            return self.broker.portfolio_value(usd_prices)
+        return self.broker.portfolio_value(usd_prices)
+
     def _update_goal_evolution(self, portfolio: float, drawdown: float, candles: dict) -> None:
         self._goal_status = self.goal_evolution.evaluate_goals(portfolio)
         allowed = self.goal_evolution.filter_configured_strategies(
@@ -927,7 +1242,11 @@ class TradingEngine:
             trading_active=self.runtime.is_trading_active(),
         )
         if self.settings.discord_enabled:
-            if self._goal_status.newly_achieved and self._goal_status.achievement_message:
+            if (
+                not self.settings.discord_quiet_mode
+                and self._goal_status.newly_achieved
+                and self._goal_status.achievement_message
+            ):
                 self.discord.post_important(self._goal_status.achievement_message, pin=True)
             if self._crash_status.newly_activated and self._crash_status.activate_message:
                 self.discord.post_important(self._crash_status.activate_message, pin=True)
@@ -950,7 +1269,7 @@ class TradingEngine:
 
         prices = {symbol: self._pair_price(symbol) for symbol in route.symbols}
 
-        return self.broker.execute_path(
+        trade = self.broker.execute_path(
 
             route=route,
 
@@ -965,6 +1284,123 @@ class TradingEngine:
             strategy_name=intent.strategy_name,
 
         )
+
+        if trade and self._mirror_mode:
+            live_trade = self._mirror_intent_to_live(
+                intent,
+                route,
+                prices,
+                usd_prices,
+                paper_size_pct=intent.size_pct,
+            )
+            if live_trade:
+                trade["live_mirrored"] = True
+            else:
+                trade["live_mirror_skipped"] = True
+
+        return trade
+
+    def _mirror_intent_to_live(
+        self,
+        intent,
+        route,
+        prices: dict[str, float],
+        usd_prices: dict[str, float],
+        *,
+        paper_size_pct: float,
+    ) -> dict | None:
+        """Mirror a successful paper trade to Kraken when live gates pass."""
+        live = self.live_broker
+        if live is None:
+            return None
+        if live.halted:
+            logger.info(
+                "Live mirror skipped — halted: %s",
+                live.halt_reason or "live broker halted",
+            )
+            return None
+        limit = self.settings.live_max_trades
+        if limit > 0 and live.risk.live_trades_completed >= limit:
+            logger.info("Live mirror skipped — LIVE_MAX_TRADES (%s) reached", limit)
+            return None
+        holdings = self._live_holdings()
+        eth = holdings.get("ETH", 0.0)
+        floor = self.settings.live_min_eth_reserve
+        if eth < floor - 1e-9:
+            logger.info(
+                "Live mirror skipped — ETH %.4f below live floor %.2f",
+                eth,
+                floor,
+            )
+            return None
+        live_ok, live_reason = check_live_route(
+            route,
+            self.settings.live_allowed_assets,
+            allow_triangular=self.settings.live_allow_triangular,
+            max_route_legs=self.settings.live_max_route_legs,
+        )
+        if not live_ok:
+            logger.info("Live mirror skipped — %s", live_reason)
+            return None
+        live_constraints = self._live_constraints or self.constraints
+        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+        constraint = live_constraints.validate_intent(
+            intent,
+            holdings,
+            usd_prices,
+            required_edge=required_edge,
+        )
+        if not constraint.allowed:
+            logger.info("Live mirror skipped — %s", constraint.reason)
+            return None
+        route_check = live_constraints.check_route_eth_floor(
+            route, holdings, constraint.size_pct
+        )
+        if not route_check.allowed:
+            logger.info("Live mirror skipped — %s", route_check.reason)
+            return None
+        pf = self.preflight.validate(
+            intent,
+            route_symbols=route.symbols,
+            hops=route.hops,
+            is_defensive=intent.is_defensive,
+            min_net_profit=self.risk.effective_min_net_profit(),
+        )
+        if not pf.allowed:
+            logger.info("Live mirror skipped — %s", pf.reason)
+            return None
+        mirror_size = min(constraint.size_pct, paper_size_pct)
+        live_trade = live.execute_path(
+            route=route,
+            prices=prices,
+            usd_prices=usd_prices,
+            reason=f"[mirror] {intent.reason}",
+            size_pct=mirror_size,
+            strategy_name=intent.strategy_name,
+        )
+        if not live_trade:
+            if live.halted and self.settings.discord_enabled:
+                self.discord.post_important(
+                    f"**LIVE HALT — ROUTE FAILURE**\n{live.halt_reason or 'live path failed'}"
+                )
+            logger.warning("Live mirror execution failed for %s", route.path)
+            return None
+        receipt_path = self.receipts.save(live_trade)
+        live_trade["receipt_file"] = str(receipt_path)
+        live_trade["edge"] = pf.net_return_pct
+        self.auditor.note_trade(live_trade)
+        self._after_live_trade()
+        if self.settings.discord_enabled:
+            live_portfolio = live.portfolio_value(usd_prices)
+            baseline = live.risk.baseline_portfolio
+            baseline_pnl = live_portfolio - baseline if baseline > 0 else 0.0
+            from bot.report import format_trade_executed_alert
+
+            self.discord.post_important(
+                format_trade_executed_alert(live_trade, live_portfolio, baseline_pnl),
+                pin=False,
+            )
+        return live_trade
 
 
 
@@ -1073,6 +1509,8 @@ class TradingEngine:
 
 
     def _maybe_force_probe(self, intents, result, holdings, usd_prices, portfolio, trades) -> None:
+        if self._live_mode and not self._mirror_mode:
+            return
         """Guaranteed-activity valve. If nothing traded this tick and the bot has
         been idle past ``idle_probe_force_minutes``, take ONE small trade that
         ignores the edge/fee gates so there is visible action. Paper-only — this
@@ -1140,7 +1578,9 @@ class TradingEngine:
         )
         self.risk.record_trade()
         self.auditor.note_trade(trade)
-        if self.settings.discord_enabled:
+        if self._live_mode and not self._mirror_mode:
+            self._after_live_trade()
+        if self.settings.discord_enabled and not self.settings.discord_quiet_mode:
             self.discord.post_important(
                 "\U0001F0CF **Forced probe trade** \u2014 no setup cleared the bar while "
                 "idle, so I took a small one to keep things active. Paper test; may lose fees.",
@@ -1230,17 +1670,28 @@ class TradingEngine:
                 from_asset="USD", to_asset="ETH", reason="probe into ETH",
                 size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
             )
-        # else trim a sliver of the largest holding that respects the ETH reserve
+        # else trim a sliver of the best funding source that respects the ETH reserve
+        from bot.funding_priority import funding_rank
+
+        probe_pct = max(0.01, self.settings.idle_probe_size_pct)
         non_usd = {
             a: q * usd_prices.get(a, 0.0)
             for a, q in live.items()
             if a != "USD" and self._probe_respects_eth_reserve(a, holdings)
         }
-        if non_usd:
-            asset = max(non_usd, key=non_usd.get)
+        viable = {
+            a: v
+            for a, v in non_usd.items()
+            if v * probe_pct >= self.settings.min_usd_trade
+        }
+        if viable:
+            asset = min(
+                viable,
+                key=lambda a: (funding_rank(a, self.settings.preferred_start_assets), -viable[a]),
+            )
             return TradeIntent(
                 from_asset=asset, to_asset="USD", reason="probe to USD",
-                size_pct=0.05, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
+                size_pct=probe_pct, edge=0.0, gross_return_pct=0.0, strategy_name="probe",
             )
         return None
 
@@ -1254,6 +1705,12 @@ class TradingEngine:
     ) -> None:
         if not self.settings.discord_enabled or not trades:
             return
+        if getattr(self, "_mirror_mode", False):
+            return
+        if self.settings.discord_quiet_mode:
+            trades = [t for t in trades if t.get("live")]
+            if not trades:
+                return
         threshold = self.settings.discord_pin_trade_usd
         for trade in trades:
             gain = float(trade.get("gain_loss", 0.0))
@@ -1275,7 +1732,7 @@ class TradingEngine:
 
     def _maybe_pin_pnl_milestone(self, portfolio: float, baseline_pnl: float) -> None:
 
-        if not self.settings.discord_enabled:
+        if not self.settings.discord_enabled or self.settings.discord_quiet_mode:
 
             return
 
@@ -1667,13 +2124,37 @@ class TradingEngine:
 
         usd_prices = self._usd_prices()
 
+        if self._mirror_mode and self.live_broker is not None:
+            self.live_broker.sync_from_exchange()
+        elif self._live_mode:
+            self.broker.sync_from_exchange()
+
         candles = self.data.fetch_all_candles()
 
         holdings = self._holdings()
 
+        if self._mirror_mode:
+            self._check_live_eth_floor(self._live_holdings())
+        elif self._live_mode:
+            self._check_live_eth_floor(holdings)
+
 
 
         portfolio = self.broker.portfolio_value(usd_prices)
+
+        if self._mirror_mode and self.live_broker is not None:
+            live_portfolio = self.live_broker.portfolio_value(usd_prices)
+            if self.live_broker.risk.peak_portfolio <= 0:
+                self.live_broker.risk.peak_portfolio = live_portfolio
+                self.live_broker.risk.baseline_portfolio = live_portfolio
+                self.live_broker.save()
+        elif self._live_mode and self.broker.risk.peak_portfolio <= 0:
+            self.broker.risk.peak_portfolio = portfolio
+            self.broker.risk.baseline_portfolio = portfolio
+            self.broker.save()
+
+        if self._live_mode and not self._mirror_mode and getattr(self.broker, "halted", False):
+            self.runtime.set_trading_active(False)
 
         self.governor.set_portfolio_snapshot(portfolio)
 
@@ -1689,11 +2170,23 @@ class TradingEngine:
 
         drawdown = self.risk.drawdown_pct(portfolio)
 
-        self._update_goal_evolution(portfolio, drawdown, candles)
+        goal_portfolio = portfolio
+        goal_drawdown = drawdown
+        if self._mirror_mode and self.live_broker is not None:
+            goal_portfolio = self.live_broker.portfolio_value(usd_prices)
+            live_peak = self.live_broker.risk.peak_portfolio
+            goal_drawdown = (
+                max(0.0, (live_peak - goal_portfolio) / live_peak) if live_peak > 0 else 0.0
+            )
+        elif self._live_mode and not self._mirror_mode:
+            goal_portfolio = portfolio
+            goal_drawdown = drawdown
+
+        self._update_goal_evolution(goal_portfolio, goal_drawdown, candles)
 
         cb_event = None
 
-        if self.settings.circuit_breaker_enabled:
+        if self.settings.circuit_breaker_enabled or (self._live_mode and not self._mirror_mode):
 
             cb_event = self.circuit_breaker.check(portfolio)
 
@@ -1703,6 +2196,14 @@ class TradingEngine:
 
                 self.broker.save()
 
+                if self._live_mode and not self._mirror_mode:
+                    self.runtime.set_trading_active(False)
+                    if hasattr(self.broker, "halt"):
+                        self.broker.halt(
+                            f"Drawdown {cb_event.drawdown_pct:.1%} from peak — "
+                            "all live trading stopped"
+                        )
+
                 path = self.circuit_breaker.dump_diagnostics(
 
                     cb_event, holdings, usd_prices,
@@ -1711,20 +2212,49 @@ class TradingEngine:
 
                 )
 
-                if self.settings.discord_enabled:
-
+                live_halt = self._live_mode and not self._mirror_mode
+                post_discord = (
+                    self.settings.discord_enabled
+                    and path.name not in self._posted_cb_diagnostics
+                    and (live_halt or not self.settings.discord_quiet_mode)
+                )
+                if post_discord:
+                    self._posted_cb_diagnostics.add(path.name)
+                    headline = "**LIVE HALT — CIRCUIT BREAKER**" if live_halt else "**CIRCUIT BREAKER**"
                     self.discord.post_important(
-
-                        f"**CIRCUIT BREAKER** — portfolio ${cb_event.portfolio_value:,.2f}, "
-
+                        f"{headline} — portfolio ${cb_event.portfolio_value:,.2f}, "
                         f"drawdown {cb_event.drawdown_pct:.1%} from peak. "
-
                         f"Re-evaluation mode — manual `resume-trading` required.\n"
-
                         f"Diagnostic: `{path.name}`",
-
                         pin=True,
+                    )
 
+        if self._mirror_mode and self.live_circuit_breaker is not None and self.live_broker is not None:
+            live_holdings = self._live_holdings()
+            live_portfolio = self.live_broker.portfolio_value(usd_prices)
+            live_cb = self.live_circuit_breaker.check(live_portfolio)
+            if live_cb:
+                self.live_broker.halt(
+                    f"Drawdown {live_cb.drawdown_pct:.1%} from live peak — "
+                    "live mirror stopped (paper continues)"
+                )
+                path = self.live_circuit_breaker.dump_diagnostics(
+                    live_cb,
+                    live_holdings,
+                    usd_prices,
+                    extra={"strategies": getattr(self.strategy, "name", ""), "scope": "live"},
+                )
+                if (
+                    self.settings.discord_enabled
+                    and path.name not in self._posted_cb_diagnostics
+                ):
+                    self._posted_cb_diagnostics.add(path.name)
+                    self.discord.post_important(
+                        f"**LIVE HALT — CIRCUIT BREAKER** (paper continues) — "
+                        f"Kraken portfolio ${live_cb.portfolio_value:,.2f}, "
+                        f"drawdown {live_cb.drawdown_pct:.1%} from peak.\n"
+                        f"Diagnostic: `{path.name}`",
+                        pin=True,
                     )
 
         elif hibernate_event:
@@ -1835,24 +2365,26 @@ class TradingEngine:
 
         )
 
+        if can_trade and self._live_mode and not self._mirror_mode and getattr(self.broker, "halted", False):
+            can_trade = False
+
         if can_trade:
 
             adaptive_active = self.risk.adaptive_status().active
-
-            if adaptive_active and intents:
-
-                exhausted_msg = self.risk.record_adaptive_attempt()
-
-                if exhausted_msg:
-
-                    blocked.append(exhausted_msg)
-                    activity_blocked.append(exhausted_msg)
-
-                    if self.settings.discord_enabled and not self.settings.discord_quiet_mode:
-
-                        self.discord.post_plain(exhausted_msg)
+            edge_qualified = False
 
             for intent in intents:
+
+                if self._live_mode and not self._mirror_mode:
+                    eth = holdings.get("ETH", 0.0)
+                    floor = self.settings.live_min_eth_reserve
+                    if eth < floor - 1e-9:
+                        reason = (
+                            f"ETH balance {eth:.4f} below live floor {floor:.2f}"
+                        )
+                        blocked.append(reason)
+                        activity_blocked.append(reason)
+                        continue
 
                 if in_reevaluation and not intent.is_defensive:
 
@@ -1913,6 +2445,15 @@ class TradingEngine:
 
                 intent.size_pct = constraint.size_pct
 
+                if self._live_mode and not self._mirror_mode:
+                    route_check = self.constraints.check_route_eth_floor(
+                        route, holdings, constraint.size_pct
+                    )
+                    if not route_check.allowed:
+                        blocked.append(route_check.reason)
+                        activity_blocked.append(route_check.reason)
+                        continue
+
                 trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
 
                 pf = self.preflight.validate(
@@ -1936,6 +2477,7 @@ class TradingEngine:
 
                     continue
 
+                edge_qualified = True
                 intent.edge = pf.net_return_pct
 
 
@@ -2001,7 +2543,23 @@ class TradingEngine:
 
                     self.auditor.note_trade(trade)
 
+                    if self._live_mode and not self._mirror_mode:
+                        self._after_live_trade()
+
                     break
+
+            if adaptive_active and not trades and edge_qualified:
+
+                exhausted_msg = self.risk.record_adaptive_attempt()
+
+                if exhausted_msg:
+
+                    blocked.append(exhausted_msg)
+                    activity_blocked.append(exhausted_msg)
+
+                    if self.settings.discord_enabled and not self.settings.discord_quiet_mode:
+
+                        self.discord.post_plain(exhausted_msg)
 
             self._maybe_force_probe(intents, result, holdings, usd_prices, portfolio, trades)
 
@@ -2114,6 +2672,13 @@ class TradingEngine:
             baseline_pnl=baseline_pnl,
             drawdown=drawdown,
         )
+        self._write_trade_diagnosis(
+            portfolio=portfolio,
+            result=result,
+            blocked=blocked,
+            trades=trades,
+            can_trade=can_trade,
+        )
 
 
 
@@ -2220,12 +2785,41 @@ class TradingEngine:
         overrides_line = self._active_overrides_line()
 
         startup_text = (
-            f"**Trading bot started and active**\n"
+            f"**{'Paper + LIVE mirror' if self._mirror_mode else ('LIVE' if self._live_mode else 'Paper')} "
+            f"trading bot started and active**\n"
             f"Started {self._instance_started_at}"
         )
+        if self._mirror_mode:
+            startup_text += (
+                f"\n:chart_with_upwards_trend: Paper runs continuously in `.paper_state.json`; "
+                f"profitable paper trades mirror to Kraken when live gates pass."
+                f"\n:rotating_light: **LIVE TRADING ARMED** — REAL MONEY on mirror "
+                f"(confirm `{LIVE_CONFIRM_PHRASE}`)"
+                f"\n:warning: max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
+                f"assets {','.join(self.settings.live_allowed_assets)}, "
+                f"halt live at {self.settings.live_drawdown_halt_pct:.0%} Kraken drawdown, "
+                f"{self.settings.live_min_eth_reserve:.1f} ETH floor — no multi-hop live"
+            )
+        elif self._live_mode:
+            startup_text += (
+                f"\n:rotating_light: **LIVE TRADING ARMED** — REAL MONEY "
+                f"(confirm `{LIVE_CONFIRM_PHRASE}`)"
+                f"\n:warning: max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
+                f"assets {','.join(self.settings.live_allowed_assets)}, "
+                f"halt at {self.settings.live_drawdown_halt_pct:.0%} drawdown from peak, "
+                f"{self.settings.live_min_eth_reserve:.1f} ETH floor — no multi-hop live"
+            )
 
         if overrides_line:
             startup_text = f"{startup_text}\n{overrides_line}"
+
+        if self.settings.goal_evolution_enabled:
+            goal_portfolio = self._goal_tracking_portfolio()
+            if goal_portfolio > 0:
+                self._goal_status = self.goal_evolution.evaluate_goals(goal_portfolio)
+                goal_line = format_primary_goal_discord(self._goal_status)
+                if goal_line:
+                    startup_text = f"{startup_text}\n{goal_line}"
 
         self.discord.post_startup_pin(startup_text)
 
@@ -2246,6 +2840,14 @@ class TradingEngine:
             self._instance_started_at = format_pacific()
 
         self.discord.post_plain(f"Monitoring exchange since {self._instance_started_at}")
+        if (
+            not self.settings.discord_quiet_mode
+            and self._goal_status
+            and self.settings.goal_evolution_enabled
+        ):
+            goal_line = format_primary_goal_discord(self._goal_status)
+            if goal_line:
+                self.discord.post_plain(goal_line)
 
         self._last_heartbeat_monotonic = time.monotonic()
 

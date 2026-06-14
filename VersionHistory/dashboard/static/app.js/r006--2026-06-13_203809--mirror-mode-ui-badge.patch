@@ -1,0 +1,42 @@
+--- a/dashboard/static/app.js
++++ b/dashboard/static/app.js
+@@ -88,15 +88,37 @@
+   if (mode === "live") {
+     return `<span class="mode-badge mode-live">LIVE</span>`;
+   }
++  if (mode === "mirror") {
++    return `<span class="mode-badge mode-mirror">Paper+LIVE</span>`;
++  }
+   return `<span class="mode-badge mode-paper">Paper</span>`;
++}
++
++function modeLabel(mode) {
++  if (mode === "live") return "LIVE";
++  if (mode === "mirror") return "Paper + LIVE";
++  return "Paper";
++}
++
++function modeClass(mode) {
++  if (mode === "live") return "mode-live-text";
++  if (mode === "mirror") return "mode-mirror-text";
++  return "mode-paper-text";
+ }
+ 
+ function renderMetricStrip(summary) {
+   const s = summary || {};
+   const mode = s.trading_mode || "paper";
+   const metrics = [
+-    { label: "Mode", value: mode === "live" ? "LIVE" : "Paper", cls: mode === "live" ? "mode-live-text" : "mode-paper-text" },
+-    { label: "Portfolio", value: fmtUsd(s.portfolio_usd), cls: "mono" },
++    { label: "Mode", value: modeLabel(mode), cls: modeClass(mode) },
++    { label: "Paper", value: fmtUsd(s.portfolio_usd), cls: "mono" },
++  ];
++  if (mode === "mirror" && s.live_portfolio_usd != null) {
++    metrics.push({ label: "Live (Kraken)", value: fmtUsd(s.live_portfolio_usd), cls: "mono mode-live-text" });
++  } else if (mode !== "mirror") {
++    metrics[1] = { label: "Portfolio", value: fmtUsd(s.portfolio_usd), cls: "mono" };
++  }
++  metrics.push(
+     { label: "Session PnL", value: fmtPnl(s.baseline_pnl), cls: `mono ${pnlClass(s.baseline_pnl)}` },
+     { label: "Drawdown", value: fmtPct(s.drawdown_pct, true), cls: `mono ${s.drawdown_pct > 0.05 ? "score-bad" : ""}` },
+     { label: "Cash", value: fmtPct(s.cash_pct, true), cls: "mono" },

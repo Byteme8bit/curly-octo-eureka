@@ -1,0 +1,28 @@
+--- a/dashboard/static/index.html
++++ b/dashboard/static/index.html
+@@ -4,7 +4,7 @@
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>TradeBot Command Center</title>
+-  <link rel="stylesheet" href="/static/styles.css?v=045" />
++  <link rel="stylesheet" href="/static/styles.css?v=046" />
+   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+ </head>
+ <body>
+@@ -75,7 +75,7 @@
+         <div id="whales-panel"></div>
+       </section>
+       <section id="goals" class="panel-section">
+-        <h2 class="section-heading">Goals &amp; evolution</h2>
++        <h2 class="section-heading">Goals — portfolio milestones</h2>
+         <div id="goals-panel"></div>
+       </section>
+       <section id="watchdog" class="panel-section">
+@@ -106,6 +106,6 @@
+     </aside>
+   </div>
+ 
+-  <script src="/static/app.js?v=045"></script>
++  <script src="/static/app.js?v=046"></script>
+ </body>
+ </html>

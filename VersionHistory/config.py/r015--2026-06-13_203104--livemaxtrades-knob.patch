@@ -1,0 +1,18 @@
+--- a/config.py
++++ b/config.py
+@@ -204,6 +204,7 @@
+     live_max_usd_per_trade: float
+     live_drawdown_halt_pct: float
+     live_min_eth_reserve: float
++    live_max_trades: int
+     live_strict_profit: bool
+     reset_live_state: bool
+ 
+@@ -540,6 +541,7 @@
+         live_max_usd_per_trade=float(os.getenv("LIVE_MAX_USD_PER_TRADE", "75")),
+         live_drawdown_halt_pct=float(os.getenv("LIVE_DRAWDOWN_HALT_PCT", "0.10")),
+         live_min_eth_reserve=float(os.getenv("LIVE_MIN_ETH_RESERVE", "0.5")),
++        live_max_trades=int(os.getenv("LIVE_MAX_TRADES", "0")),
+         live_strict_profit=os.getenv("LIVE_STRICT_PROFIT", "1") == "1",
+         reset_live_state=os.getenv("RESET_LIVE_STATE", "0") == "1",
+     )

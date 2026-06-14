@@ -1,0 +1,74 @@
+--- a/dashboard/static/styles.css
++++ b/dashboard/static/styles.css
+@@ -480,6 +480,71 @@
+ .sidebar ul { margin: 0; padding-left: 1rem; color: var(--muted); }
+ .sidebar li { margin-bottom: 0.3rem; }
+ 
++.goal-primary-card {
++  margin-bottom: 1rem;
++  padding: 1rem 1.1rem;
++  border: 1px solid var(--border);
++  border-radius: 8px;
++  background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
++}
++
++.goal-primary-header {
++  display: flex;
++  align-items: baseline;
++  justify-content: space-between;
++  gap: 0.75rem;
++  margin-bottom: 0.65rem;
++}
++
++.goal-primary-title {
++  margin: 0;
++  font-size: 1.05rem;
++  font-weight: 600;
++  color: var(--text);
++}
++
++.goal-primary-pct {
++  font-size: 1.1rem;
++  color: var(--accent);
++  font-weight: 600;
++}
++
++.goal-progress-track {
++  height: 10px;
++  border-radius: 999px;
++  background: var(--border);
++  overflow: hidden;
++}
++
++.goal-progress-compact {
++  height: 6px;
++  margin: 0.35rem 0;
++}
++
++.goal-progress-fill {
++  height: 100%;
++  border-radius: 999px;
++  background: linear-gradient(90deg, var(--accent), var(--good));
++  transition: width 0.4s ease;
++}
++
++.goal-primary-meta {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: 0.45rem;
++  margin-top: 0.55rem;
++  font-size: 0.9rem;
++}
++
++.goal-unlock { margin: 0.55rem 0 0; }
++
++.goal-snapshot-headline {
++  font-weight: 600;
++  font-size: 0.85rem;
++  margin-bottom: 0.15rem;
++}
++
+ @media (max-width: 1100px) {
+   .chart-grid, .dual-panels { grid-template-columns: 1fr; }
+ }

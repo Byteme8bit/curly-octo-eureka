@@ -1,0 +1,33 @@
+--- a/dashboard/static/styles.css
++++ b/dashboard/static/styles.css
+@@ -58,7 +58,29 @@
+ }
+ 
+ .top-bar h1 { margin: 0; font-size: 1.15rem; font-weight: 600; letter-spacing: 0.02em; }
+-.meta { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.78rem; }
++.meta { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.78rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
++
++.mode-badge {
++  display: inline-block;
++  font-size: 0.68rem;
++  font-weight: 700;
++  letter-spacing: 0.06em;
++  padding: 0.12rem 0.45rem;
++  border-radius: 3px;
++  vertical-align: middle;
++}
++.mode-live {
++  color: #fff;
++  background: var(--bad);
++  box-shadow: 0 0 8px rgba(245, 101, 101, 0.35);
++}
++.mode-paper {
++  color: var(--muted);
++  background: var(--surface2);
++  border: 1px solid var(--border);
++}
++.mode-live-text { color: var(--bad); font-weight: 700; }
++.mode-paper-text { color: var(--muted); }
+ 
+ .section-nav {
+   display: flex;

@@ -1,0 +1,14 @@
+--- a/config.py
++++ b/config.py
+@@ -515,7 +515,10 @@
+             os.getenv("GOAL_MILESTONES_USD", "10000,100000,1000000")
+         ),
+         goal_tier0_strategies=_parse_strategies(
+-            os.getenv("GOAL_TIER0_STRATEGIES", "cross_momentum")
++            os.getenv(
++                "GOAL_TIER0_STRATEGIES",
++                "cross_momentum,stat_arb,triangular_arbitrage",
++            )
+         ),
+         goal_tier1_strategies=_parse_strategies(
+             os.getenv("GOAL_TIER1_STRATEGIES", "cross_momentum,stat_arb")

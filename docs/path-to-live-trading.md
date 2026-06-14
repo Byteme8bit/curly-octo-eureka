@@ -102,16 +102,17 @@ Positive signals: receipts correlate, markets are real, pre-flight would allow t
 
 ---
 
-### Phase 4 — Multi-hop / triangular (months, optional)
+### Phase 4 — Multi-hop / triangular (optional, gated)
 
-**Goal:** Only pursue if edge justifies leg risk and engineering cost.
+**Goal:** Sequential live legs among ETH/ADA/USD (+ BTC bridge) when edge justifies leg risk.
 
 | Step | Bot work | You verify |
 |------|----------|------------|
-| Sequential legs with rollback | Execute leg 1, confirm fill, then leg 2; abort / unwind if edge gone. | Paper-simulate stall on leg 2. |
-| Or disable live triangular | Keep triangular paper-only for research. | Accept that live PnL ≠ paper PnL. |
+| Enable triangular live | Set `LIVE_ALLOW_TRIANGULAR=1` with live armed (`LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY`). Caps: `LIVE_MAX_ROUTE_LEGS`, `LIVE_MAX_TRADE_USD` per leg, `LIVE_MAX_ROUTE_USD` total. | Mirror a 2–3 leg paper route; confirm legs fill sequentially on Kraken. |
+| Mid-route failure | `LiveBroker` rolls back completed legs; halts + Discord alert if rollback fails. | Paper-simulate stall on leg 2; confirm halt message. |
+| Or keep triangular paper-only | Leave `LIVE_ALLOW_TRIANGULAR=0` (default). | Accept that live PnL ≠ paper PnL for arb loops. |
 
-**Exit criteria:** Documented max loss on stalled loop; verifier `multi_hop_atomic` CONFIRM only with rollback tests.
+**Exit criteria:** Documented max loss on stalled loop; `tests/test_live_broker.py` rollback test passes.
 
 ---
 

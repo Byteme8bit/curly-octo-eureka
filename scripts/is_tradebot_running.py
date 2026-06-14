@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from bot.singleton import LOCK_FILE, _pid_is_running  # noqa: E402
+from bot.singleton import LOCK_FILE, _pid_is_running, _pid_is_valid_tradebot_holder  # noqa: E402
 
 
 def tradebot_is_running() -> bool:
@@ -24,7 +24,7 @@ def tradebot_is_running() -> bool:
         pid = int(LOCK_FILE.read_text(encoding="utf-8").strip())
     except (ValueError, OSError):
         return False
-    return _pid_is_running(pid)
+    return _pid_is_running(pid) and _pid_is_valid_tradebot_holder(pid)
 
 
 def main() -> int:

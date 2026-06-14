@@ -1,0 +1,19 @@
+--- a/dashboard/service.py
++++ b/dashboard/service.py
+@@ -24,12 +24,15 @@
+ 
+ def _build_summary_strip(tradebot: dict, watchdog: dict) -> dict:
+     p = tradebot.get("portfolio") or {}
++    lp = tradebot.get("live_portfolio") or {}
+     h = watchdog.get("health") or {}
+     s = watchdog.get("session") or {}
+     pnl = p.get("baseline_pnl")
++    mode = tradebot.get("mode", "paper")
+     return {
+-        "trading_mode": tradebot.get("mode", "paper"),
++        "trading_mode": mode,
+         "portfolio_usd": p.get("portfolio_usd"),
++        "live_portfolio_usd": lp.get("portfolio_usd") if mode == "mirror" else None,
+         "baseline_pnl": pnl,
+         "drawdown_pct": p.get("drawdown_pct"),
+         "cash_pct": p.get("cash_pct"),

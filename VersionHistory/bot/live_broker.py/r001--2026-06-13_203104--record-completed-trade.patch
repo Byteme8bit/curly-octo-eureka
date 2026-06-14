@@ -1,0 +1,3 @@
+--- a/bot/live_broker.py
++++ b/bot/live_broker.py
+# initial baseline - no previous state available

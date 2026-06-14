@@ -34,7 +34,11 @@ def test_live_verify_tag_exception_returns_empty() -> None:
 
 def test_notify_discord_trades_posts_when_live_tag_fails() -> None:
     engine = TradingEngine.__new__(TradingEngine)
-    engine.settings = MagicMock(discord_enabled=True, discord_pin_trade_usd=500.0)
+    engine.settings = MagicMock(
+        discord_enabled=True,
+        discord_pin_trade_usd=500.0,
+        discord_quiet_mode=False,
+    )
     engine.discord = MagicMock()
     with patch.object(TradingEngine, "_live_verify_tag", return_value=""):
         engine._notify_discord_trades(

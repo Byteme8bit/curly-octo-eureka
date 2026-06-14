@@ -1,0 +1,35 @@
+--- a/tests/test_adaptive_resume.py
++++ b/tests/test_adaptive_resume.py
+@@ -53,3 +53,32 @@
+     status = risk.adaptive_status()
+     assert status.suspended is False
+     assert status.relax_factor < 1.0
++
++
++def test_adaptive_resumes_when_idle_exceeds_one_day() -> None:
++    """55h+ idle with fresh suspend should resume immediately, not wait 2h cooldown."""
++    suspended_at = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
++    state = RiskState(
++        last_trade_at=(datetime.now(timezone.utc) - timedelta(hours=55)).isoformat(),
++        adaptive_suspended=True,
++        adaptive_suspended_at=suspended_at,
++    )
++    risk = RiskManager(
++        risk_state=state,
++        fee_rate=0.0026,
++        drawdown_hibernate_pct=0.15,
++        hibernate_hours=12.0,
++        trade_cooldown_seconds=0,
++        max_trades_per_hour=100,
++        min_trade_edge=0.0115,
++        leader_stable_seconds=600,
++        fee_safety_multiplier=2.0,
++        idle_reeval_hours=2.0,
++        idle_reeval_max_attempts=3,
++        min_net_profit_pct=0.0005,
++        stat_arb_zscore_threshold=2.5,
++        save_callback=lambda: None,
++    )
++    status = risk.adaptive_status()
++    assert status.suspended is False
++    assert status.relax_factor <= 0.5

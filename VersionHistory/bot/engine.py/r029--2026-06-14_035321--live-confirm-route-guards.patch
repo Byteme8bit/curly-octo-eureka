@@ -1,0 +1,143 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -27,6 +27,7 @@
+ from bot.markets import MarketRegistry
+ from bot.paper_broker import PaperBroker
+ from bot.live_broker import LiveBroker
++from bot.live_guards import LIVE_CONFIRM_PHRASE, is_live_armed, check_live_route
+ from bot.paper_portfolio import PaperPortfolioLog
+ from bot.portfolio_constraints import PortfolioConstraints
+ from bot.preflight import PreFlightValidator
+@@ -91,6 +92,14 @@
+         self._mirror_mode = bool(settings.live_mirror_paper and settings.live_enabled)
+         self.live_broker: LiveBroker | None = None
+ 
++        if settings.live_enabled and not is_live_armed(
++            live_enabled=settings.live_enabled,
++            live_trading_confirm=settings.live_trading_confirm,
++        ):
++            raise ValueError(
++                "LIVE_ENABLED=1 requires LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY in .env"
++            )
++
+         if self._mirror_mode:
+             if not settings.api_key or not settings.api_secret:
+                 raise ValueError(
+@@ -109,6 +118,10 @@
+                 state_file=settings.live_state_file,
+                 min_usd_trade=settings.min_usd_trade,
+                 max_usd_per_trade=settings.live_max_usd_per_trade,
++                max_usd_per_route=settings.live_max_usd_per_route,
++                allowed_assets=settings.live_allowed_assets,
++                allow_triangular=settings.live_allow_triangular,
++                max_route_legs=settings.live_max_route_legs,
+                 reset=settings.reset_live_state,
+             )
+             self.broker = self.paper_broker
+@@ -124,6 +137,10 @@
+                 state_file=settings.live_state_file,
+                 min_usd_trade=settings.min_usd_trade,
+                 max_usd_per_trade=settings.live_max_usd_per_trade,
++                max_usd_per_route=settings.live_max_usd_per_route,
++                allowed_assets=settings.live_allowed_assets,
++                allow_triangular=settings.live_allow_triangular,
++                max_route_legs=settings.live_max_route_legs,
+                 reset=settings.reset_live_state,
+             )
+             self._live_mode = True
+@@ -136,6 +153,17 @@
+                 reset=settings.reset_paper_state,
+             )
+             self._live_mode = False
++
++        if self._live_mode:
++            assets = ",".join(self.settings.live_allowed_assets)
++            logger.critical(
++                "!!! LIVE TRADING ARMED — REAL MONEY ON KRAKEN !!! "
++                "confirm=%s max=$%.0f/trade allowed=%s mirror=%s",
++                LIVE_CONFIRM_PHRASE,
++                self.settings.live_max_usd_per_trade,
++                assets,
++                self._mirror_mode,
++            )
+ 
+         _live_execution = settings.live_enabled and not self._mirror_mode
+         if self._mirror_mode:
+@@ -816,6 +844,15 @@
+         )
+         if not route:
+             return None, f"No route: {intent.from_asset} -> {intent.to_asset}"
++        if self._live_mode and not self._mirror_mode:
++            live_ok, live_reason = check_live_route(
++                route,
++                self.settings.live_allowed_assets,
++                allow_triangular=self.settings.live_allow_triangular,
++                max_route_legs=self.settings.live_max_route_legs,
++            )
++            if not live_ok:
++                return None, live_reason
+         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
+         required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+         constraint = self.constraints.validate_intent(
+@@ -1296,6 +1333,15 @@
+                 floor,
+             )
+             return None
++        live_ok, live_reason = check_live_route(
++            route,
++            self.settings.live_allowed_assets,
++            allow_triangular=self.settings.live_allow_triangular,
++            max_route_legs=self.settings.live_max_route_legs,
++        )
++        if not live_ok:
++            logger.info("Live mirror skipped — %s", live_reason)
++            return None
+         live_constraints = self._live_constraints or self.constraints
+         required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+         constraint = live_constraints.validate_intent(
+@@ -1333,6 +1379,10 @@
+             strategy_name=intent.strategy_name,
+         )
+         if not live_trade:
++            if live.halted and self.settings.discord_enabled:
++                self.discord.post_important(
++                    f"**LIVE HALT — ROUTE FAILURE**\n{live.halt_reason or 'live path failed'}"
++                )
+             logger.warning("Live mirror execution failed for %s", route.path)
+             return None
+         receipt_path = self.receipts.save(live_trade)
+@@ -1655,7 +1705,7 @@
+     ) -> None:
+         if not self.settings.discord_enabled or not trades:
+             return
+-        if self._mirror_mode:
++        if getattr(self, "_mirror_mode", False):
+             return
+         if self.settings.discord_quiet_mode:
+             trades = [t for t in trades if t.get("live")]
+@@ -2743,15 +2793,21 @@
+             startup_text += (
+                 f"\n:chart_with_upwards_trend: Paper runs continuously in `.paper_state.json`; "
+                 f"profitable paper trades mirror to Kraken when live gates pass."
+-                f"\n:warning: **REAL MONEY on mirror** — max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
++                f"\n:rotating_light: **LIVE TRADING ARMED** — REAL MONEY on mirror "
++                f"(confirm `{LIVE_CONFIRM_PHRASE}`)"
++                f"\n:warning: max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
++                f"assets {','.join(self.settings.live_allowed_assets)}, "
+                 f"halt live at {self.settings.live_drawdown_halt_pct:.0%} Kraken drawdown, "
+-                f"{self.settings.live_min_eth_reserve:.1f} ETH floor"
++                f"{self.settings.live_min_eth_reserve:.1f} ETH floor — no multi-hop live"
+             )
+         elif self._live_mode:
+             startup_text += (
+-                f"\n:warning: **REAL MONEY** — max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
++                f"\n:rotating_light: **LIVE TRADING ARMED** — REAL MONEY "
++                f"(confirm `{LIVE_CONFIRM_PHRASE}`)"
++                f"\n:warning: max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
++                f"assets {','.join(self.settings.live_allowed_assets)}, "
+                 f"halt at {self.settings.live_drawdown_halt_pct:.0%} drawdown from peak, "
+-                f"{self.settings.live_min_eth_reserve:.1f} ETH floor (untouchable)"
++                f"{self.settings.live_min_eth_reserve:.1f} ETH floor — no multi-hop live"
+             )
+ 
+         if overrides_line:

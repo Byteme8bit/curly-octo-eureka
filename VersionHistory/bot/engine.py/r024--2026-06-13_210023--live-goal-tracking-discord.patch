@@ -1,0 +1,129 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -21,7 +21,7 @@
+ )
+ from bot.display import TerminalDisplay
+ from bot.fee_engine import FeeEngine
+-from bot.goal_evolution import build_manager_from_settings
++from bot.goal_evolution import build_manager_from_settings, format_primary_goal_discord
+ from bot.local_time import format_pacific
+ from bot.markets import MarketRegistry
+ from bot.paper_broker import PaperBroker
+@@ -596,10 +596,16 @@
+         snap = self._activity_buffer.snapshot()
+         portfolio_view = self._refresh_market_view()
+         tier = ""
++        pg_headline = ""
++        pg_pct = None
+         if self._goal_status is not None:
+             tier = getattr(self._goal_status, "tier_label", "") or str(
+                 getattr(self._goal_status, "tier", "")
+             )
++            pg = getattr(self._goal_status, "primary_goal", None) or {}
++            if pg and not pg.get("achieved"):
++                pg_headline = str(pg.get("headline", ""))
++                pg_pct = pg.get("progress_pct")
+         crash = bool(self._crash_status and self._crash_status.blocks_new_risk)
+         body = format_hourly_summary(
+             trade_count=snap["trade_count"],
+@@ -610,6 +616,8 @@
+             baseline_pnl=portfolio_view.baseline_pnl,
+             tier_label=tier,
+             crash_hold=crash,
++            primary_goal_headline=pg_headline,
++            primary_goal_progress_pct=pg_pct,
+         )
+         return f"{body}\n\n_Updated {format_pacific()}_"
+ 
+@@ -632,10 +640,16 @@
+             self._last_summary_monotonic = time.monotonic()
+             return
+         tier = ""
++        pg_headline = ""
++        pg_pct = None
+         if self._goal_status is not None:
+             tier = getattr(self._goal_status, "tier_label", "") or str(
+                 getattr(self._goal_status, "tier", "")
+             )
++            pg = getattr(self._goal_status, "primary_goal", None) or {}
++            if pg and not pg.get("achieved"):
++                pg_headline = str(pg.get("headline", ""))
++                pg_pct = pg.get("progress_pct")
+         crash = bool(self._crash_status and self._crash_status.blocks_new_risk)
+         msg = format_hourly_summary(
+             trade_count=snap["trade_count"],
+@@ -646,6 +660,8 @@
+             baseline_pnl=baseline_pnl,
+             tier_label=tier,
+             crash_hold=crash,
++            primary_goal_headline=pg_headline,
++            primary_goal_progress_pct=pg_pct,
+         )
+         self.discord.post_important(msg, pin=False, source="TradeBot")
+         self._last_summary_monotonic = time.monotonic()
+@@ -1068,6 +1084,18 @@
+ 
+ 
+ 
++    def _goal_tracking_portfolio(self) -> float:
++        """Portfolio USD used for milestone goals (live in mirror/live mode, else paper)."""
++        try:
++            usd_prices = self._usd_prices()
++        except Exception:  # noqa: BLE001
++            return 0.0
++        if self._mirror_mode and self.live_broker is not None:
++            return self.live_broker.portfolio_value(usd_prices)
++        if self._live_mode:
++            return self.broker.portfolio_value(usd_prices)
++        return self.broker.portfolio_value(usd_prices)
++
+     def _update_goal_evolution(self, portfolio: float, drawdown: float, candles: dict) -> None:
+         self._goal_status = self.goal_evolution.evaluate_goals(portfolio)
+         allowed = self.goal_evolution.filter_configured_strategies(
+@@ -1982,7 +2010,19 @@
+ 
+         drawdown = self.risk.drawdown_pct(portfolio)
+ 
+-        self._update_goal_evolution(portfolio, drawdown, candles)
++        goal_portfolio = portfolio
++        goal_drawdown = drawdown
++        if self._mirror_mode and self.live_broker is not None:
++            goal_portfolio = self.live_broker.portfolio_value(usd_prices)
++            live_peak = self.live_broker.risk.peak_portfolio
++            goal_drawdown = (
++                max(0.0, (live_peak - goal_portfolio) / live_peak) if live_peak > 0 else 0.0
++            )
++        elif self._live_mode and not self._mirror_mode:
++            goal_portfolio = portfolio
++            goal_drawdown = drawdown
++
++        self._update_goal_evolution(goal_portfolio, goal_drawdown, candles)
+ 
+         cb_event = None
+ 
+@@ -2597,6 +2637,14 @@
+         if overrides_line:
+             startup_text = f"{startup_text}\n{overrides_line}"
+ 
++        if self.settings.goal_evolution_enabled:
++            goal_portfolio = self._goal_tracking_portfolio()
++            if goal_portfolio > 0:
++                self._goal_status = self.goal_evolution.evaluate_goals(goal_portfolio)
++                goal_line = format_primary_goal_discord(self._goal_status)
++                if goal_line:
++                    startup_text = f"{startup_text}\n{goal_line}"
++
+         self.discord.post_startup_pin(startup_text)
+ 
+         self._post_strategy_status()
+@@ -2616,6 +2664,10 @@
+             self._instance_started_at = format_pacific()
+ 
+         self.discord.post_plain(f"Monitoring exchange since {self._instance_started_at}")
++        if self._goal_status and self.settings.goal_evolution_enabled:
++            goal_line = format_primary_goal_discord(self._goal_status)
++            if goal_line:
++                self.discord.post_plain(goal_line)
+ 
+         self._last_heartbeat_monotonic = time.monotonic()
+ 

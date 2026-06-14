@@ -99,6 +99,96 @@
       "removed": 0,
       "request_id": "048",
       "timestamp": "2026-06-12 08:46:12 PDT"
+    },
+    {
+      "added": 13,
+      "number": 11,
+      "patch": "r011--2026-06-13_202119--document-live-settings.patch",
+      "path": ".env.example",
+      "reason": "document LIVE_* settings",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:21:19 PDT"
+    },
+    {
+      "added": 2,
+      "number": 12,
+      "patch": "r012--2026-06-13_202721--document-live-eth-floor.patch",
+      "path": ".env.example",
+      "reason": "document-live-eth-floor",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:27:21 PDT"
+    },
+    {
+      "added": 2,
+      "number": 13,
+      "patch": "r013--2026-06-13_203105--document-livemaxtrades.patch",
+      "path": ".env.example",
+      "reason": "document LIVE_MAX_TRADES",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:31:05 PDT"
+    },
+    {
+      "added": 4,
+      "number": 14,
+      "patch": "r014--2026-06-13_203808--document-live-mirror-paper.patch",
+      "path": ".env.example",
+      "reason": "document-live-mirror-paper",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:08 PDT"
+    },
+    {
+      "added": 5,
+      "number": 15,
+      "patch": "r015--2026-06-13_210024--document-goal-1-milestone.patch",
+      "path": ".env.example",
+      "reason": "document goal-1 milestone",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:24 PDT"
+    },
+    {
+      "added": 3,
+      "number": 16,
+      "patch": "r016--2026-06-13_213043--document-preferred-start-assets.patch",
+      "path": ".env.example",
+      "reason": "document preferred start assets",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:30:43 PDT"
+    },
+    {
+      "added": 14,
+      "number": 17,
+      "patch": "r017--2026-06-13_213254--document-quiet-discord-bundle.patch",
+      "path": ".env.example",
+      "reason": "document quiet discord bundle",
+      "removed": 5,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:32:54 PDT"
+    },
+    {
+      "added": 1,
+      "number": 18,
+      "patch": "r018--2026-06-14_034553--goal-tier0-all-strategies-doc.patch",
+      "path": ".env.example",
+      "reason": "goal-tier0-all-strategies-doc",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-14 03:45:53 PDT"
+    },
+    {
+      "added": 11,
+      "number": 19,
+      "patch": "r019--2026-06-14_035322--live-arm-docs-knobs.patch",
+      "path": ".env.example",
+      "reason": "live arm docs knobs",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-14 03:53:22 PDT"
     }
   ],
   ".gitignore": [
@@ -365,6 +455,16 @@
       "removed": 0,
       "request_id": "040",
       "timestamp": "2026-06-09 20:24:54 PDT"
+    },
+    {
+      "added": 28,
+      "number": 2,
+      "patch": "r002--2026-06-13_203201--skip-non-tradable-kfee-pricing.patch",
+      "path": "bot/data.py",
+      "reason": "skip non-tradable KFEE pricing",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:32:01 PDT"
     }
   ],
   "bot/discord_bot.py": [
@@ -417,6 +517,18 @@
       "removed": 0,
       "request_id": "048",
       "timestamp": "2026-06-12 08:46:09 PDT"
+    }
+  ],
+  "bot/discord_summary.py": [
+    {
+      "added": 5,
+      "number": 1,
+      "patch": "r001--2026-06-13_210023--hourly-primary-goal-line.patch",
+      "path": "bot/discord_summary.py",
+      "reason": "hourly primary goal line",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:23 PDT"
     }
   ],
   "bot/display.py": [
@@ -611,6 +723,116 @@
       "removed": 12,
       "request_id": "049",
       "timestamp": "2026-06-12 21:04:05 PDT"
+    },
+    {
+      "added": 15,
+      "number": 19,
+      "patch": "r019--2026-06-13_002823--adaptive-attempt-after-preflight.patch",
+      "path": "bot/engine.py",
+      "reason": "adaptive attempt after preflight",
+      "removed": 13,
+      "request_id": "050",
+      "timestamp": "2026-06-13 00:28:23 PDT"
+    },
+    {
+      "added": 74,
+      "number": 20,
+      "patch": "r020--2026-06-13_202119--wire-livebroker-live-halt.patch",
+      "path": "bot/engine.py",
+      "reason": "wire LiveBroker live halt",
+      "removed": 22,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:21:19 PDT"
+    },
+    {
+      "added": 71,
+      "number": 21,
+      "patch": "r021--2026-06-13_202720--live-eth-floor-halt-guards.patch",
+      "path": "bot/engine.py",
+      "reason": "live-eth-floor-halt-guards",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:27:20 PDT"
+    },
+    {
+      "added": 27,
+      "number": 22,
+      "patch": "r022--2026-06-13_203105--pause-after-max-live-trades.patch",
+      "path": "bot/engine.py",
+      "reason": "pause after max live trades",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:31:05 PDT"
+    },
+    {
+      "added": 257,
+      "number": 23,
+      "patch": "r023--2026-06-13_203808--paper-shadow-live-mirror-path.patch",
+      "path": "bot/engine.py",
+      "reason": "paper-shadow live mirror path",
+      "removed": 37,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:08 PDT"
+    },
+    {
+      "added": 54,
+      "number": 24,
+      "patch": "r024--2026-06-13_210023--live-goal-tracking-discord.patch",
+      "path": "bot/engine.py",
+      "reason": "live goal tracking discord",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:23 PDT"
+    },
+    {
+      "added": 15,
+      "number": 25,
+      "patch": "r025--2026-06-13_213042--ada-first-probe-funding-pick.patch",
+      "path": "bot/engine.py",
+      "reason": "ada-first probe funding pick",
+      "removed": 4,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:30:42 PDT"
+    },
+    {
+      "added": 27,
+      "number": 26,
+      "patch": "r026--2026-06-13_213254--quiet-discord-mirror-trade-gates.patch",
+      "path": "bot/engine.py",
+      "reason": "quiet discord mirror trade gates",
+      "removed": 6,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:32:54 PDT"
+    },
+    {
+      "added": 25,
+      "number": 27,
+      "patch": "r027--2026-06-13_213737--quiet-cb-dedup-wiring.patch",
+      "path": "bot/engine.py",
+      "reason": "quiet CB dedup wiring",
+      "removed": 11,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:37:37 PDT"
+    },
+    {
+      "added": 78,
+      "number": 28,
+      "patch": "r028--2026-06-14_034553--trade-diagnosis-json-tick-summary.patch",
+      "path": "bot/engine.py",
+      "reason": "trade-diagnosis-json-tick-summary",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-14 03:45:53 PDT"
+    },
+    {
+      "added": 61,
+      "number": 29,
+      "patch": "r029--2026-06-14_035321--live-confirm-route-guards.patch",
+      "path": "bot/engine.py",
+      "reason": "live confirm route guards",
+      "removed": 5,
+      "request_id": "051",
+      "timestamp": "2026-06-14 03:53:21 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -647,6 +869,52 @@
       "timestamp": "2026-06-01 15:35:19 PDT"
     }
   ],
+  "bot/goal_evolution.py": [
+    {
+      "added": 89,
+      "number": 1,
+      "patch": "r001--2026-06-13_210022--primary-goal-progress-helpers.patch",
+      "path": "bot/goal_evolution.py",
+      "reason": "primary goal progress helpers",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:22 PDT"
+    }
+  ],
+  "bot/live_broker.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-13_203104--record-completed-trade.patch",
+      "path": "bot/live_broker.py",
+      "reason": "record completed trade",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:31:04 PDT"
+    },
+    {
+      "added": 147,
+      "number": 2,
+      "patch": "r002--2026-06-14_035321--skip-new-file.patch",
+      "path": "bot/live_broker.py",
+      "reason": "skip new file",
+      "removed": 2,
+      "request_id": null,
+      "timestamp": "2026-06-14 03:53:21 PDT"
+    }
+  ],
+  "bot/live_guards.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-14_035321--skip-new-file.patch",
+      "path": "bot/live_guards.py",
+      "reason": "skip new file",
+      "removed": 0,
+      "request_id": null,
+      "timestamp": "2026-06-14 03:53:21 PDT"
+    }
+  ],
   "bot/markets.py": [
     {
       "added": 3,
@@ -669,6 +937,16 @@
       "removed": 0,
       "request_id": "042",
       "timestamp": "2026-06-10 00:21:02 PDT"
+    },
+    {
+      "added": 9,
+      "number": 2,
+      "patch": "r002--2026-06-13_213040--ada-first-intent-tie-break.patch",
+      "path": "bot/orchestrator.py",
+      "reason": "ada-first intent tie-break",
+      "removed": 3,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:30:40 PDT"
     }
   ],
   "bot/paper_broker.py": [
@@ -691,6 +969,16 @@
       "removed": 0,
       "request_id": "049",
       "timestamp": "2026-06-12 21:04:05 PDT"
+    },
+    {
+      "added": 2,
+      "number": 3,
+      "patch": "r003--2026-06-13_203104--live-trades-completed-counter.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "live-trades-completed counter",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:31:04 PDT"
     }
   ],
   "bot/portfolio_constraints.py": [
@@ -703,6 +991,16 @@
       "removed": 3,
       "request_id": "036",
       "timestamp": "2026-06-03 22:26:20 PDT"
+    },
+    {
+      "added": 47,
+      "number": 2,
+      "patch": "r002--2026-06-13_202721--strict-eth-floor-route-check.patch",
+      "path": "bot/portfolio_constraints.py",
+      "reason": "strict-eth-floor-route-check",
+      "removed": 4,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:27:21 PDT"
     }
   ],
   "bot/report.py": [
@@ -735,6 +1033,16 @@
       "removed": 1,
       "request_id": "048",
       "timestamp": "2026-06-12 08:46:09 PDT"
+    },
+    {
+      "added": 2,
+      "number": 4,
+      "patch": "r004--2026-06-13_202119--live-trade-discord-headline.patch",
+      "path": "bot/report.py",
+      "reason": "LIVE trade discord headline",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:21:19 PDT"
     }
   ],
   "bot/risk.py": [
@@ -757,6 +1065,26 @@
       "removed": 0,
       "request_id": "049",
       "timestamp": "2026-06-12 21:04:05 PDT"
+    },
+    {
+      "added": 13,
+      "number": 3,
+      "patch": "r003--2026-06-13_002823--24h-idle-bypass-suspend-cooldown.patch",
+      "path": "bot/risk.py",
+      "reason": "24h idle bypass suspend cooldown",
+      "removed": 7,
+      "request_id": "050",
+      "timestamp": "2026-06-13 00:28:23 PDT"
+    },
+    {
+      "added": 14,
+      "number": 4,
+      "patch": "r004--2026-06-13_202119--disable-adaptive-on-live.patch",
+      "path": "bot/risk.py",
+      "reason": "disable adaptive on live",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:21:19 PDT"
     }
   ],
   "bot/singleton.py": [
@@ -791,6 +1119,30 @@
       "removed": 0,
       "request_id": "042",
       "timestamp": "2026-06-10 00:21:02 PDT"
+    }
+  ],
+  "bot/strategies/momentum_rotation.py": [
+    {
+      "added": 13,
+      "number": 1,
+      "patch": "r001--2026-06-13_213041--ada-first-rotation-sources.patch",
+      "path": "bot/strategies/momentum_rotation.py",
+      "reason": "ada-first rotation sources",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:30:41 PDT"
+    }
+  ],
+  "bot/strategies/registry.py": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-13_213041--pass-settings-to-orchestrator.patch",
+      "path": "bot/strategies/registry.py",
+      "reason": "pass settings to orchestrator",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:30:41 PDT"
     }
   ],
   "bot/strategies/stat_arb.py": [
@@ -863,6 +1215,18 @@
       "removed": 1,
       "request_id": "047",
       "timestamp": "2026-06-12 01:45:45 PDT"
+    }
+  ],
+  "bot/verifier/live_tag.py": [
+    {
+      "added": 9,
+      "number": 1,
+      "patch": "r001--2026-06-14_035322--live-fill-confirm-tag.patch",
+      "path": "bot/verifier/live_tag.py",
+      "reason": "live fill confirm tag",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-14 03:53:22 PDT"
     }
   ],
   "bot/verifier/report.py": [
@@ -1041,6 +1405,76 @@
       "removed": 0,
       "request_id": "048",
       "timestamp": "2026-06-12 08:49:00 PDT"
+    },
+    {
+      "added": 14,
+      "number": 13,
+      "patch": "r013--2026-06-13_202118--live-trading-env-knobs.patch",
+      "path": "config.py",
+      "reason": "live trading env knobs",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:21:18 PDT"
+    },
+    {
+      "added": 2,
+      "number": 14,
+      "patch": "r014--2026-06-13_202720--live-min-eth-reserve-knob.patch",
+      "path": "config.py",
+      "reason": "live-min-eth-reserve-knob",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:27:20 PDT"
+    },
+    {
+      "added": 2,
+      "number": 15,
+      "patch": "r015--2026-06-13_203104--livemaxtrades-knob.patch",
+      "path": "config.py",
+      "reason": "LIVE_MAX_TRADES knob",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:31:04 PDT"
+    },
+    {
+      "added": 3,
+      "number": 16,
+      "patch": "r016--2026-06-13_203807--live-mirror-paper-env-knob.patch",
+      "path": "config.py",
+      "reason": "live-mirror-paper env knob",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:07 PDT"
+    },
+    {
+      "added": 20,
+      "number": 17,
+      "patch": "r017--2026-06-13_213040--ada-first-preferred-start-assets.patch",
+      "path": "config.py",
+      "reason": "ada-first preferred start assets",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:30:40 PDT"
+    },
+    {
+      "added": 4,
+      "number": 18,
+      "patch": "r018--2026-06-14_034553--goal-tier0-all-strategies-default.patch",
+      "path": "config.py",
+      "reason": "goal-tier0-all-strategies-default",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-14 03:45:53 PDT"
+    },
+    {
+      "added": 29,
+      "number": 19,
+      "patch": "r019--2026-06-14_035322--live-confirm-env-knobs.patch",
+      "path": "config.py",
+      "reason": "live confirm env knobs",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-14 03:53:22 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -1063,6 +1497,16 @@
       "removed": 0,
       "request_id": "040",
       "timestamp": "2026-06-09 20:24:55 PDT"
+    },
+    {
+      "added": 79,
+      "number": 3,
+      "patch": "r003--2026-06-13_205255--split-paper-live-dashboards.patch",
+      "path": "dashboard/app.py",
+      "reason": "split paper live dashboards",
+      "removed": 16,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:55 PDT"
     }
   ],
   "dashboard/config.py": [
@@ -1085,6 +1529,36 @@
       "removed": 0,
       "request_id": "042",
       "timestamp": "2026-06-10 00:21:02 PDT"
+    },
+    {
+      "added": 6,
+      "number": 3,
+      "patch": "r003--2026-06-13_203606--live-mode-dashboard-settings.patch",
+      "path": "dashboard/config.py",
+      "reason": "live-mode dashboard settings",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:36:06 PDT"
+    },
+    {
+      "added": 2,
+      "number": 4,
+      "patch": "r004--2026-06-13_203808--dashboard-mirror-flag.patch",
+      "path": "dashboard/config.py",
+      "reason": "dashboard-mirror-flag",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:08 PDT"
+    },
+    {
+      "added": 6,
+      "number": 5,
+      "patch": "r005--2026-06-13_205254--split-paper-live-dashboards.patch",
+      "path": "dashboard/config.py",
+      "reason": "split paper live dashboards",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:54 PDT"
     }
   ],
   "dashboard/parsers/__init__.py": [
@@ -1131,6 +1605,62 @@
       "timestamp": "2026-06-02 21:21:32 PDT"
     }
   ],
+  "dashboard/parsers/goals.py": [
+    {
+      "added": 6,
+      "number": 1,
+      "patch": "r001--2026-06-13_203606--live-portfolio-for-goals.patch",
+      "path": "dashboard/parsers/goals.py",
+      "reason": "live-portfolio-for-goals",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:36:06 PDT"
+    },
+    {
+      "added": 3,
+      "number": 2,
+      "patch": "r002--2026-06-13_205255--split-paper-live-dashboards.patch",
+      "path": "dashboard/parsers/goals.py",
+      "reason": "split paper live dashboards",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:55 PDT"
+    },
+    {
+      "added": 253,
+      "number": 3,
+      "patch": "r003--2026-06-13_210023--primary-goal-mirror-live.patch",
+      "path": "dashboard/parsers/goals.py",
+      "reason": "primary goal mirror live",
+      "removed": 81,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:23 PDT"
+    }
+  ],
+  "dashboard/parsers/live_portfolio.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-13_205254--split-paper-live-dashboards.patch",
+      "path": "dashboard/parsers/live_portfolio.py",
+      "reason": "split paper live dashboards",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:54 PDT"
+    }
+  ],
+  "dashboard/parsers/series.py": [
+    {
+      "added": 135,
+      "number": 1,
+      "patch": "r001--2026-06-13_205255--split-paper-live-dashboards.patch",
+      "path": "dashboard/parsers/series.py",
+      "reason": "split paper live dashboards",
+      "removed": 5,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:55 PDT"
+    }
+  ],
   "dashboard/parsers/tradebot.py": [
     {
       "added": 36,
@@ -1141,6 +1671,36 @@
       "removed": 1,
       "request_id": "035",
       "timestamp": "2026-06-02 21:21:31 PDT"
+    },
+    {
+      "added": 83,
+      "number": 2,
+      "patch": "r002--2026-06-13_203606--read-live-state-portfolio.patch",
+      "path": "dashboard/parsers/tradebot.py",
+      "reason": "read-live-state-portfolio",
+      "removed": 37,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:36:06 PDT"
+    },
+    {
+      "added": 71,
+      "number": 3,
+      "patch": "r003--2026-06-13_203808--show-paper-and-live-portfolios.patch",
+      "path": "dashboard/parsers/tradebot.py",
+      "reason": "show-paper-and-live-portfolios",
+      "removed": 36,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:08 PDT"
+    },
+    {
+      "added": 124,
+      "number": 4,
+      "patch": "r004--2026-06-13_205254--split-paper-live-dashboards.patch",
+      "path": "dashboard/parsers/tradebot.py",
+      "reason": "split paper live dashboards",
+      "removed": 124,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:54 PDT"
     }
   ],
   "dashboard/parsers/whales.py": [
@@ -1185,6 +1745,36 @@
       "removed": 1,
       "request_id": "042",
       "timestamp": "2026-06-10 00:21:02 PDT"
+    },
+    {
+      "added": 2,
+      "number": 4,
+      "patch": "r004--2026-06-13_203606--summary-trading-mode-field.patch",
+      "path": "dashboard/service.py",
+      "reason": "summary-trading-mode-field",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:36:06 PDT"
+    },
+    {
+      "added": 4,
+      "number": 5,
+      "patch": "r005--2026-06-13_203808--mirror-summary-strip.patch",
+      "path": "dashboard/service.py",
+      "reason": "mirror-summary-strip",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:08 PDT"
+    },
+    {
+      "added": 38,
+      "number": 6,
+      "patch": "r006--2026-06-13_205255--split-paper-live-dashboards.patch",
+      "path": "dashboard/service.py",
+      "reason": "split paper live dashboards",
+      "removed": 10,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:55 PDT"
     }
   ],
   "dashboard/static/app.js": [
@@ -1227,6 +1817,56 @@
       "removed": 0,
       "request_id": "042",
       "timestamp": "2026-06-10 00:21:02 PDT"
+    },
+    {
+      "added": 10,
+      "number": 5,
+      "patch": "r005--2026-06-13_203607--live-mode-badge-labels.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "live-mode-badge-labels",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:36:07 PDT"
+    },
+    {
+      "added": 24,
+      "number": 6,
+      "patch": "r006--2026-06-13_203809--mirror-mode-ui-badge.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "mirror-mode-ui-badge",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:09 PDT"
+    },
+    {
+      "added": 1,
+      "number": 7,
+      "patch": "r007--2026-06-13_205019--fix-metricspush-syntax-error.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "fix metrics.push syntax error",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:50:19 PDT"
+    },
+    {
+      "added": 100,
+      "number": 8,
+      "patch": "r008--2026-06-13_205256--split-paper-live-dashboards.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "split paper live dashboards",
+      "removed": 28,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:56 PDT"
+    },
+    {
+      "added": 47,
+      "number": 9,
+      "patch": "r009--2026-06-13_210023--goal-progress-bar-ui.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "goal progress bar UI",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:23 PDT"
     }
   ],
   "dashboard/static/index.html": [
@@ -1259,6 +1899,46 @@
       "removed": 2,
       "request_id": "042",
       "timestamp": "2026-06-10 00:21:03 PDT"
+    },
+    {
+      "added": 2,
+      "number": 4,
+      "patch": "r004--2026-06-13_203607--bump-static-cache-version.patch",
+      "path": "dashboard/static/index.html",
+      "reason": "bump-static-cache-version",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:36:07 PDT"
+    },
+    {
+      "added": 2,
+      "number": 5,
+      "patch": "r005--2026-06-13_205019--bump-static-cache-version.patch",
+      "path": "dashboard/static/index.html",
+      "reason": "bump static cache version",
+      "removed": 2,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:50:19 PDT"
+    },
+    {
+      "added": 12,
+      "number": 6,
+      "patch": "r006--2026-06-13_205256--split-paper-live-dashboards.patch",
+      "path": "dashboard/static/index.html",
+      "reason": "split paper live dashboards",
+      "removed": 3,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:56 PDT"
+    },
+    {
+      "added": 3,
+      "number": 7,
+      "patch": "r007--2026-06-13_210024--goals-section-heading-bump.patch",
+      "path": "dashboard/static/index.html",
+      "reason": "goals section heading bump",
+      "removed": 3,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:24 PDT"
     }
   ],
   "dashboard/static/styles.css": [
@@ -1281,6 +1961,46 @@
       "removed": 15,
       "request_id": "040",
       "timestamp": "2026-06-09 20:24:56 PDT"
+    },
+    {
+      "added": 23,
+      "number": 3,
+      "patch": "r003--2026-06-13_203607--live-paper-mode-badge-styles.patch",
+      "path": "dashboard/static/styles.css",
+      "reason": "live-paper-mode-badge-styles",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:36:07 PDT"
+    },
+    {
+      "added": 6,
+      "number": 4,
+      "patch": "r004--2026-06-13_203809--mirror-mode-badge-style.patch",
+      "path": "dashboard/static/styles.css",
+      "reason": "mirror-mode-badge-style",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:09 PDT"
+    },
+    {
+      "added": 64,
+      "number": 5,
+      "patch": "r005--2026-06-13_205256--split-paper-live-dashboards.patch",
+      "path": "dashboard/static/styles.css",
+      "reason": "split paper live dashboards",
+      "removed": 10,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:56 PDT"
+    },
+    {
+      "added": 65,
+      "number": 6,
+      "patch": "r006--2026-06-13_210024--goal-progress-bar-styles.patch",
+      "path": "dashboard/static/styles.css",
+      "reason": "goal progress bar styles",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:24 PDT"
     }
   ],
   "docs/README.md": [
@@ -1437,6 +2157,18 @@
       "timestamp": "2026-06-02 21:21:33 PDT"
     }
   ],
+  "tests/test_adaptive_resume.py": [
+    {
+      "added": 29,
+      "number": 1,
+      "patch": "r001--2026-06-13_002824--prolonged-idle-resume-test.patch",
+      "path": "tests/test_adaptive_resume.py",
+      "reason": "prolonged idle resume test",
+      "removed": 0,
+      "request_id": "050",
+      "timestamp": "2026-06-13 00:28:24 PDT"
+    }
+  ],
   "tests/test_auditor.py": [
     {
       "added": 0,
@@ -1541,6 +2273,68 @@
       "removed": 0,
       "request_id": "042",
       "timestamp": "2026-06-10 00:21:03 PDT"
+    },
+    {
+      "added": 3,
+      "number": 5,
+      "patch": "r005--2026-06-13_203607--settings-live-fields.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "settings-live-fields",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:36:07 PDT"
+    },
+    {
+      "added": 3,
+      "number": 6,
+      "patch": "r006--2026-06-13_205019--mirror-field-and-goals-patch.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "mirror field and goals patch",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:50:19 PDT"
+    },
+    {
+      "added": 29,
+      "number": 7,
+      "patch": "r007--2026-06-13_205256--split-paper-live-dashboards.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "split paper live dashboards",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:56 PDT"
+    },
+    {
+      "added": 46,
+      "number": 8,
+      "patch": "r008--2026-06-13_210025--mirror-goals-view-test.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "mirror goals view test",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:25 PDT"
+    }
+  ],
+  "tests/test_dashboard_live.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-13_205020--add-livemirrorpaper-field.patch",
+      "path": "tests/test_dashboard_live.py",
+      "reason": "add live_mirror_paper field",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:50:20 PDT"
+    },
+    {
+      "added": 97,
+      "number": 2,
+      "patch": "r002--2026-06-13_205256--split-paper-live-dashboards.patch",
+      "path": "tests/test_dashboard_live.py",
+      "reason": "split paper live dashboards",
+      "removed": 1,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:52:56 PDT"
     }
   ],
   "tests/test_discord_commands.py": [
@@ -1575,6 +2369,78 @@
       "removed": 0,
       "request_id": "031",
       "timestamp": "2026-06-01 15:35:19 PDT"
+    }
+  ],
+  "tests/test_goal_evolution.py": [
+    {
+      "added": 54,
+      "number": 1,
+      "patch": "r001--2026-06-13_210024--primary-goal-tests.patch",
+      "path": "tests/test_goal_evolution.py",
+      "reason": "primary goal tests",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:00:24 PDT"
+    }
+  ],
+  "tests/test_kraken_retry.py": [
+    {
+      "added": 40,
+      "number": 1,
+      "patch": "r001--2026-06-13_203206--kfee-skip-price-tests.patch",
+      "path": "tests/test_kraken_retry.py",
+      "reason": "KFEE skip price tests",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:32:06 PDT"
+    }
+  ],
+  "tests/test_live_eth_floor.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-13_203809--mirror-eth-floor-tests.patch",
+      "path": "tests/test_live_eth_floor.py",
+      "reason": "mirror-eth-floor-tests",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 20:38:09 PDT"
+    }
+  ],
+  "tests/test_live_guards.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-14_035323--skip-new-file.patch",
+      "path": "tests/test_live_guards.py",
+      "reason": "skip new file",
+      "removed": 0,
+      "request_id": null,
+      "timestamp": "2026-06-14 03:53:23 PDT"
+    }
+  ],
+  "tests/test_live_mirror.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-14_035322--mirror-guard-fixtures.patch",
+      "path": "tests/test_live_mirror.py",
+      "reason": "mirror guard fixtures",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-14 03:53:22 PDT"
+    }
+  ],
+  "tests/test_quiet_discord.py": [
+    {
+      "added": 2,
+      "number": 1,
+      "patch": "r001--2026-06-13_213254--auditor-quiet-default-test.patch",
+      "path": "tests/test_quiet_discord.py",
+      "reason": "auditor quiet default test",
+      "removed": 0,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:32:54 PDT"
     }
   ],
   "tests/test_startup_display.py": [
@@ -1681,6 +2547,16 @@
       "removed": 0,
       "request_id": "048",
       "timestamp": "2026-06-12 08:46:11 PDT"
+    },
+    {
+      "added": 33,
+      "number": 2,
+      "patch": "r002--2026-06-13_213737--fix-diagnostic-dedup-flood.patch",
+      "path": "watchdog/engine.py",
+      "reason": "fix diagnostic dedup flood",
+      "removed": 7,
+      "request_id": "051",
+      "timestamp": "2026-06-13 21:37:37 PDT"
     }
   ]
 }

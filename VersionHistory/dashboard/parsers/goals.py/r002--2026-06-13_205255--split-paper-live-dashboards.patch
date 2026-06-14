@@ -1,0 +1,16 @@
+--- a/dashboard/parsers/goals.py
++++ b/dashboard/parsers/goals.py
+@@ -22,10 +22,11 @@
+     return ("Baseline", "Growth", "Scale", "Elite")
+ 
+ 
+-def build_goals_view(settings: DashboardSettings) -> dict:
++def build_goals_view(settings: DashboardSettings, *, mode: str = "paper") -> dict:
+     state_path = settings.goal_state_file
+     portfolio_usd = 0.0
+-    if settings.live_enabled:
++    dashboard_mode = (mode or "paper").lower()
++    if dashboard_mode == "live" and settings.live_enabled:
+         live = load_live_portfolio(settings)
+         if live:
+             portfolio_usd = float(live.get("portfolio_usd", 0.0))

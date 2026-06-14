@@ -1,0 +1,3 @@
+--- a/bot/live_guards.py
++++ b/bot/live_guards.py
+# initial baseline - no previous state available

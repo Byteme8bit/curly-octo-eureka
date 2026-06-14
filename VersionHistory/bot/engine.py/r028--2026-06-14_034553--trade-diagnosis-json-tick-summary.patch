@@ -1,0 +1,98 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -1,3 +1,4 @@
++import json
+ import logging
+ import os
+ import sys
+@@ -997,6 +998,76 @@
+         except OSError as exc:
+             logger.warning("Could not write portfolio file: %s", exc)
+ 
++    def _write_trade_diagnosis(
++        self,
++        *,
++        portfolio: float,
++        result,
++        blocked: list[str],
++        trades: list[dict],
++        can_trade: bool,
++    ) -> None:
++        """Persist one tick summary for offline trade-frequency diagnosis."""
++        adaptive = self.risk.adaptive_status()
++        ranked = sorted(
++            result.opportunities,
++            key=lambda o: o.edge - o.required_edge,
++            reverse=True,
++        )[:5]
++        best = [
++            {
++                "route": f"{op.from_asset}->{op.to_asset}",
++                "category": op.category,
++                "edge": round(op.edge, 6),
++                "required_edge": round(op.required_edge, 6),
++                "gap": round(op.required_edge - op.edge, 6),
++                "meets_threshold": op.edge >= op.required_edge,
++                "path": op.path,
++            }
++            for op in ranked
++        ]
++        live_broker = self.live_broker
++        payload = {
++            "timestamp_utc": datetime.utcnow().isoformat() + "Z",
++            "timestamp_pacific": format_pacific(),
++            "decision": "TRADE" if trades else "HOLD",
++            "trading_active": self.runtime.is_trading_active(),
++            "risk_paused": self.risk.is_paused(),
++            "mirror_mode": self._mirror_mode,
++            "live_enabled": self._live_mode,
++            "live_halted": bool(live_broker and live_broker.halted),
++            "live_halt_reason": getattr(live_broker, "halt_reason", None) if live_broker else None,
++            "live_trades_completed": (
++                int(live_broker.risk.live_trades_completed) if live_broker else 0
++            ),
++            "live_max_trades": self.settings.live_max_trades,
++            "can_trade": can_trade,
++            "reevaluation_mode": self.circuit_breaker.in_reevaluation(),
++            "adaptive": {
++                "active": adaptive.active,
++                "idle_hours": round(adaptive.idle_hours, 2),
++                "relax_factor": round(adaptive.relax_factor, 3),
++                "suspended": adaptive.suspended,
++                "relax_attempts": adaptive.relax_attempts,
++            },
++            "thresholds": {
++                "min_trade_edge": self.settings.min_trade_edge,
++                "required_edge_1hop": round(self.risk.path_edge(1), 6),
++                "swap_edge_1hop": round(self.risk.swap_edge(), 6),
++                "min_net_profit_pct": self.risk.effective_min_net_profit(),
++            },
++            "best_opportunities": best,
++            "blocked": blocked[:12],
++            "portfolio_usd": round(portfolio, 2),
++            "paper_trades_session": int(self.broker.risk.total_trades),
++        }
++        path = self.settings.log_dir / "trade_diagnosis.json"
++        try:
++            path.parent.mkdir(parents=True, exist_ok=True)
++            path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
++        except OSError as exc:
++            logger.warning("Could not write trade diagnosis: %s", exc)
++
+     def _seed_portfolio_snapshot(self) -> None:
+         """Ensure ``paper_portfolio.json`` exists before the first tick."""
+         try:
+@@ -2551,6 +2622,13 @@
+             baseline_pnl=baseline_pnl,
+             drawdown=drawdown,
+         )
++        self._write_trade_diagnosis(
++            portfolio=portfolio,
++            result=result,
++            blocked=blocked,
++            trades=trades,
++            can_trade=can_trade,
++        )
+ 
+ 
+ 

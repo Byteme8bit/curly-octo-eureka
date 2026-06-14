@@ -1,0 +1,19 @@
+--- a/dashboard/static/index.html
++++ b/dashboard/static/index.html
+@@ -4,7 +4,7 @@
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>TradeBot Command Center</title>
+-  <link rel="stylesheet" href="/static/styles.css?v=042" />
++  <link rel="stylesheet" href="/static/styles.css?v=043" />
+   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+ </head>
+ <body>
+@@ -97,6 +97,6 @@
+     </aside>
+   </div>
+ 
+-  <script src="/static/app.js?v=042"></script>
++  <script src="/static/app.js?v=043"></script>
+ </body>
+ </html>

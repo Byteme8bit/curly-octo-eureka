@@ -14,6 +14,64 @@ logger = logging.getLogger(__name__)
 
 TIER_LABELS = ("Baseline", "Growth", "Scale", "Elite")
 
+TIER_UNLOCK_SUMMARIES: dict[int, str] = {
+    1: "Stat-arb pairs",
+    2: "Triangular arb loops + 35% exploration",
+    3: "Full multi-strategy + whale-follow sizing ×1.25",
+}
+
+
+def compute_primary_goal(
+    *,
+    portfolio_usd: float,
+    next_threshold_usd: float | None,
+    next_tier_level: int | None,
+    next_tier_label: str,
+    unlock_summary: str,
+) -> dict:
+    """Primary milestone progress for dashboard and Discord (Goal 1 = first $ threshold)."""
+    if next_threshold_usd is None or next_threshold_usd <= 0 or next_tier_level is None:
+        return {
+            "number": None,
+            "target_usd": None,
+            "headline": "All milestones achieved",
+            "progress_pct": 100.0,
+            "current_usd": portfolio_usd,
+            "remaining_usd": 0.0,
+            "unlock_summary": "",
+            "achieved": True,
+            "tier_label": next_tier_label or "Max tier",
+        }
+    progress = min(100.0, max(0.0, portfolio_usd / next_threshold_usd * 100.0))
+    remaining = max(0.0, next_threshold_usd - portfolio_usd)
+    achieved = portfolio_usd >= next_threshold_usd
+    headline = f"Goal {next_tier_level}: ${next_threshold_usd:,.0f} portfolio ({next_tier_label})"
+    return {
+        "number": next_tier_level,
+        "target_usd": next_threshold_usd,
+        "headline": headline,
+        "progress_pct": round(progress, 1),
+        "current_usd": portfolio_usd,
+        "remaining_usd": round(remaining, 2),
+        "unlock_summary": unlock_summary,
+        "achieved": achieved,
+        "tier_label": next_tier_label,
+    }
+
+
+def format_primary_goal_discord(status: "GoalStatus") -> str:
+    """One-line goal progress for startup/heartbeat when the primary goal is not yet met."""
+    if not status.enabled or status.primary_goal.get("achieved"):
+        return ""
+    pg = status.primary_goal
+    if not pg.get("number"):
+        return ""
+    return (
+        f":dart: **{pg['headline']}** — "
+        f"${status.portfolio_usd:,.2f} / ${pg['target_usd']:,.0f} "
+        f"({pg['progress_pct']:.1f}%) · Unlocks: {pg['unlock_summary']}"
+    )
+
 
 def build_manager_from_settings(settings) -> GoalEvolutionManager:
     """Construct manager from ``config.Settings``."""
@@ -52,6 +110,7 @@ def build_manager_from_settings(settings) -> GoalEvolutionManager:
                 strategies=tier_strategies[idx],
                 exploration_ratio=exploration,
                 whale_follow_size_mult=whale_mult,
+                unlock_summary=TIER_UNLOCK_SUMMARIES.get(idx, ""),
             )
         )
 
@@ -170,6 +229,7 @@ class GoalStatus:
     unlocked_capabilities: tuple[str, ...]
     newly_achieved: bool
     achievement_message: str
+    primary_goal: dict
 
 
 @dataclass(frozen=True)
@@ -228,6 +288,28 @@ class GoalEvolutionManager:
             return tier.exploration_ratio
         return self.config.base_exploration_ratio
 
+    def _primary_goal_for(
+        self,
+        portfolio_usd: float,
+        nxt: GoalTier | None,
+    ) -> dict:
+        if nxt is None:
+            return compute_primary_goal(
+                portfolio_usd=portfolio_usd,
+                next_threshold_usd=None,
+                next_tier_level=None,
+                next_tier_label="Max tier",
+                unlock_summary="",
+            )
+        unlock = nxt.unlock_summary or ", ".join(self._capabilities(nxt))
+        return compute_primary_goal(
+            portfolio_usd=portfolio_usd,
+            next_threshold_usd=nxt.threshold_usd,
+            next_tier_level=nxt.level,
+            next_tier_label=nxt.label,
+            unlock_summary=unlock,
+        )
+
     def evaluate_goals(self, portfolio_usd: float) -> GoalStatus:
         if not self.config.enabled:
             tier = self._tier_by_level(0)
@@ -244,6 +326,7 @@ class GoalEvolutionManager:
                 unlocked_capabilities=(),
                 newly_achieved=False,
                 achievement_message="",
+                primary_goal={},
             )
 
         tier = tier_for_portfolio(self.config.tiers, portfolio_usd)
@@ -270,6 +353,7 @@ class GoalEvolutionManager:
         self._save()
 
         caps = self._capabilities(tier)
+        primary = self._primary_goal_for(portfolio_usd, nxt)
         return GoalStatus(
             enabled=True,
             tier=tier.level,
@@ -283,6 +367,7 @@ class GoalEvolutionManager:
             unlocked_capabilities=caps,
             newly_achieved=newly and bool(message),
             achievement_message=message,
+            primary_goal=primary,
         )
 
     def _capabilities(self, tier: GoalTier) -> tuple[str, ...]:
@@ -301,8 +386,9 @@ class GoalEvolutionManager:
 
     def _format_achievement(self, achieved: GoalTier, current: GoalTier) -> str:
         caps = ", ".join(self._capabilities(achieved)) or achieved.unlock_summary
+        goal_num = achieved.level if achieved.level > 0 else achieved.label
         return (
-            f"**Goal reached — {achieved.label}** (${achieved.threshold_usd:,.0f}+)\n"
+            f"**Goal {goal_num} reached — {achieved.label}** (${achieved.threshold_usd:,.0f}+)\n"
             f"Portfolio ${self.state.last_portfolio_usd:,.2f}. Now unlocked: {caps}."
         )
 
@@ -442,6 +528,7 @@ class GoalEvolutionManager:
         usd = portfolio_usd if portfolio_usd is not None else self.state.last_portfolio_usd
         tier = tier_for_portfolio(self.config.tiers, usd) if self.config.enabled else self.config.tiers[0]
         nxt = next_tier(self.config.tiers, tier) if self.config.enabled else None
+        primary = self._primary_goal_for(usd, nxt) if self.config.enabled else {}
         return {
             "enabled": self.config.enabled,
             "tier": tier.level,
@@ -454,6 +541,7 @@ class GoalEvolutionManager:
             "whale_follow_size_mult": tier.whale_follow_size_mult,
             "unlocked_capabilities": list(self._capabilities(tier)),
             "achieved_tiers": list(self.state.achieved_tiers),
+            "primary_goal": primary,
             "crash_hold": {
                 "active": self.state.crash_hold_active,
                 "reason": self.state.crash_hold_reason,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections import defaultdict
 from datetime import datetime
@@ -9,7 +10,12 @@ from pathlib import Path
 
 from dashboard.config import DashboardSettings
 from dashboard.io_util import newest_files, read_text
-from dashboard.parsers.tradebot import _extract_ticks_from_log, _load_window_logs, _parse_receipt
+from dashboard.parsers.live_portfolio import load_live_portfolio
+from dashboard.parsers.tradebot import (
+    _extract_ticks_from_log,
+    _load_window_logs,
+    _parse_receipt,
+)
 
 _FORECAST_SECTION = re.compile(
     r"## Forecast\s*\n(.*?)(?=\n## |\Z)",
@@ -101,8 +107,17 @@ def build_forecasts(settings: DashboardSettings) -> dict:
     }
 
 
-def build_portfolio_history(settings: DashboardSettings, *, max_ticks: int = 120) -> dict:
+def build_portfolio_history(
+    settings: DashboardSettings,
+    *,
+    mode: str = "paper",
+    max_ticks: int = 120,
+) -> dict:
     """Portfolio value time series from window logs + current snapshot."""
+    normalized = (mode or "paper").lower()
+    if normalized == "live":
+        return _build_live_portfolio_history(settings)
+
     log_text = _load_window_logs(settings.log_dir, max_files=8)
     ticks = _extract_ticks_from_log(log_text, max_ticks=max_ticks)
     points: list[dict] = []
@@ -139,6 +154,73 @@ def build_portfolio_history(settings: DashboardSettings, *, max_ticks: int = 120
         "points": points,
         "pnl_deltas": pnl_deltas,
         "source": str(settings.log_dir),
+        "mode": "paper",
+    }
+
+
+def _parse_live_trade_day(time_str: str) -> str:
+    s = (time_str or "").strip()
+    if len(s) >= 10:
+        return s[:10]
+    return "unknown"
+
+
+def _build_live_portfolio_history(settings: DashboardSettings) -> dict:
+    live = load_live_portfolio(settings)
+    points: list[dict] = []
+    pnl_deltas: list[dict] = []
+
+    session_path = settings.live_session_start_file
+    session = None
+    if session_path.exists():
+        try:
+            session = json.loads(session_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            session = None
+
+    if session:
+        anchored = str(session.get("anchored_at_pacific", ""))
+        baseline = float(session.get("baseline_portfolio_usd", 0.0))
+        if baseline > 0:
+            points.append({
+                "time": anchored or "session start",
+                "portfolio_usd": round(baseline, 2),
+                "baseline_pnl": 0.0,
+                "drawdown_pct": 0.0,
+            })
+
+    if live:
+        for trade in reversed(live.get("live_trades") or []):
+            pnl = trade.get("gain_loss_usd")
+            if pnl is None:
+                continue
+            points.append({
+                "time": trade.get("time", ""),
+                "portfolio_usd": None,
+                "baseline_pnl": pnl,
+                "drawdown_pct": None,
+            })
+        points.append({
+            "time": live.get("updated_at", "now"),
+            "portfolio_usd": live.get("portfolio_usd"),
+            "baseline_pnl": live.get("baseline_pnl"),
+            "drawdown_pct": live.get("drawdown_pct"),
+        })
+
+    for i in range(1, len(points)):
+        prev = points[i - 1]
+        cur = points[i]
+        if prev.get("baseline_pnl") is not None and cur.get("baseline_pnl") is not None:
+            pnl_deltas.append({
+                "time": cur["time"],
+                "delta_pnl": round(cur["baseline_pnl"] - prev["baseline_pnl"], 4),
+            })
+
+    return {
+        "points": points,
+        "pnl_deltas": pnl_deltas,
+        "source": str(settings.live_state_file),
+        "mode": "live",
     }
 
 
@@ -158,8 +240,17 @@ def _parse_receipt_time(time_str: str) -> str:
     return s[:10] if len(s) >= 10 else "unknown"
 
 
-def build_trades_series(settings: DashboardSettings, *, receipt_limit: int = 200) -> dict:
-    """Trade counts and net PnL grouped by day from receipts."""
+def build_trades_series(
+    settings: DashboardSettings,
+    *,
+    mode: str = "paper",
+    receipt_limit: int = 200,
+) -> dict:
+    """Trade counts and net PnL grouped by day from receipts or live trades."""
+    normalized = (mode or "paper").lower()
+    if normalized == "live":
+        return _build_live_trades_series(settings)
+
     buckets: dict[str, dict] = defaultdict(lambda: {"trade_count": 0, "net_pnl": 0.0, "fees": 0.0})
     trades: list[dict] = []
 
@@ -195,4 +286,43 @@ def build_trades_series(settings: DashboardSettings, *, receipt_limit: int = 200
         "buckets": series,
         "recent": trades[:30],
         "source": str(settings.receipts_dir),
+        "mode": "paper",
+    }
+
+
+def _build_live_trades_series(settings: DashboardSettings) -> dict:
+    live = load_live_portfolio(settings)
+    buckets: dict[str, dict] = defaultdict(lambda: {"trade_count": 0, "net_pnl": 0.0, "fees": 0.0})
+    trades: list[dict] = []
+
+    for trade in live.get("live_trades") or [] if live else []:
+        day = _parse_live_trade_day(trade.get("time", ""))
+        pnl = trade.get("gain_loss_usd")
+        fee = trade.get("fee_usd") or 0.0
+        buckets[day]["trade_count"] += 1
+        if pnl is not None:
+            buckets[day]["net_pnl"] += pnl
+        buckets[day]["fees"] += fee
+        trades.append({
+            "time": trade.get("time", ""),
+            "summary": trade.get("summary", ""),
+            "gain_loss_usd": pnl,
+            "fee_usd": fee,
+        })
+
+    series = []
+    for day in sorted(buckets.keys()):
+        b = buckets[day]
+        series.append({
+            "bucket": day,
+            "trade_count": b["trade_count"],
+            "net_pnl": round(b["net_pnl"], 2),
+            "fees": round(b["fees"], 2),
+        })
+
+    return {
+        "buckets": series,
+        "recent": trades[:30],
+        "source": str(settings.live_state_file),
+        "mode": "live",
     }

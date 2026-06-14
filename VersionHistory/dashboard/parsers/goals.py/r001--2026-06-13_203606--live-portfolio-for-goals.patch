@@ -1,0 +1,23 @@
+--- a/dashboard/parsers/goals.py
++++ b/dashboard/parsers/goals.py
+@@ -7,6 +7,7 @@
+ from pathlib import Path
+ 
+ from dashboard.config import DashboardSettings
++from dashboard.parsers.live_portfolio import load_live_portfolio
+ 
+ 
+ def _parse_milestones(raw: str) -> tuple[float, ...]:
+@@ -24,7 +25,11 @@
+ def build_goals_view(settings: DashboardSettings) -> dict:
+     state_path = settings.goal_state_file
+     portfolio_usd = 0.0
+-    if settings.paper_portfolio_file.exists():
++    if settings.live_enabled:
++        live = load_live_portfolio(settings)
++        if live:
++            portfolio_usd = float(live.get("portfolio_usd", 0.0))
++    elif settings.paper_portfolio_file.exists():
+         try:
+             data = json.loads(settings.paper_portfolio_file.read_text(encoding="utf-8"))
+             portfolio_usd = float(data.get("portfolio_usd", 0.0))

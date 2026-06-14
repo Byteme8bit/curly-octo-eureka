@@ -1,0 +1,151 @@
+--- a/dashboard/parsers/tradebot.py
++++ b/dashboard/parsers/tradebot.py
+@@ -160,10 +160,19 @@
+ 
+ 
+ def build_tradebot_view(settings: DashboardSettings) -> dict:
++    mirror_mode = settings.live_mirror_paper and settings.live_enabled
+     mode = "paper"
+     live_trades: list[dict] = []
+-
+-    if settings.live_enabled:
++    live_portfolio = None
++    portfolio = None
++
++    if mirror_mode:
++        live = load_live_portfolio(settings)
++        live_portfolio = live
++        if live:
++            live_trades = live.get("live_trades") or []
++        mode = "mirror"
++    elif settings.live_enabled:
+         live = load_live_portfolio(settings)
+         if live:
+             mode = "live"
+@@ -192,43 +201,56 @@
+         live = None
+         portfolio = None
+ 
+-    if portfolio is None:
++    if mirror_mode or not settings.live_enabled or portfolio is None:
+         portfolio_log = PaperPortfolioLog(settings.paper_portfolio_file)
+         snap = portfolio_log.load()
+         if snap is None and settings.paper_state_file.exists():
+             snap = portfolio_log.bootstrap_from_state(settings.paper_state_file)
+ 
+-        portfolio = None
+-        if snap:
+-            cash_usd = sum(
+-                row["usd_value"]
+-                for asset, row in snap.holdings.items()
+-                if asset == "USD"
+-            )
+-            total = snap.portfolio_usd or 0.0
+-            cash_pct = round(cash_usd / total, 4) if total > 0 else None
+-            portfolio = {
+-                "mode": "paper",
+-                "updated_at": snap.updated_at,
+-                "portfolio_usd": snap.portfolio_usd,
+-                "baseline_pnl": snap.baseline_pnl,
+-                "drawdown_pct": snap.drawdown_pct,
+-                "cash_usd": round(cash_usd, 2),
+-                "cash_pct": cash_pct,
+-                "trade_count": 0,
+-                "holdings": [
+-                    {
+-                        "asset": asset,
+-                        "qty": row["qty"],
+-                        "usd_price": row["usd_price"],
+-                        "usd_value": row["usd_value"],
+-                    }
+-                    for asset, row in sorted(
+-                        snap.holdings.items(),
+-                        key=lambda x: -x[1]["usd_value"],
+-                    )
+-                ],
+-            }
++        if mirror_mode or portfolio is None:
++            portfolio = None
++            if snap:
++                cash_usd = sum(
++                    row["usd_value"]
++                    for asset, row in snap.holdings.items()
++                    if asset == "USD"
++                )
++                total = snap.portfolio_usd or 0.0
++                cash_pct = round(cash_usd / total, 4) if total > 0 else None
++                portfolio = {
++                    "mode": "mirror" if mirror_mode else "paper",
++                    "updated_at": snap.updated_at,
++                    "portfolio_usd": snap.portfolio_usd,
++                    "baseline_pnl": snap.baseline_pnl,
++                    "drawdown_pct": snap.drawdown_pct,
++                    "cash_usd": round(cash_usd, 2),
++                    "cash_pct": cash_pct,
++                    "trade_count": 0,
++                    "holdings": [
++                        {
++                            "asset": asset,
++                            "qty": row["qty"],
++                            "usd_price": row["usd_price"],
++                            "usd_value": row["usd_value"],
++                        }
++                        for asset, row in sorted(
++                            snap.holdings.items(),
++                            key=lambda x: -x[1]["usd_value"],
++                        )
++                    ],
++                }
++            elif mirror_mode and live_portfolio:
++                portfolio = {
++                    "mode": "mirror",
++                    "updated_at": live_portfolio.get("updated_at", ""),
++                    "portfolio_usd": live_portfolio.get("portfolio_usd"),
++                    "baseline_pnl": live_portfolio.get("baseline_pnl"),
++                    "drawdown_pct": live_portfolio.get("drawdown_pct"),
++                    "cash_usd": live_portfolio.get("cash_usd"),
++                    "cash_pct": live_portfolio.get("cash_pct"),
++                    "trade_count": 0,
++                    "holdings": live_portfolio.get("holdings") or [],
++                }
+ 
+     receipts = []
+     for path in newest_files(settings.receipts_dir, "*.txt", limit=15):
+@@ -238,6 +260,11 @@
+ 
+     if mode == "live":
+         trade_count = portfolio.get("trade_count", 0) if portfolio else 0
++        recent_trades = live_trades[:15] if live_trades else receipts[:15]
++    elif mode == "mirror":
++        trade_count = live_portfolio.get("trade_count", 0) if live_portfolio else 0
++        if portfolio is not None:
++            portfolio = {**portfolio, "trade_count": trade_count}
+         recent_trades = live_trades[:15] if live_trades else receipts[:15]
+     else:
+         trade_count = len(receipts)
+@@ -262,6 +289,7 @@
+     return {
+         "mode": mode,
+         "portfolio": portfolio,
++        "live_portfolio": live_portfolio if mirror_mode else None,
+         "latest_tick": latest,
+         "pnl_trend": _pnl_trend(ticks),
+         "recent_ticks": ticks[-5:],
+@@ -270,8 +298,15 @@
+         "strategy_focus": strategy_focus,
+         "runtime_log_tail": runtime_tail,
+         "sources": {
+-            "portfolio": str(settings.live_state_file if mode == "live" else settings.paper_portfolio_file),
+-            "session_anchor": str(settings.live_session_start_file) if mode == "live" else None,
++            "portfolio": str(
++                settings.paper_portfolio_file
++                if mode in ("paper", "mirror")
++                else settings.live_state_file
++            ),
++            "live_portfolio": str(settings.live_state_file) if mirror_mode else None,
++            "session_anchor": str(settings.live_session_start_file)
++            if mode in ("live", "mirror")
++            else None,
+             "logs": str(settings.log_dir),
+             "receipts": str(settings.receipts_dir),
+         },

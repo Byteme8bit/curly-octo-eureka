@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from bot.risk import RiskManager
 
+from bot.funding_priority import funding_rank
+
 from bot.strategies.base import Signal, Strategy, StrategyResult, TradeIntent, RotationOption
 
 from config import ASSET_USD_SYMBOLS, SYMBOL_ASSETS, Settings
@@ -101,6 +103,8 @@ class MomentumRotationStrategy(Strategy):
         self.diversify_bonus = settings.diversify_bonus
 
         self.core_assets = set(settings.core_assets)
+
+        self.preferred_start_assets = settings.preferred_start_assets
 
         self.dust_usd = settings.dust_usd
 
@@ -466,6 +470,8 @@ class MomentumRotationStrategy(Strategy):
 
             key=lambda a: (
 
+                funding_rank(a, self.preferred_start_assets),
+
                 -max(0.0, self._allocation_pct(a, holdings, prices) - avg_weight * 2),
 
                 self._asset_score(a, scores),
@@ -768,7 +774,13 @@ class MomentumRotationStrategy(Strategy):
 
             )
 
-            ranked_candidates = sorted(candidates, key=lambda c: c.diversify_score, reverse=True)
+            ranked_candidates = sorted(
+                candidates,
+                key=lambda c: (
+                    -c.diversify_score,
+                    funding_rank(c.from_asset, self.preferred_start_assets),
+                ),
+            )
 
 
 

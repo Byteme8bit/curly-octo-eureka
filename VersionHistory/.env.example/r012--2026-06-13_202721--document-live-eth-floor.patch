@@ -1,0 +1,11 @@
+--- a/.env.example
++++ b/.env.example
+@@ -261,6 +261,8 @@
+ # LIVE_MAX_USD_PER_TRADE=75
+ # Hard halt all trading when portfolio drops this much from session peak
+ LIVE_DRAWDOWN_HALT_PCT=0.10
++# Untouchable ETH floor — live trading halts if balance drops below this
++LIVE_MIN_ETH_RESERVE=0.5
+ # When 1 (default): no adaptive threshold relaxation or idle probes on live
+ LIVE_STRICT_PROFIT=1
+ # RESET_LIVE_STATE=0

@@ -15,6 +15,8 @@ from bot.goal_evolution import (
     GoalEvolutionState,
     GoalTier,
     build_manager_from_settings,
+    compute_primary_goal,
+    format_primary_goal_discord,
 )
 
 
@@ -186,3 +188,55 @@ def test_build_manager_from_settings(tmp_path):
     mgr = build_manager_from_settings(settings)
     assert mgr.config.enabled is True
     assert len(mgr.config.tiers) == 4
+
+
+def test_compute_primary_goal_progress():
+    pg = compute_primary_goal(
+        portfolio_usd=1653.94,
+        next_threshold_usd=10_000.0,
+        next_tier_level=1,
+        next_tier_label="Growth",
+        unlock_summary="Stat-arb pairs",
+    )
+    assert pg["number"] == 1
+    assert pg["headline"] == "Goal 1: $10,000 portfolio (Growth)"
+    assert pg["progress_pct"] == pytest.approx(16.5, abs=0.1)
+    assert pg["achieved"] is False
+    assert pg["unlock_summary"] == "Stat-arb pairs"
+
+
+def test_format_primary_goal_discord():
+    from bot.goal_evolution import GoalStatus
+
+    pg = compute_primary_goal(
+        portfolio_usd=1653.94,
+        next_threshold_usd=10_000.0,
+        next_tier_level=1,
+        next_tier_label="Growth",
+        unlock_summary="Stat-arb pairs",
+    )
+    status = GoalStatus(
+        enabled=True,
+        tier=0,
+        tier_label="Baseline",
+        portfolio_usd=1653.94,
+        next_threshold_usd=10_000.0,
+        next_tier_label="Growth",
+        allowed_strategies=("cross_momentum",),
+        exploration_ratio=0.25,
+        whale_follow_size_mult=1.0,
+        unlocked_capabilities=("Core momentum only",),
+        newly_achieved=False,
+        achievement_message="",
+        primary_goal=pg,
+    )
+    line = format_primary_goal_discord(status)
+    assert "Goal 1" in line
+    assert "16.5%" in line
+    assert "Stat-arb pairs" in line
+
+
+def test_tier1_achievement_message_uses_goal_number(tmp_path):
+    mgr = _manager(tmp_path)
+    status = mgr.evaluate_goals(12_000.0)
+    assert "Goal 1 reached" in status.achievement_message

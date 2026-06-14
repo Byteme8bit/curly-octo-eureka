@@ -1,0 +1,18 @@
+--- a/bot/paper_broker.py
++++ b/bot/paper_broker.py
+@@ -31,6 +31,7 @@
+     growth_window_start_value: float = 0.0
+     strategy_stats: dict = field(default_factory=dict)
+     total_trades: int = 0
++    live_trades_completed: int = 0
+ 
+     def to_dict(self) -> dict:
+         return asdict(self)
+@@ -62,6 +63,7 @@
+             growth_window_start_value=float(data.get("growth_window_start_value", 0.0)),
+             strategy_stats=dict(data.get("strategy_stats") or {}),
+             total_trades=int(data.get("total_trades", 0)),
++            live_trades_completed=int(data.get("live_trades_completed", 0)),
+         )
+ 
+ 

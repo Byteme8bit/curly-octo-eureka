@@ -1,0 +1,3 @@
+--- a/dashboard/parsers/live_portfolio.py
++++ b/dashboard/parsers/live_portfolio.py
+# initial baseline - no previous state available

@@ -1,0 +1,30 @@
+--- a/config.py
++++ b/config.py
+@@ -199,6 +199,12 @@
+     crash_hold_momentum_asset_ratio: float
+     crash_hold_watchdog_drawdown_pct: float
+     crash_hold_min_minutes: float
++    live_enabled: bool
++    live_state_file: Path
++    live_max_usd_per_trade: float
++    live_drawdown_halt_pct: float
++    live_strict_profit: bool
++    reset_live_state: bool
+ 
+ 
+ def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
+@@ -528,6 +534,14 @@
+             os.getenv("CRASH_HOLD_WATCHDOG_DRAWDOWN_PCT", "0.10")
+         ),
+         crash_hold_min_minutes=float(os.getenv("CRASH_HOLD_MIN_MINUTES", "30")),
++        live_enabled=os.getenv("LIVE_ENABLED", "0") == "1",
++        live_state_file=ROOT / os.getenv("LIVE_STATE_FILE", ".live_state.json"),
++        live_max_usd_per_trade=float(os.getenv("LIVE_MAX_USD_PER_TRADE", "75")),
++        live_drawdown_halt_pct=float(os.getenv("LIVE_DRAWDOWN_HALT_PCT", "0.10")),
++        live_strict_profit=os.getenv("LIVE_STRICT_PROFIT", "1") == "1",
++        reset_live_state=os.getenv("RESET_LIVE_STATE", "0") == "1",
+     )
+     _apply_runtime_overrides(fields)
++    if fields["live_enabled"]:
++        fields["state_file"] = fields["live_state_file"]
+     return Settings(**fields)

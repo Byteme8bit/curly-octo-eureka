@@ -187,6 +187,12 @@ class WatchdogEngine:
 
             self.state.mark_receipt_seen(path.name)
 
+        if self.settings.diagnostics_dir.exists():
+
+            for path in self.settings.diagnostics_dir.glob("circuit_breaker_*.json"):
+
+                self.state.mark_diagnostic_seen(path.name)
+
         self.state.last_log_activity = time.time()
 
         self.state.prune_errors()
@@ -582,22 +588,36 @@ class WatchdogEngine:
 
         alerts: list[tuple[str, bool]] = []
 
+        if self.settings.quiet_mode:
+
+            return alerts
+
         diag_dir = self.settings.diagnostics_dir
 
         if not diag_dir.exists():
 
             return alerts
 
+        cooldown = max(self.settings.error_cooldown_minutes * 60, 3600.0)
+
         for path in sorted(diag_dir.glob("circuit_breaker_*.json")):
 
             if not self.state.mark_diagnostic_seen(path.name):
 
-                alerts.append((
-                    f"**Watchdog — circuit breaker diagnostic**\n"
-                    f"New file: `{path.name}`\n"
-                    f"Review `diagnostics/` for full state dump.",
-                    True,
-                ))
+                continue
+
+            key = f"diag:{path.name}"
+
+            if not self.state.should_alert_error(key, cooldown):
+
+                continue
+
+            alerts.append((
+                f"**Watchdog — circuit breaker diagnostic**\n"
+                f"New file: `{path.name}`\n"
+                f"Review `diagnostics/` for full state dump.",
+                False,
+            ))
 
         return alerts
 
@@ -808,7 +828,13 @@ class WatchdogEngine:
 
                     break
 
-                pin = explicit_pin or "major" in msg.lower() or "circuit breaker" in msg.lower()
+                pin = explicit_pin or (
+                    "major" in msg.lower()
+                    or (
+                        "circuit breaker" in msg.lower()
+                        and "diagnostic" not in msg.lower()
+                    )
+                )
 
                 try:
 
