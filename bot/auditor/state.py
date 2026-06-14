@@ -56,7 +56,11 @@ class AuditorState:
 
     # ----------------------- proposal lifecycle --------------------------
 
-    def add_proposal(self, proposal: ConfigProposal) -> None:
+    def add_proposal(self, proposal: ConfigProposal, *, replace_same_knob: bool = False) -> None:
+        if replace_same_knob:
+            for pid, existing in list(self.pending_proposals.items()):
+                if existing.knob == proposal.knob and pid != proposal.id:
+                    self.pending_proposals.pop(pid, None)
         self.pending_proposals[proposal.id] = proposal
 
     def consume_proposal(self, proposal_id: str) -> ConfigProposal | None:

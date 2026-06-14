@@ -389,6 +389,16 @@
       "removed": 0,
       "request_id": "029",
       "timestamp": "2026-06-01 07:13:30 PDT"
+    },
+    {
+      "added": 24,
+      "number": 2,
+      "patch": "r002--2026-06-14_130814--conflict-dedupe-helpers.patch",
+      "path": "bot/auditor/proposer.py",
+      "reason": "conflict dedupe helpers",
+      "removed": 1,
+      "request_id": "054",
+      "timestamp": "2026-06-14 13:08:14 PDT"
     }
   ],
   "bot/auditor/report.py": [
@@ -401,6 +411,16 @@
       "removed": 10,
       "request_id": "053",
       "timestamp": "2026-06-14 12:49:04 PDT"
+    },
+    {
+      "added": 186,
+      "number": 2,
+      "patch": "r002--2026-06-14_130815--forecast-news-proposal-ux.patch",
+      "path": "bot/auditor/report.py",
+      "reason": "forecast news proposal UX",
+      "removed": 38,
+      "request_id": "054",
+      "timestamp": "2026-06-14 13:08:15 PDT"
     }
   ],
   "bot/auditor/state.py": [
@@ -413,6 +433,16 @@
       "removed": 0,
       "request_id": "020",
       "timestamp": "2026-05-27 03:51:57 PDT"
+    },
+    {
+      "added": 23,
+      "number": 2,
+      "patch": "r002--2026-06-14_130815--replace-same-knob-pending.patch",
+      "path": "bot/auditor/state.py",
+      "reason": "replace same-knob pending",
+      "removed": 2,
+      "request_id": "054",
+      "timestamp": "2026-06-14 13:08:15 PDT"
     }
   ],
   "bot/auditor_service.py": [
@@ -475,6 +505,16 @@
       "removed": 1,
       "request_id": "053",
       "timestamp": "2026-06-14 12:49:04 PDT"
+    },
+    {
+      "added": 178,
+      "number": 7,
+      "patch": "r007--2026-06-14_130815--batch-confirm-attachments.patch",
+      "path": "bot/auditor_service.py",
+      "reason": "batch confirm attachments",
+      "removed": 29,
+      "request_id": "054",
+      "timestamp": "2026-06-14 13:08:15 PDT"
     }
   ],
   "bot/data.py": [
@@ -549,6 +589,16 @@
       "removed": 0,
       "request_id": "048",
       "timestamp": "2026-06-12 08:46:09 PDT"
+    },
+    {
+      "added": 158,
+      "number": 6,
+      "patch": "r006--2026-06-14_130815--discord-file-attachments.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "discord file attachments",
+      "removed": 4,
+      "request_id": "054",
+      "timestamp": "2026-06-14 13:08:15 PDT"
     }
   ],
   "bot/discord_summary.py": [
@@ -2303,6 +2353,16 @@
       "removed": 1,
       "request_id": "053",
       "timestamp": "2026-06-14 12:49:05 PDT"
+    },
+    {
+      "added": 207,
+      "number": 5,
+      "patch": "r005--2026-06-14_130815--054-ux-tests.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "054 UX tests",
+      "removed": 2,
+      "request_id": "054",
+      "timestamp": "2026-06-14 13:08:15 PDT"
     }
   ],
   "tests/test_auditor_chat.py": [

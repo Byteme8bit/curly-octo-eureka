@@ -14,11 +14,155 @@ from bot.auditor.analyzer import PortfolioInsights, StrategyPerformance
 from bot.auditor.context import AuditGoalView, LiveAuditSnapshot, format_goal_summary_line, format_goal_summary_markdown
 from bot.auditor.forecaster import ForecastBand
 from bot.auditor.news_client import NewsHeadline
-from bot.auditor.proposer import ConfigProposal
+from bot.auditor.proposer import ConfigProposal, knobs_with_conflicts
 from bot.local_time import format_pacific
 
 
 DISCORD_MAX_LEN = 1900  # leave room for Discord's 2000 char hard limit
+DISCORD_ATTACHMENT_MAX_BYTES = 8 * 1024 * 1024  # ~8 MB Discord attachment cap
+
+
+def prepare_report_attachment(path: Path) -> tuple[bytes, str, str | None]:
+    """Read an audit markdown file for Discord upload as plain text.
+
+    Returns ``(payload_bytes, filename, truncate_note)``. ``truncate_note`` is
+    set when the file exceeds ``DISCORD_ATTACHMENT_MAX_BYTES``.
+    """
+    text = path.read_text(encoding="utf-8")
+    filename = f"{path.stem}.txt"
+    encoded = text.encode("utf-8")
+    if len(encoded) <= DISCORD_ATTACHMENT_MAX_BYTES:
+        return encoded, filename, None
+    truncated = encoded[:DISCORD_ATTACHMENT_MAX_BYTES]
+    while truncated and (truncated[-1] & 0xC0) == 0x80:
+        truncated = truncated[:-1]
+    note = f"Report attachment truncated to 8MB — full file on disk: `{path}`"
+    return truncated, f"{path.stem}-truncated.txt", note
+
+
+def _format_confidence(confidence: float) -> str:
+    pct = int(round(confidence * 100))
+    return f"confidence: {pct}% = statistical confidence in this extrapolation"
+
+
+def _format_method_label(method: str) -> str:
+    labels = {
+        "bootstrap": (
+            "**Bootstrap** — resamples past trade outcomes at the observed trade rate "
+            "to estimate likely PnL (10th–90th percentile bands)."
+        ),
+        "trade_rate_extrapolation": (
+            "**Trade-rate extrapolation** — multiplies average net PnL per trade by "
+            "the expected number of trades in the horizon."
+        ),
+        "insufficient_data": (
+            "**Insufficient data** — fewer than 10 trades; no reliable forecast yet."
+        ),
+    }
+    return labels.get(method, f"**{method.replace('_', ' ')}**")
+
+
+def _forecast_explainer(forecast: list[ForecastBand], *, paper_only: bool = True) -> str:
+    if not forecast:
+        return ""
+    scope = "paper simulation pace" if paper_only else "recent trade pace"
+    methods = {b.method for b in forecast if b.method != "insufficient_data"}
+    method_bits: list[str] = []
+    if "bootstrap" in methods:
+        method_bits.append(
+            "Bootstrap resamples your historical trade wins/losses to simulate "
+            "what might happen if that pace continues."
+        )
+    if "trade_rate_extrapolation" in methods:
+        method_bits.append(
+            "Trade-rate extrapolation projects average net PnL per trade forward "
+            "over the horizon."
+        )
+    method_line = " ".join(method_bits)
+    low = any(b.confidence < 0.3 for b in forecast if b.horizon in ("7d", "30d"))
+    base = (
+        f"_If **{scope}** continues, the table below shows projected net PnL by horizon. "
+        "Each **confidence** percentage is how strongly the sample supports that extrapolation "
+        "(not a profit guarantee)._"
+    )
+    if method_line:
+        base = f"{base} {method_line}"
+    if low:
+        return (
+            f"{base} "
+            "7d/30d figures are **directional only** — low confidence, not targets."
+        )
+    return (
+        f"{base} Confidence naturally drops as the horizon lengthens."
+    )
+
+
+def news_strategy_impact(headline: NewsHeadline) -> str:
+    """Rule-based note on how TradeBot might react — honest heuristics, not LLM."""
+    title = (headline.title or "").lower()
+    tickers = {t.upper() for t in headline.tickers}
+
+    crash_words = (
+        "crash", "plunge", "collapse", "liquidat", "selloff", "bear market",
+        "dump", "hack", "exploit", "outflow", "bankrupt",
+    )
+    reg_words = (
+        "sec ", "regulat", "regulation", "ban ", "banned", "lawsuit", "fine ",
+        "enforcement", "compliance", "subpoena",
+    )
+    defi_words = (
+        "defi", "upgrade", "hard fork", "layer 2", " l2 ", "staking", "etf",
+        "mainnet", "airdrop", "protocol launch",
+    )
+
+    if any(w in title for w in crash_words):
+        return "Strategy note: defensive posture — crash_hold / circuit-breaker rules may tighten entries."
+    if headline.sentiment == "negative" and (tickers & {"BTC", "ETH"} or "bitcoin" in title or "ethereum" in title):
+        return "Strategy note: risk-off context — may favor defensive holds over new entries."
+    if any(w in title for w in reg_words):
+        return "Strategy note: no strategy change — regulation headline is context only."
+    if any(w in title for w in defi_words):
+        return "Strategy note: alt/momentum exposure may rise if price action confirms."
+    if headline.sentiment == "positive" and tickers:
+        return "Strategy note: bullish context — existing momentum strategies may lean in; no auto config change."
+    return "Strategy note: no strategy change — context only."
+
+
+def format_proposal_discord_block(
+    proposals: list[ConfigProposal],
+    *,
+    pending_count: int | None = None,
+) -> list[str]:
+    """Discord lines for the proposals section, including overload warnings."""
+    lines: list[str] = []
+    count = pending_count if pending_count is not None else len(proposals)
+    conflicts = knobs_with_conflicts(proposals)
+
+    if count > 3:
+        conflict_note = ""
+        if conflicts:
+            conflict_note = f"; conflicting knobs: {', '.join(f'`{k}`' for k in conflicts)}"
+        lines.append(
+            f"⚠ **{count} proposals pending** — review before confirming{conflict_note}. "
+            "Only one change per knob; use `Auditor -pending` (alias `-list`)."
+        )
+
+    if proposals:
+        lines.append("**Proposals** — apply with `Auditor -confirm <id>` or `Auditor -confirm all`:")
+        for p in proposals[:5]:
+            lines.append(
+                f"  • `{p.id}` `{p.knob}` {p.current_value} → {p.proposed_value} ({p.severity})"
+            )
+        if conflicts:
+            lines.append(
+                "  _Pick ONE per knob — batch confirm refuses duplicate knobs._"
+            )
+        lines.append(
+            "`Auditor -pending` / `-list` · `Auditor -confirm id1,id2` · `Auditor -revert <knob>`"
+        )
+    else:
+        lines.append("_No config changes proposed._")
+    return lines
 
 
 @dataclass
@@ -64,23 +208,6 @@ def _format_news_tag(headline) -> str:
     if has_sentiment:
         return f"[{sentiment}]"
     return "[news]"
-
-
-def _forecast_explainer(forecast: list[ForecastBand], *, paper_only: bool = True) -> str:
-    if not forecast:
-        return ""
-    scope = "paper simulation pace" if paper_only else "recent trade pace"
-    low = any(b.confidence < 0.3 for b in forecast if b.horizon in ("7d", "30d"))
-    base = f"_If {scope} continues"
-    if low:
-        return (
-            f"{base}, the table below shows projected net PnL by horizon. "
-            "7d/30d figures are extrapolations with **low confidence** — directional only, not targets._"
-        )
-    return (
-        f"{base}, the table below shows projected net PnL by horizon. "
-        "Confidence drops as the horizon lengthens._"
-    )
 
 
 def _headline_block(title: str, insights: PortfolioInsights, *, trade_label: str | None = None) -> list[str]:
@@ -251,18 +378,22 @@ def render_markdown_report(
         lines.append(explainer)
         lines.append("")
     if forecast:
+        methods_used = {b.method for b in forecast}
+        for method in sorted(methods_used):
+            lines.append(_format_method_label(method))
+        lines.append("")
         lines.append("| Horizon | Method | Expected | 10th %ile | 90th %ile | Confidence |")
-        lines.append("|---|---|---:|---:|---:|---:|")
+        lines.append("|---|---|---:|---:|---:|---|")
         for band in forecast:
             lines.append(
                 f"| {band.horizon} | {band.method} | {_money(band.expected_pnl)} | "
                 f"{_money(band.lower_band)} | {_money(band.upper_band)} | "
-                f"{band.confidence:.2f} |"
+                f"{_format_confidence(band.confidence)} |"
             )
     else:
         lines.append("_No forecast produced._")
     lines.append("")
-    lines.append("_Confidence is heuristic only; bands are not investment advice._")
+    lines.append("_Bands are extrapolations, not investment advice or profit targets._")
     lines.append("")
 
     # 6) News
@@ -272,10 +403,12 @@ def render_markdown_report(
         for h in headlines:
             ticker_str = ", ".join(h.tickers[:4]) if h.tickers else "—"
             published = h.published_at[:19] if h.published_at else ""
+            link = f"[{h.title}]({h.url})" if h.url else h.title
             lines.append(
-                f"- **[{h.sentiment}]** [{h.title}]({h.url})  "
+                f"- **[{h.sentiment}]** {link}  "
                 f"_{h.source} · {published} · {ticker_str}_"
             )
+            lines.append(f"  - {news_strategy_impact(h)}")
     else:
         lines.append("_No headlines fetched._")
     lines.append("")
@@ -284,6 +417,17 @@ def render_markdown_report(
     lines.append("## Proposed config changes")
     lines.append("")
     if proposals:
+        conflicts = knobs_with_conflicts(proposals)
+        if len(proposals) > 3:
+            conflict_note = ""
+            if conflicts:
+                conflict_note = f" Conflicting knobs: {', '.join(f'`{k}`' for k in conflicts)}."
+            lines.append(
+                f"> **{len(proposals)} proposals** — review before confirming.{conflict_note} "
+                "Use `Auditor -pending` (alias `-list`); batch apply: `Auditor -confirm all` or "
+                "`Auditor -confirm id1,id2`. Only one change per knob."
+            )
+            lines.append("")
         for p in proposals:
             lines.append(
                 f"### `{p.knob}` — {p.severity}"
@@ -380,32 +524,36 @@ def render_discord_summary(
         prefix = "**Forecast (paper pace)** " if live_enabled else "**Forecast** "
         rendered = " · ".join(
             f"{b.horizon}: {_money(b.expected_pnl)} [{_money(b.lower_band)}…{_money(b.upper_band)}] "
-            f"({b.method.replace('_', ' ')}, conf {b.confidence:.2f})"
+            f"({b.method.replace('_', ' ')}, {_format_confidence(b.confidence)})"
             for b in forecast
         )
         parts.append(prefix + rendered)
-        note = _forecast_explainer(forecast, paper_only=True).strip("_")
+        methods_used = {b.method for b in forecast if b.method != "insufficient_data"}
+        if "bootstrap" in methods_used:
+            parts.append(
+                "_Bootstrap: resamples past trade outcomes at your observed trade rate._"
+            )
+        note = _forecast_explainer(forecast, paper_only=True)
         if note:
-            parts.append(f"_{note}_")
+            parts.append(note)
 
     if headlines:
         parts.append("**News:**")
         for h in headlines[:3]:
-            title = h.title if len(h.title) <= 110 else h.title[:107] + "…"
-            parts.append(f"  • {_format_news_tag(h)} {title}")
+            title = h.title if len(h.title) <= 90 else h.title[:87] + "…"
+            if h.url:
+                line = f"  • {_format_news_tag(h)} [{title}]({h.url})"
+            else:
+                line = f"  • {_format_news_tag(h)} {title}"
+            parts.append(line)
+            impact = news_strategy_impact(h)
+            if len(impact) <= 120:
+                parts.append(f"    _{impact}_")
 
-    if proposals:
-        parts.append("**Proposals** — apply with `Auditor -confirm <id>` within TTL:")
-        for p in proposals[:5]:
-            parts.append(
-                f"  • `{p.id}` `{p.knob}` {p.current_value} → {p.proposed_value} ({p.severity})"
-            )
-        parts.append("Use `Auditor -pending` to list, `Auditor -revert <knob>` to undo.")
-    else:
-        parts.append("_No config changes proposed._")
+    parts.extend(format_proposal_discord_block(proposals))
 
     if markdown_path is not None:
-        parts.append(f"_Full report: `{markdown_path}`_")
+        parts.append(f"_Full report attached + on disk: `{markdown_path}`_")
 
     text = "\n".join(parts)
     if len(text) <= DISCORD_MAX_LEN:

@@ -1,0 +1,202 @@
+--- a/bot/discord_bot.py
++++ b/bot/discord_bot.py
+@@ -9,6 +9,7 @@
+ import time
+ import urllib.error
+ import urllib.request
++import uuid
+ from dataclasses import dataclass
+ from datetime import datetime, timedelta, timezone
+ from typing import Callable
+@@ -260,12 +261,13 @@
+ Send `help` for all bots + utility commands."""
+ 
+ AuditorHelpText = """**Auditor commands** (read-only review + tier-2 proposals + chat):
+-\u2022 `Auditor -review` \u2014 audit recent trades + fetch news + propose changes
++\u2022 `Auditor -review` \u2014 audit recent trades + fetch news + propose changes (posts .txt report)
+ \u2022 `Auditor -forecast` \u2014 audit with PnL forecast bands highlighted
+ \u2022 `Auditor -strategy <name>` \u2014 review focused on the listed strategy
+ \u2022 `Auditor -summary` \u2014 quick recap of the most recent audit
+-\u2022 `Auditor -pending` \u2014 list pending proposals + active runtime overrides
+-\u2022 `Auditor -confirm <id>` \u2014 apply a proposal (writes runtime_overrides.json)
++\u2022 `Auditor -pending` / `-list` \u2014 pending proposals + active runtime overrides
++\u2022 `Auditor -confirm <id>` \u2014 apply one proposal (writes runtime_overrides.json)
++\u2022 `Auditor -confirm all` or `-confirm id1,id2` \u2014 batch apply (one per knob max)
+ \u2022 `Auditor -revert <knob>` \u2014 remove an active runtime override
+ \u2022 `Auditor -status` \u2014 service status (next scheduled run, triggers, chat config)
+ \u2022 `Auditor -ask <question>` \u2014 single-turn Q&A; can also draft a proposal on request
+@@ -275,7 +277,8 @@
+ \u2022 `Auditor -help` \u2014 this message
+ 
+ Shortcuts: `Audit -<action>` and `Au -<action>` are also accepted.
+-Auditor never edits `.env`; reversions are just key removals. Chat is strictly read-only."""
++Auditor never edits `.env`; reversions are just key removals. Chat is strictly read-only.
++Kraken Trade Prop ($5k eval) is **not** supported \u2014 see `docs/kraken-prop.md`."""
+ 
+ HelpText = """**TradeBot commands** (owner only \u2014 start/restart/reset):
+ \u2022 `TradeBot -start` \u2014 resume trading ticks
+@@ -515,6 +518,35 @@
+         if pin and message_id:
+             self._pin_message(message_id)
+ 
++    def post_with_attachment(
++        self,
++        content: str,
++        file_bytes: bytes,
++        filename: str,
++        *,
++        pin: bool = False,
++        source: str = DEFAULT_SOURCE,
++    ) -> None:
++        """Post a message with a file attachment (bot token or webhook)."""
++        if not self.config.enabled or not self.config.can_post_status:
++            return
++        if not file_bytes:
++            self.post_important(content, pin=pin, source=source)
++            return
++        message_id = self._send_message_with_file(
++            _truncate(content, 1990),
++            file_bytes,
++            filename,
++            source=source,
++        )
++        self.chat_log.log_outbound(
++            content=f"{content}\n[attachment: {filename}]",
++            pin=pin,
++            kind="important",
++        )
++        if pin and message_id:
++            self._pin_message(message_id)
++
+     def post_error(self, context: str, exc: BaseException) -> None:
+         """Post an error alert with troubleshooting tips (deduped, pinned)."""
+         if not self.config.enabled or not self.config.can_post_status:
+@@ -572,6 +604,128 @@
+             except Exception as exc:
+                 logger.warning("Discord webhook post failed: %s", _format_discord_error(exc))
+         return None
++
++    def _send_message_with_file(
++        self,
++        content: str,
++        file_bytes: bytes,
++        filename: str,
++        *,
++        source: str = DEFAULT_SOURCE,
++    ) -> str | None:
++        """Upload a file alongside a text message."""
++        if self.config.bot_token and self.config.channel_id:
++            try:
++                url = f"{DISCORD_API}/channels/{self.config.channel_id}/messages"
++                body = _truncate(self._source_prefix(source) + content, 2000)
++                payload = {"content": body}
++                result = self._request_multipart(
++                    "POST",
++                    url,
++                    payload_json=payload,
++                    files=[("files[0]", filename, file_bytes, "text/plain; charset=utf-8")],
++                )
++                if isinstance(result, dict):
++                    return str(result.get("id")) if result.get("id") else None
++            except Exception as exc:
++                logger.warning("Discord bot file post failed: %s", _format_discord_error(exc))
++        if self.config.webhook_url:
++            try:
++                payload = {"content": content, "username": self._webhook_username(source)}
++                result = self._request_multipart_webhook(
++                    self.config.webhook_url,
++                    payload_json=payload,
++                    files=[("files[0]", filename, file_bytes, "text/plain; charset=utf-8")],
++                )
++                if isinstance(result, dict) and result.get("id"):
++                    return str(result["id"])
++            except Exception as exc:
++                logger.warning("Discord webhook file post failed: %s", _format_discord_error(exc))
++        return None
++
++    def _build_multipart_body(
++        self,
++        *,
++        fields: dict[str, str] | None = None,
++        payload_json: dict | None = None,
++        files: list[tuple[str, str, bytes, str]] | None = None,
++    ) -> tuple[bytes, str]:
++        boundary = f"----EthTradingBot{uuid.uuid4().hex}"
++        chunks: list[bytes] = []
++        if payload_json is not None:
++            chunks.append(
++                f'--{boundary}\r\nContent-Disposition: form-data; name="payload_json"\r\n'
++                f"Content-Type: application/json\r\n\r\n".encode()
++                + json.dumps(payload_json).encode("utf-8")
++                + b"\r\n"
++            )
++        for name, value in (fields or {}).items():
++            chunks.append(
++                f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n'.encode()
++                + value.encode("utf-8")
++                + b"\r\n"
++            )
++        for field_name, fname, data, mime in files or []:
++            chunks.append(
++                f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; '
++                f'filename="{fname}"\r\nContent-Type: {mime}\r\n\r\n'.encode()
++                + data
++                + b"\r\n"
++            )
++        chunks.append(f"--{boundary}--\r\n".encode())
++        return b"".join(chunks), boundary
++
++    def _request_multipart(
++        self,
++        method: str,
++        url: str,
++        *,
++        payload_json: dict | None = None,
++        files: list[tuple[str, str, bytes, str]] | None = None,
++    ):
++        body, boundary = self._build_multipart_body(payload_json=payload_json, files=files)
++        headers = {
++            "Authorization": f"Bot {self.config.bot_token}",
++            "User-Agent": DISCORD_USER_AGENT,
++            "Content-Type": f"multipart/form-data; boundary={boundary}",
++        }
++        req = urllib.request.Request(url, data=body, headers=headers, method=method)
++        try:
++            with urllib.request.urlopen(req, timeout=30) as resp:
++                raw = resp.read().decode("utf-8")
++                if not raw:
++                    return None
++                return json.loads(raw)
++        except urllib.error.HTTPError as exc:
++            raise RuntimeError(_read_http_error(exc)) from exc
++
++    def _request_multipart_webhook(
++        self,
++        url: str,
++        *,
++        payload_json: dict | None = None,
++        files: list[tuple[str, str, bytes, str]] | None = None,
++    ):
++        body, boundary = self._build_multipart_body(payload_json=payload_json, files=files)
++        sep = "&" if "?" in url else "?"
++        target = f"{url}{sep}wait=true"
++        req = urllib.request.Request(
++            target,
++            data=body,
++            headers={
++                "User-Agent": DISCORD_USER_AGENT,
++                "Content-Type": f"multipart/form-data; boundary={boundary}",
++            },
++            method="POST",
++        )
++        try:
++            with urllib.request.urlopen(req, timeout=30) as resp:
++                raw = resp.read().decode("utf-8")
++                if not raw:
++                    return None
++                return json.loads(raw)
++        except urllib.error.HTTPError as exc:
++            raise RuntimeError(_read_http_error(exc)) from exc
+ 
+     def _pin_message(self, message_id: str) -> None:
+         if not self.config.can_pin:

@@ -1,0 +1,298 @@
+--- a/bot/auditor_service.py
++++ b/bot/auditor_service.py
+@@ -23,11 +23,13 @@
+     ALLOWED_KNOBS,
+     KNOB_TO_FIELD,
+     build_proposal,
++    knobs_with_conflicts,
+     propose_changes,
+ )
+ from bot.auditor.report import (
+     AuditReport,
+     DISCORD_MAX_LEN,
++    prepare_report_attachment,
+     render_discord_summary,
+     render_markdown_report,
+ )
+@@ -137,28 +139,24 @@
+             return self._run_audit_locked(trigger=trigger)
+ 
+     def confirm_proposal(self, proposal_id: str) -> str:
+-        proposal_id = (proposal_id or "").strip()
+-        if not proposal_id:
+-            return "Provide a proposal ID — see `Auditor -pending`."
++        arg = (proposal_id or "").strip()
++        if not arg:
++            return "Provide a proposal ID — see `Auditor -pending` (alias `-list`)."
++        if arg.lower() == "all":
++            with self._lock:
++                self.state.prune_expired()
++                ids = list(self.state.pending_proposals.keys())
++            return self._confirm_batch(ids)
++        if "," in arg:
++            ids = [part.strip() for part in arg.split(",") if part.strip()]
++            return self._confirm_batch(ids)
++        return self._confirm_single(arg)
++
++    def _confirm_single(self, proposal_id: str) -> str:
+         with self._lock:
+-            proposal = self.state.get_proposal(proposal_id)
+-            if proposal is None:
+-                self.state.prune_expired()
+-                self._save_state()
+-                return f"No pending proposal `{proposal_id}`. Use `Auditor -pending` to list."
+-            if self.state.is_expired(proposal):
+-                self.state.consume_proposal(proposal_id)
+-                self.state.prune_expired()
+-                self._save_state()
+-                return (
+-                    f"Proposal `{proposal_id}` expired at {proposal.expires_at}. "
+-                    "Run `Auditor -review` for a fresh suggestion."
+-                )
+-            try:
+-                apply_proposal(proposal, self.overrides_file)
+-            except ValueError as exc:
+-                return f"Refused to apply `{proposal.knob}`: {exc}"
+-            self.state.consume_proposal(proposal_id)
++            proposal, err = self._apply_proposal_locked(proposal_id)
++            if err:
++                return err
+             self.state.prune_expired()
+             self._save_state()
+ 
+@@ -173,6 +171,107 @@
+             except Exception:  # noqa: BLE001
+                 logger.exception("Confirm restart request failed")
+ 
++        return self._format_confirm_success(proposal, restart_scheduled)
++
++    def _confirm_batch(self, proposal_ids: list[str]) -> str:
++        if not proposal_ids:
++            return "No pending proposals to confirm — run `Auditor -review` first."
++
++        with self._lock:
++            self.state.prune_expired()
++            to_apply: list = []
++            for pid in proposal_ids:
++                proposal = self.state.get_proposal(pid)
++                if proposal is None:
++                    return (
++                        f"No pending proposal `{pid}`. "
++                        "Use `Auditor -pending` to list valid IDs."
++                    )
++                if self.state.is_expired(proposal):
++                    self.state.consume_proposal(pid)
++                    return (
++                        f"Proposal `{pid}` expired at {proposal.expires_at}. "
++                        "Run `Auditor -review` for fresh suggestions."
++                    )
++                to_apply.append(proposal)
++
++            dup_knobs = knobs_with_conflicts(to_apply)
++            if dup_knobs:
++                rendered = ", ".join(f"`{k}`" for k in dup_knobs)
++                return (
++                    f"Refused batch confirm — duplicate knobs: {rendered}. "
++                    "Pick one proposal per knob, then retry."
++                )
++
++            applied: list = []
++            errors: list[str] = []
++            for proposal in to_apply:
++                try:
++                    apply_proposal(proposal, self.overrides_file)
++                except ValueError as exc:
++                    errors.append(f"`{proposal.id}` ({proposal.knob}): {exc}")
++                    continue
++                self.state.consume_proposal(proposal.id)
++                applied.append(proposal)
++
++            self.state.prune_expired()
++            self._save_state()
++
++        if not applied:
++            return "No proposals applied.\n" + "\n".join(errors)
++
++        restart_scheduled = False
++        if self.config.confirm_restart_enabled and self._request_restart is not None:
++            try:
++                summary = ", ".join(f"{p.knob}={p.proposed_value}" for p in applied)
++                self._request_restart(f"auditor batch-confirm applied {summary}")
++                restart_scheduled = True
++            except Exception:  # noqa: BLE001
++                logger.exception("Batch confirm restart request failed")
++
++        lines = [
++            f"Applied **{len(applied)}** proposal(s):",
++        ]
++        for p in applied:
++            lines.append(
++                f"• `{p.knob}` = `{p.proposed_value}` (was `{p.current_value}`, id `{p.id}`)"
++            )
++        if errors:
++            lines.append("")
++            lines.append("Skipped:")
++            lines.extend(f"• {e}" for e in errors)
++        if restart_scheduled:
++            lines.append(
++                "\n:arrows_counterclockwise: **Restarting bot to load new settings…**"
++            )
++        else:
++            lines.append(
++                "\n:warning: **Restart `main.py`** for overrides to take effect."
++            )
++        return "\n".join(lines)
++
++    def _apply_proposal_locked(self, proposal_id: str):
++        """Validate + apply one proposal under ``self._lock``. Returns (proposal, error)."""
++        proposal = self.state.get_proposal(proposal_id)
++        if proposal is None:
++            self.state.prune_expired()
++            return None, (
++                f"No pending proposal `{proposal_id}`. Use `Auditor -pending` to list."
++            )
++        if self.state.is_expired(proposal):
++            self.state.consume_proposal(proposal_id)
++            return None, (
++                f"Proposal `{proposal_id}` expired at {proposal.expires_at}. "
++                "Run `Auditor -review` for a fresh suggestion."
++            )
++        try:
++            apply_proposal(proposal, self.overrides_file)
++        except ValueError as exc:
++            return None, f"Refused to apply `{proposal.knob}`: {exc}"
++        self.state.consume_proposal(proposal_id)
++        return proposal, None
++
++    def _format_confirm_success(self, proposal, restart_scheduled: bool) -> str:
+         if restart_scheduled:
+             return (
+                 f"Applied `{proposal.knob}` = `{proposal.proposed_value}` "
+@@ -203,6 +302,13 @@
+ 
+         lines: list[str] = []
+         if proposals:
++            conflicts = knobs_with_conflicts(proposals)
++            if len(proposals) > 3:
++                note = f"⚠ **{len(proposals)} proposals pending** — review before confirming."
++                if conflicts:
++                    note += f" Conflicting knobs: {', '.join(f'`{k}`' for k in conflicts)}."
++                lines.append(note)
++                lines.append("")
+             lines.append("**Pending auditor proposals:**")
+             for p in proposals:
+                 lines.append(
+@@ -210,7 +316,10 @@
+                     f"({p.severity}) — expires {p.expires_at}\n  _{p.rationale}_"
+                 )
+             lines.append("")
+-            lines.append("Apply with `Auditor -confirm <id>` before the TTL.")
++            lines.append(
++                "Apply with `Auditor -confirm <id>`, `Auditor -confirm all`, "
++                "or `Auditor -confirm id1,id2` before the TTL."
++            )
+         else:
+             lines.append("No pending proposals — run `Auditor -review` to generate fresh suggestions.")
+ 
+@@ -644,11 +753,17 @@
+         )
+ 
+         for proposal in proposals:
+-            self.state.add_proposal(proposal)
++            self.state.add_proposal(proposal, replace_same_knob=True)
+         self.state.prune_expired()
+         self._save_state()
+ 
+-        self._post_summary_to_discord(summary, trigger=trigger, proposals=proposals, insights=insights)
++        self._post_summary_to_discord(
++            summary,
++            trigger=trigger,
++            proposals=proposals,
++            insights=insights,
++            markdown_path=markdown_path,
++        )
+ 
+         # Sleep-window auto-apply happens AFTER the regular summary post so the
+         # user wakes up to two messages in chronological order: the audit
+@@ -688,6 +803,15 @@
+         if not self.config.autoapply_enabled:
+             return
+         if not proposals:
++            return
++
++        with self._lock:
++            pending = list(self.state.pending_proposals.values())
++        if knobs_with_conflicts(pending):
++            logger.info(
++                "Auto-apply: skipping — pending store has conflicting knobs: %s",
++                ", ".join(knobs_with_conflicts(pending)),
++            )
+             return
+ 
+         now = self._clock()
+@@ -715,6 +839,14 @@
+         # broker is in a re-eval state, surface the suggestion but don't apply.
+         if not self._broker_is_healthy():
+             logger.info("Auto-apply: broker not healthy (drawdown/paused) — skipping")
++            return
++
++        # Never auto-apply when the current audit batch still has duplicate knobs.
++        if knobs_with_conflicts(proposals):
++            logger.info(
++                "Auto-apply: skipping — conflicting knobs in audit batch: %s",
++                ", ".join(knobs_with_conflicts(proposals)),
++            )
+             return
+ 
+         min_rank = self.SEVERITY_RANK.get(self.config.autoapply_min_severity.lower(), 2)
+@@ -890,6 +1022,7 @@
+         trigger: str = "manual",
+         proposals: list | None = None,
+         insights=None,
++        markdown_path: Path | None = None,
+     ) -> None:
+         if not self.discord:
+             return
+@@ -906,7 +1039,21 @@
+             if hasattr(self.discord, "config") and not getattr(self.discord.config, "enabled", False):
+                 return
+             text = summary[:DISCORD_MAX_LEN] if len(summary) > DISCORD_MAX_LEN else summary
+-            self.discord.post_important(text, pin=False, source="Auditor")
++            attachment = None
++            attach_name = ""
++            truncate_note = None
++            if markdown_path is not None and markdown_path.exists():
++                try:
++                    attachment, attach_name, truncate_note = prepare_report_attachment(markdown_path)
++                except OSError as exc:
++                    logger.warning("Auditor could not read report for attachment: %s", exc)
++            if truncate_note:
++                text = f"{text}\n_{truncate_note}_"
++            poster = getattr(self.discord, "post_with_attachment", None)
++            if attachment and callable(poster):
++                poster(text, attachment, attach_name, pin=False, source="Auditor")
++            else:
++                self.discord.post_important(text, pin=False, source="Auditor")
+         except Exception:  # noqa: BLE001
+             logger.exception("Auditor failed to post summary to Discord")
+ 
+@@ -975,13 +1122,15 @@
+ 
+ 
+ AuditorHelpText = """**Auditor commands** (read-only review + tier-2 proposals):
+-• `Auditor -review` — run a full audit (synchronous)
++• `Auditor -review` — run a full audit (posts summary + .txt report attachment)
+ • `Auditor -forecast` — same as review but reply highlights forecast bands
+ • `Auditor -strategy <name>` — review focused on the strategies you list
+ • `Auditor -summary` — last-summary recall (re-runs if none)
+-• `Auditor -pending` — list pending proposals + active overrides
+-• `Auditor -confirm <id>` — apply a proposal (writes `runtime_overrides.json`)
++• `Auditor -pending` / `-list` — list pending proposals + active overrides
++• `Auditor -confirm <id>` — apply one proposal (writes `runtime_overrides.json`)
++• `Auditor -confirm all` or `-confirm id1,id2` — batch apply (one per knob max)
+ • `Auditor -revert <knob>` — remove an active override
+ • `Auditor -help` — this message
+ 
+-All proposals expire (default 60 min). The auditor never edits `.env`."""
++All proposals expire (default 60 min). The auditor never edits `.env`.
++Kraken Trade Prop ($5k eval) is **not** supported — see `docs/kraken-prop.md`."""
