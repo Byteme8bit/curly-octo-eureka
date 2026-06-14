@@ -26,10 +26,14 @@ from bot.auditor.news_client import NewsClient, NewsHeadline
 from bot.auditor.proposer import (
     ALLOWED_KNOBS,
     ConfigProposal,
+    dedupe_proposals_by_knob,
+    knobs_with_conflicts,
     propose_changes,
 )
 from bot.auditor.report import (
     DISCORD_MAX_LEN,
+    news_strategy_impact,
+    prepare_report_attachment,
     render_discord_summary,
     render_markdown_report,
 )
@@ -696,7 +700,7 @@ def test_render_markdown_live_mode_labels_paper_vs_live_pnl() -> None:
     assert "$1,644.00" in md
     assert "## Portfolio goals" in md
     assert "need $8,356 more" in md
-    assert "paper simulation pace continues" in md
+    assert "statistical confidence" in md or "paper simulation pace" in md
     assert "Portfolio goals" in md or "## Portfolio goals" in md
 
 
@@ -737,7 +741,7 @@ def test_render_discord_live_mode_separates_paper_and_live() -> None:
     assert "**Live Kraken spot:**" in summary
     assert "Next milestone:" in summary
     assert "Forecast (paper pace)" in summary
-    assert "paper simulation pace continues" in summary
+    assert "statistical confidence" in summary
 
 
 def test_load_live_audit_snapshot_from_state_file(tmp_path: Path) -> None:
@@ -1361,3 +1365,204 @@ def test_inside_sleep_window_handles_cross_midnight(tmp_path: Path) -> None:
     pm_10 = _dt(2026, 5, 27, 22, 0, 0, tzinfo=PACIFIC)
     inside_2, _ = service._inside_sleep_window(pm_10)
     assert inside_2 is False
+
+
+# ---------------------------------------------------------------------------
+# forecast clarity, news URLs, proposal conflicts (054)
+# ---------------------------------------------------------------------------
+
+
+def test_forecast_markdown_labels_confidence_and_bootstrap() -> None:
+    start = datetime(2026, 5, 1, 0, 0, 0, tzinfo=timezone.utc)
+    trades = [
+        _trade(gain=1.0 if i % 3 else -0.5, fee=0.1, when=start + timedelta(hours=i))
+        for i in range(60)
+    ]
+    insights = analyze_trades(trades, {}, _settings_stub())
+    forecast = forecast_pnl(insights, trades, bootstrap_iterations=50, seed=1)
+    md = render_markdown_report(insights, forecast, [], [], settings=_settings_stub())
+    assert "statistical confidence in this extrapolation" in md
+    assert "**Bootstrap**" in md
+    assert "resamples past trade outcomes" in md
+
+
+def test_discord_summary_includes_news_url_and_strategy_note() -> None:
+    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
+    headline = NewsHeadline(
+        title="Bitcoin crash sparks liquidations",
+        url="https://example.com/btc-crash",
+        published_at="2026-05-27",
+        source="CoinDesk",
+        tickers=["BTC"],
+        sentiment="negative",
+    )
+    summary = render_discord_summary(insights, forecast, [headline], [])
+    assert "[Bitcoin crash sparks liquidations](https://example.com/btc-crash)" in summary
+    assert "defensive posture" in summary.lower() or "crash_hold" in summary.lower()
+
+
+def test_news_strategy_impact_regulation_is_context_only() -> None:
+    headline = NewsHeadline(
+        title="SEC announces new crypto regulation framework",
+        url="https://example.com/sec",
+        published_at="",
+        source="Reuters",
+        tickers=["BTC"],
+        sentiment="neutral",
+    )
+    assert "no strategy change" in news_strategy_impact(headline).lower()
+
+
+def test_knobs_with_conflicts_and_dedupe() -> None:
+    a = _future_proposal("MIN_TRADE_EDGE")
+    b = ConfigProposal(
+        id="bbbbbbbb",
+        knob="MIN_TRADE_EDGE",
+        current_value=0.006,
+        proposed_value=0.009,
+        rationale="second",
+        created_at=a.created_at,
+        expires_at=a.expires_at,
+        severity="high",
+    )
+    c = _future_proposal("TRADE_SIZE_PCT")
+    assert knobs_with_conflicts([a, b, c]) == ["MIN_TRADE_EDGE"]
+    deduped = dedupe_proposals_by_knob([a, b, c])
+    assert len(deduped) == 2
+    edge = next(p for p in deduped if p.knob == "MIN_TRADE_EDGE")
+    assert edge.severity == "high"
+    assert edge.id == "bbbbbbbb"
+
+
+def test_proposer_dedupes_same_knob_in_one_audit() -> None:
+    trades = [_trade(gain=0.5, fee=1.0) for _ in range(20)]
+    insights = analyze_trades(trades, {}, _settings_stub())
+    start = datetime(2026, 5, 1, 0, 0, 0, tzinfo=timezone.utc)
+    many = [
+        _trade(gain=-1.0, fee=0.2, when=start + timedelta(hours=i))
+        for i in range(60)
+    ]
+    insights_many = analyze_trades(many, {}, _settings_stub())
+    forecast = forecast_pnl(insights_many, many, bootstrap_iterations=50, seed=1)
+    proposals = propose_changes(insights, forecast, _settings_stub(), ttl_minutes=30)
+    knobs = [p.knob for p in proposals]
+    assert len(knobs) == len(set(knobs))
+
+
+def test_confirm_batch_refuses_duplicate_knobs(tmp_path: Path) -> None:
+    service = _make_service(tmp_path)
+    p1 = _future_proposal("MIN_TRADE_EDGE")
+    p2 = ConfigProposal(
+        id="22222222",
+        knob="MIN_TRADE_EDGE",
+        current_value=0.006,
+        proposed_value=0.008,
+        rationale="dup",
+        created_at=p1.created_at,
+        expires_at=p1.expires_at,
+        severity="high",
+    )
+    service.state.add_proposal(p1)
+    service.state.add_proposal(p2)
+    msg = service.confirm_proposal(f"{p1.id},{p2.id}")
+    assert "duplicate knobs" in msg.lower()
+    assert not (tmp_path / "runtime_overrides.json").exists()
+
+
+def test_confirm_all_applies_every_pending_proposal(tmp_path: Path) -> None:
+    service = _make_service(tmp_path)
+    p1 = ConfigProposal(
+        id="aaaa1111",
+        knob="MIN_TRADE_EDGE",
+        current_value=0.006,
+        proposed_value=0.0075,
+        rationale="test",
+        created_at=format_pacific(pacific_now()),
+        expires_at=format_pacific(pacific_now() + timedelta(minutes=60)),
+        severity="medium",
+    )
+    p2 = ConfigProposal(
+        id="bbbb2222",
+        knob="TRADE_SIZE_PCT",
+        current_value=0.10,
+        proposed_value=0.09,
+        rationale="test",
+        created_at=p1.created_at,
+        expires_at=p1.expires_at,
+        severity="medium",
+    )
+    service.state.add_proposal(p1)
+    service.state.add_proposal(p2)
+    msg = service.confirm_proposal("all")
+    assert "Applied **2** proposal" in msg
+    assert not service.state.pending_proposals
+    data = json.loads((tmp_path / "runtime_overrides.json").read_text(encoding="utf-8"))
+    assert "MIN_TRADE_EDGE" in data
+    assert "TRADE_SIZE_PCT" in data
+
+
+def test_autoapply_skips_when_pending_has_conflicting_knobs(tmp_path: Path) -> None:
+    clock, _ = _pacific_clock(3)
+    service = _make_service(tmp_path, autoapply_enabled=True, clock=clock)
+    p1 = _future_proposal("MIN_TRADE_EDGE")
+    p2 = ConfigProposal(
+        id="conflict",
+        knob="MIN_TRADE_EDGE",
+        current_value=0.006,
+        proposed_value=0.009,
+        rationale="dup",
+        created_at=p1.created_at,
+        expires_at=p1.expires_at,
+        severity="high",
+    )
+    service.state.add_proposal(p1)
+    service.state.add_proposal(p2)
+    service._maybe_auto_apply([_high_severity_proposal()])
+    assert service.state.last_auto_apply_at is None
+    assert not (tmp_path / "runtime_overrides.json").exists()
+
+
+def test_prepare_report_attachment_truncates_large_files(tmp_path: Path) -> None:
+    report = tmp_path / "audit-big.md"
+    report.write_text("x" * 100, encoding="utf-8")
+    payload, name, note = prepare_report_attachment(report)
+    assert payload == b"x" * 100
+    assert note is None
+    assert name == "audit-big.txt"
+
+    huge = tmp_path / "audit-huge.md"
+    huge.write_text("y" * (9 * 1024 * 1024), encoding="utf-8")
+    payload2, name2, note2 = prepare_report_attachment(huge)
+    assert len(payload2) <= 8 * 1024 * 1024
+    assert note2 is not None
+    assert "truncated" in note2.lower()
+    assert name2.endswith("-truncated.txt")
+
+
+def test_state_add_proposal_replaces_same_knob_when_requested() -> None:
+    state = AuditorState()
+    first = _future_proposal("MIN_TRADE_EDGE")
+    second = ConfigProposal(
+        id="newerid1",
+        knob="MIN_TRADE_EDGE",
+        current_value=0.006,
+        proposed_value=0.008,
+        rationale="newer",
+        created_at=first.created_at,
+        expires_at=first.expires_at,
+        severity="high",
+    )
+    state.add_proposal(first)
+    state.add_proposal(second, replace_same_knob=True)
+    assert first.id not in state.pending_proposals
+    assert state.pending_proposals["newerid1"].knob == "MIN_TRADE_EDGE"
+
+
+def test_discord_many_proposals_shows_overload_warning() -> None:
+    insights = analyze_trades([_trade(gain=1.0)], {"ETH": 1.0}, _settings_stub())
+    forecast = forecast_pnl(insights, [_trade(gain=1.0)])
+    proposals = [_future_proposal(k) for k in ALLOWED_KNOBS]
+    summary = render_discord_summary(insights, forecast, [], proposals)
+    assert "proposals pending" in summary
+    assert "Auditor -confirm all" in summary

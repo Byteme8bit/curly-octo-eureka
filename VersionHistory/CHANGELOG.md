@@ -2035,3 +2035,51 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +115 / -1
 - **Patch:** `r004--2026-06-14_124905--live-pnl-labeling-tests.patch`
 
+## bot/auditor/proposer.py — r002
+
+- **When:** 2026-06-14 13:08:14 PDT
+- **Reason:** conflict dedupe helpers
+- **Request:** 054
+- **Diff:** +24 / -1
+- **Patch:** `r002--2026-06-14_130814--conflict-dedupe-helpers.patch`
+
+## bot/auditor/report.py — r002
+
+- **When:** 2026-06-14 13:08:15 PDT
+- **Reason:** forecast news proposal UX
+- **Request:** 054
+- **Diff:** +186 / -38
+- **Patch:** `r002--2026-06-14_130815--forecast-news-proposal-ux.patch`
+
+## bot/auditor/state.py — r002
+
+- **When:** 2026-06-14 13:08:15 PDT
+- **Reason:** replace same-knob pending
+- **Request:** 054
+- **Diff:** +23 / -2
+- **Patch:** `r002--2026-06-14_130815--replace-same-knob-pending.patch`
+
+## bot/auditor_service.py — r007
+
+- **When:** 2026-06-14 13:08:15 PDT
+- **Reason:** batch confirm attachments
+- **Request:** 054
+- **Diff:** +178 / -29
+- **Patch:** `r007--2026-06-14_130815--batch-confirm-attachments.patch`
+
+## bot/discord_bot.py — r006
+
+- **When:** 2026-06-14 13:08:15 PDT
+- **Reason:** discord file attachments
+- **Request:** 054
+- **Diff:** +158 / -4
+- **Patch:** `r006--2026-06-14_130815--discord-file-attachments.patch`
+
+## tests/test_auditor.py — r005
+
+- **When:** 2026-06-14 13:08:15 PDT
+- **Reason:** 054 UX tests
+- **Request:** 054
+- **Diff:** +207 / -2
+- **Patch:** `r005--2026-06-14_130815--054-ux-tests.patch`
+

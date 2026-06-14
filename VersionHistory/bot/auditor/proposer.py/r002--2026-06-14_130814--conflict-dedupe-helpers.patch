@@ -1,0 +1,38 @@
+--- a/bot/auditor/proposer.py
++++ b/bot/auditor/proposer.py
+@@ -107,6 +107,29 @@
+ 
+ VALID_SEVERITIES: frozenset[str] = frozenset({"low", "medium", "high"})
+ 
++SEVERITY_RANK: dict[str, int] = {"low": 0, "medium": 1, "high": 2}
++
++
++def knobs_with_conflicts(proposals: list[ConfigProposal]) -> list[str]:
++    """Return knob names that appear on more than one pending proposal."""
++    counts: dict[str, int] = {}
++    for p in proposals:
++        counts[p.knob] = counts.get(p.knob, 0) + 1
++    return sorted(k for k, n in counts.items() if n > 1)
++
++
++def dedupe_proposals_by_knob(proposals: list[ConfigProposal]) -> list[ConfigProposal]:
++    """Keep one proposal per knob — highest severity wins; ties keep the first."""
++    best: dict[str, ConfigProposal] = {}
++    for p in proposals:
++        existing = best.get(p.knob)
++        if existing is None:
++            best[p.knob] = p
++            continue
++        if SEVERITY_RANK.get(p.severity, 0) > SEVERITY_RANK.get(existing.severity, 0):
++            best[p.knob] = p
++    return list(best.values())
++
+ 
+ def build_proposal(
+     knob: str,
+@@ -260,4 +283,4 @@
+                     )
+                 )
+ 
+-    return proposals
++    return dedupe_proposals_by_knob(proposals)

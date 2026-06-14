@@ -1,0 +1,41 @@
+--- a/bot/auditor/state.py
++++ b/bot/auditor/state.py
+@@ -56,7 +56,11 @@
+ 
+     # ----------------------- proposal lifecycle --------------------------
+ 
+-    def add_proposal(self, proposal: ConfigProposal) -> None:
++    def add_proposal(self, proposal: ConfigProposal, *, replace_same_knob: bool = False) -> None:
++        if replace_same_knob:
++            for pid, existing in list(self.pending_proposals.items()):
++                if existing.knob == proposal.knob and pid != proposal.id:
++                    self.pending_proposals.pop(pid, None)
+         self.pending_proposals[proposal.id] = proposal
+ 
+     def consume_proposal(self, proposal_id: str) -> ConfigProposal | None:
+@@ -179,7 +183,24 @@
+         except (OSError, json.JSONDecodeError) as exc:
+             logger.warning("Auditor state unreadable (%s) — starting fresh", exc)
+             return cls()
+-        return cls.from_dict(data)
++        state = cls.from_dict(data)
++        # Defense in depth: a restart should not inherit proposals that are
++        # already past their TTL. Without this, the chat tool / status command
++        # surface stale proposals between restarts until the next prune cycle.
++        # We also persist the cleaned state immediately so the on-disk file
++        # matches what is in memory — otherwise an interrupted bot would keep
++        # the stale entries forever.
++        pruned = state.prune_expired()
++        if pruned:
++            logger.warning(
++                "Auditor state load: dropped %d expired proposal(s) from %s",
++                pruned, path,
++            )
++            try:
++                state.save(path)
++            except OSError as exc:
++                logger.warning("Could not persist pruned auditor state: %s", exc)
++        return state
+ 
+     def save(self, path: Path) -> None:
+         path.parent.mkdir(parents=True, exist_ok=True)
