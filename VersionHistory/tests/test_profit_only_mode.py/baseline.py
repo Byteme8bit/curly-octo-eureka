@@ -73,8 +73,6 @@ def test_try_execute_intent_blocks_non_positive_net_when_profit_only() -> None:
         reason="edge case net exactly zero",
     )
     engine._execute_intent = MagicMock()
-    engine._trade_context_block = MagicMock(return_value=None)
-    engine._is_accumulation_intent = MagicMock(return_value=False)
 
     intent = TradeIntent(
         from_asset="ETH",
@@ -130,8 +128,6 @@ def test_try_execute_intent_allows_defensive_when_profit_only() -> None:
     engine.receipts.save.return_value = "receipt.json"
     engine.governor = MagicMock()
     engine.auditor = MagicMock()
-    engine._trade_context_block = MagicMock(return_value=None)
-    engine._is_accumulation_intent = MagicMock(return_value=False)
 
     intent = TradeIntent(
         from_asset="ETH",

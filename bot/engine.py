@@ -59,6 +59,7 @@ from bot.verifier.kraken import PublicKraken
 from bot.verifier.live_tag import LiveVerifyResult, build_live_verify_tag
 from bot.verifier.models import Verdict
 from bot.whale_watch import WhaleWatcher, append_whale_event_log, format_whale_alert
+from bot.trade_context import TradeContextChecker
 from bot.strategies.whale_follow import (
     WhaleFollowCooldown,
     evaluate_whale_follow,
@@ -478,6 +479,21 @@ class TradingEngine:
             cooldown_sec=settings.whale_follow_cooldown_sec,
             max_per_hour=settings.whale_follow_max_per_hour,
         )
+        self.trade_context = TradeContextChecker(
+            news_check_enabled=settings.trade_news_check_enabled,
+            news_block_severe=settings.trade_news_block_severe,
+            news_block_dca=settings.trade_news_block_dca,
+            flow_check_enabled=settings.trade_flow_check_enabled,
+            flow_momentum_threshold=settings.trade_flow_momentum_threshold,
+            flow_risk_off_ratio=settings.trade_flow_risk_off_ratio,
+            news_enabled=settings.auditor_news_enabled,
+            news_provider=settings.auditor_news_provider,
+            cryptopanic_api_key=settings.auditor_cryptopanic_api_key,
+            rss_feeds=settings.auditor_rss_feeds,
+            news_max_items=settings.auditor_news_max_items,
+            watch_assets=settings.watch_assets,
+            symbol_assets=settings.symbol_assets,
+        )
         self.futures_manager: FuturesManager | None = None
         if settings.enable_futures:
             self.futures_manager = FuturesManager(settings)
@@ -859,6 +875,12 @@ class TradingEngine:
             or getattr(intent, "strategy_name", "") == "equity_dca"
         )
 
+    def _trade_context_block(self, intent) -> str | None:
+        gate = self.trade_context.check_intent(intent)
+        if gate.allowed:
+            return None
+        return gate.reason
+
     def _record_strategy_fill(self, intent) -> None:
         for strat in getattr(self.strategy, "strategies", []):
             on_fill = getattr(strat, "on_trade_executed", None)
@@ -897,6 +919,9 @@ class TradingEngine:
             and not intent.is_defensive
         ):
             return None, "Crash hold — new risk blocked"
+        ctx_reason = self._trade_context_block(intent)
+        if ctx_reason:
+            return None, ctx_reason
         route = getattr(intent, "route", None) or self.markets.find_path(
             intent.from_asset, intent.to_asset
         )
@@ -1984,6 +2009,7 @@ class TradingEngine:
         usd_prices = self._usd_prices()
 
         candles = self.data.fetch_all_candles()
+        self.trade_context.refresh(candles)
 
         holdings = self._holdings()
 
@@ -2339,6 +2365,7 @@ class TradingEngine:
             self.broker.sync_from_exchange()
 
         candles = self.data.fetch_all_candles()
+        self.trade_context.refresh(candles)
 
         holdings = self._holdings()
 
@@ -2609,6 +2636,12 @@ class TradingEngine:
                     blocked.append(reason)
                     activity_blocked.append(reason)
 
+                    continue
+
+                ctx_reason = self._trade_context_block(intent)
+                if ctx_reason:
+                    blocked.append(ctx_reason)
+                    activity_blocked.append(ctx_reason)
                     continue
 
                 route = getattr(intent, "route", None) or self.markets.find_path(

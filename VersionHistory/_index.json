@@ -259,6 +259,16 @@
       "removed": 1,
       "request_id": "060",
       "timestamp": "2026-06-15 11:28:48 PDT"
+    },
+    {
+      "added": 14,
+      "number": 27,
+      "patch": "r027--2026-06-15_113324--trade-news-whale-defaults.patch",
+      "path": ".env.example",
+      "reason": "trade news whale defaults",
+      "removed": 1,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:24 PDT"
     }
   ],
   ".gitignore": [
@@ -1095,6 +1105,16 @@
       "removed": 6,
       "request_id": "060",
       "timestamp": "2026-06-15 11:28:47 PDT"
+    },
+    {
+      "added": 33,
+      "number": 38,
+      "patch": "r038--2026-06-15_113324--wire-trade-context-gates.patch",
+      "path": "bot/engine.py",
+      "reason": "wire trade context gates",
+      "removed": 0,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:24 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1991,6 +2011,16 @@
       "removed": 0,
       "request_id": "060",
       "timestamp": "2026-06-15 11:28:48 PDT"
+    },
+    {
+      "added": 14,
+      "number": 26,
+      "patch": "r026--2026-06-15_113324--trade-context-env-knobs.patch",
+      "path": "config.py",
+      "reason": "trade context env knobs",
+      "removed": 0,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:24 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -2669,6 +2699,16 @@
       "removed": 2,
       "request_id": "059",
       "timestamp": "2026-06-15 10:59:03 PDT"
+    },
+    {
+      "added": 34,
+      "number": 5,
+      "patch": "r005--2026-06-15_113325--decision-stack-section.patch",
+      "path": "docs/live-trading.md",
+      "reason": "decision stack section",
+      "removed": 0,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:25 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
@@ -3121,6 +3161,18 @@
       "removed": 95,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:57 PDT"
+    }
+  ],
+  "tests/test_profit_only_mode.py": [
+    {
+      "added": 4,
+      "number": 1,
+      "patch": "r001--2026-06-15_113325--mock-trade-context-helper.patch",
+      "path": "tests/test_profit_only_mode.py",
+      "reason": "mock trade context helper",
+      "removed": 0,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:25 PDT"
     }
   ],
   "tests/test_quiet_discord.py": [

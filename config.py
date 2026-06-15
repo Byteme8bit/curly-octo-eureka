@@ -188,6 +188,12 @@ class Settings:
     whale_follow_cooldown_sec: int
     whale_follow_max_per_hour: int
     whale_follow_min_net_profit: float
+    trade_news_check_enabled: bool
+    trade_news_block_severe: bool
+    trade_news_block_dca: bool
+    trade_flow_check_enabled: bool
+    trade_flow_momentum_threshold: float
+    trade_flow_risk_off_ratio: float
     goal_evolution_enabled: bool
     goal_state_file: Path
     goal_milestones_usd: tuple[float, ...]
@@ -602,6 +608,14 @@ def load_settings() -> Settings:
         whale_follow_cooldown_sec=int(os.getenv("WHALE_FOLLOW_COOLDOWN_SEC", "300")),
         whale_follow_max_per_hour=int(os.getenv("WHALE_FOLLOW_MAX_PER_HOUR", "2")),
         whale_follow_min_net_profit=float(os.getenv("WHALE_FOLLOW_MIN_NET_PROFIT", "0.0005")),
+        trade_news_check_enabled=os.getenv("TRADE_NEWS_CHECK_ENABLED", "1") == "1",
+        trade_news_block_severe=os.getenv("TRADE_NEWS_BLOCK_SEVERE", "1") == "1",
+        trade_news_block_dca=os.getenv("TRADE_NEWS_BLOCK_DCA", "0") == "1",
+        trade_flow_check_enabled=os.getenv("TRADE_FLOW_CHECK_ENABLED", "1") == "1",
+        trade_flow_momentum_threshold=float(
+            os.getenv("TRADE_FLOW_MOMENTUM_THRESHOLD", "-0.008")
+        ),
+        trade_flow_risk_off_ratio=float(os.getenv("TRADE_FLOW_RISK_OFF_RATIO", "0.55")),
         goal_evolution_enabled=os.getenv("GOAL_EVOLUTION_ENABLED", "1") == "1",
         goal_state_file=ROOT / os.getenv("GOAL_STATE_FILE", ".tradebot_goals_state.json"),
         goal_milestones_usd=_parse_milestones(

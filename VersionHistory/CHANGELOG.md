@@ -2526,3 +2526,43 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +12 / -0
 - **Patch:** `r002--2026-06-15_112848--link-equity-dca-docs.patch`
 
+## config.py — r026
+
+- **When:** 2026-06-15 11:33:24 PDT
+- **Reason:** trade context env knobs
+- **Request:** 061
+- **Diff:** +14 / -0
+- **Patch:** `r026--2026-06-15_113324--trade-context-env-knobs.patch`
+
+## bot/engine.py — r038
+
+- **When:** 2026-06-15 11:33:24 PDT
+- **Reason:** wire trade context gates
+- **Request:** 061
+- **Diff:** +33 / -0
+- **Patch:** `r038--2026-06-15_113324--wire-trade-context-gates.patch`
+
+## .env.example — r027
+
+- **When:** 2026-06-15 11:33:24 PDT
+- **Reason:** trade news whale defaults
+- **Request:** 061
+- **Diff:** +14 / -1
+- **Patch:** `r027--2026-06-15_113324--trade-news-whale-defaults.patch`
+
+## docs/live-trading.md — r005
+
+- **When:** 2026-06-15 11:33:25 PDT
+- **Reason:** decision stack section
+- **Request:** 061
+- **Diff:** +34 / -0
+- **Patch:** `r005--2026-06-15_113325--decision-stack-section.patch`
+
+## tests/test_profit_only_mode.py — r001
+
+- **When:** 2026-06-15 11:33:25 PDT
+- **Reason:** mock trade context helper
+- **Request:** 061
+- **Diff:** +4 / -0
+- **Patch:** `r001--2026-06-15_113325--mock-trade-context-helper.patch`
+
