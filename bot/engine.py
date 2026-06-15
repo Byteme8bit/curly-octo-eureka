@@ -23,6 +23,7 @@ from bot.discord_bot import (
 from bot.display import TerminalDisplay
 from bot.fee_engine import FeeEngine
 from bot.goal_evolution import build_manager_from_settings, format_primary_goal_discord
+from bot.live_portfolio import load_live_portfolio_snapshot
 from bot.local_time import format_pacific
 from bot.markets import MarketRegistry
 from bot.paper_broker import PaperBroker
@@ -692,6 +693,12 @@ class TradingEngine:
                 pg_headline = str(pg.get("headline", ""))
                 pg_pct = pg.get("progress_pct")
         crash = bool(self._crash_status and self._crash_status.blocks_new_risk)
+        live_portfolio = None
+        live_session_pnl = None
+        if self.settings.live_enabled:
+            live = self._live_portfolio_metrics()
+            if live is not None:
+                live_portfolio, live_session_pnl, _baseline = live
         msg = format_hourly_summary(
             trade_count=snap["trade_count"],
             net_pnl=snap["net_pnl"],
@@ -703,6 +710,8 @@ class TradingEngine:
             crash_hold=crash,
             primary_goal_headline=pg_headline,
             primary_goal_progress_pct=pg_pct,
+            live_portfolio=live_portfolio,
+            live_session_pnl=live_session_pnl,
         )
         self.discord.post_important(msg, pin=False, source="TradeBot")
         self._last_summary_monotonic = time.monotonic()
@@ -1015,6 +1024,25 @@ class TradingEngine:
         if self._mirror_mode and self.live_broker is not None:
             return dict(self.live_broker.state.balances)
         return self._holdings()
+
+    def _live_portfolio_metrics(self) -> tuple[float, float, float] | None:
+        """Return (portfolio_usd, session_pnl, baseline_usd) for live Kraken spot."""
+        if not self.settings.live_enabled:
+            return None
+        if self.live_broker is not None:
+            usd_prices = self._usd_prices()
+            portfolio = self.live_broker.portfolio_value(usd_prices)
+            baseline = float(self.live_broker.risk.baseline_portfolio or 0.0)
+            session_pnl = portfolio - baseline if baseline > 0 else 0.0
+            return portfolio, session_pnl, baseline
+        snap = load_live_portfolio_snapshot(
+            live_state_file=self.settings.live_state_file,
+            live_session_start_file=self.settings.live_state_file.parent / "live_session_start.json",
+            paper_portfolio_file=self.settings.paper_portfolio_file,
+        )
+        if snap is None:
+            return None
+        return snap.portfolio_usd, snap.session_pnl, snap.baseline_portfolio_usd
 
     def _write_portfolio_file(
         self,
@@ -1737,7 +1765,15 @@ class TradingEngine:
 
             return
 
-        baseline = self.risk.state.baseline_portfolio
+        source = "paper"
+        if self.settings.live_enabled:
+            live = self._live_portfolio_metrics()
+            if live is None:
+                return
+            portfolio, baseline_pnl, baseline = live
+            source = "live"
+        else:
+            baseline = self.risk.state.baseline_portfolio
 
         threshold = self.settings.discord_pin_pnl_pct
 
@@ -1762,6 +1798,8 @@ class TradingEngine:
                 band=band,
 
                 threshold_pct=threshold,
+
+                source=source,
 
             ),
 

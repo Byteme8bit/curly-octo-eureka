@@ -198,15 +198,26 @@ def format_pnl_milestone_alert(
     *,
     band: int,
     threshold_pct: float,
+    source: str = "paper",
 ) -> str:
     pnl_pct = (baseline_pnl / baseline_portfolio * 100) if baseline_portfolio > 0 else 0.0
     if band > 0:
         headline = f"**Major portfolio gain — {pnl_pct:+.1f}%**"
     else:
         headline = f"**Major portfolio loss — {pnl_pct:+.1f}%**"
+    if source == "live":
+        portfolio_line = (
+            f"Live Kraken spot: ${portfolio:,.2f}  |  "
+            f"Session PnL: ${baseline_pnl:+,.2f}"
+        )
+    else:
+        portfolio_line = (
+            f"[Paper sim] Portfolio ${portfolio:,.2f}  |  "
+            f"PnL {baseline_pnl:+.2f} from start"
+        )
     return (
         f"{headline}\n"
-        f"Portfolio ${portfolio:,.2f}  |  PnL {baseline_pnl:+.2f} from start\n"
+        f"{portfolio_line}\n"
         f"Crossed {abs(band) * threshold_pct:.0%} milestone (threshold {threshold_pct:.0%} per pin)"
     )
 
