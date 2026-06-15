@@ -10,6 +10,12 @@ from typing import Callable, TypeVar
 import ccxt
 import pandas as pd
 
+from bot.equities import (
+    fetch_equity_ohlcv,
+    fetch_equity_ticker,
+    inject_equity_markets,
+    is_equity_symbol,
+)
 from config import Settings
 
 logger = logging.getLogger(__name__)
@@ -39,6 +45,10 @@ class KrakenData:
             config["secret"] = settings.api_secret
         self.exchange = ccxt.kraken(config)
         self.usd_symbols = settings.usd_symbols
+        self.equity_assets = getattr(settings, "equity_assets", frozenset())
+        self._equity_symbols = set(getattr(settings, "equity_usd_symbols", ()) or ())
+        if getattr(settings, "enable_equities", False) and self._equity_symbols:
+            self._load_equity_markets()
         self.candle_timeframe = settings.candle_timeframe
         self.candle_limit = settings.candle_limit
         self.momentum_timeframes = settings.momentum_timeframes
@@ -48,6 +58,26 @@ class KrakenData:
         # Cached last-good values for graceful degradation when all retries fail
         self._ticker_cache: dict[str, float] = {}
         self._candle_cache: dict[tuple[str, str], pd.DataFrame] = {}
+
+    def _load_equity_markets(self) -> None:
+        from bot.equities import fetch_tokenized_pairs
+
+        try:
+            pairs = fetch_tokenized_pairs()
+            inject_equity_markets(
+                self.exchange, pairs, tuple(self._equity_symbols)
+            )
+            logger.info(
+                "Loaded %d Kraken xStock USD pairs into market registry",
+                len(self._equity_symbols),
+            )
+        except Exception as exc:
+            logger.warning("Failed to load Kraken xStock markets: %s", exc)
+
+    def _is_equity(self, symbol: str) -> bool:
+        return symbol in self._equity_symbols or is_equity_symbol(
+            symbol, self.equity_assets
+        )
 
     def _retry(self, label: str, fn: Callable[[], T]) -> T:
         """Run fn with timeout-aware retries. Last exception is re-raised."""
@@ -72,12 +102,15 @@ class KrakenData:
 
     def fetch_ticker(self, symbol: str) -> float:
         try:
-            price = float(
-                self._retry(
-                    f"fetch_ticker({symbol})",
-                    lambda: self.exchange.fetch_ticker(symbol)["last"],
+            if self._is_equity(symbol):
+                price = fetch_equity_ticker(symbol)
+            else:
+                price = float(
+                    self._retry(
+                        f"fetch_ticker({symbol})",
+                        lambda: self.exchange.fetch_ticker(symbol)["last"],
+                    )
                 )
-            )
             self._ticker_cache[symbol] = price
             return price
         except _RETRYABLE as exc:
@@ -93,24 +126,49 @@ class KrakenData:
     def fetch_tickers(self, symbols: list[str]) -> dict[str, float]:
         if not symbols:
             return {}
-        try:
-            tickers = self._retry(
-                f"fetch_tickers({len(symbols)})",
-                lambda: self.exchange.fetch_tickers(symbols),
-            )
-            prices = {symbol: float(tickers[symbol]["last"]) for symbol in symbols}
-            self._ticker_cache.update(prices)
-            return prices
-        except _RETRYABLE as exc:
-            cached = {s: self._ticker_cache[s] for s in symbols if s in self._ticker_cache}
-            missing = [s for s in symbols if s not in cached]
-            if cached:
-                logger.warning(
-                    "Kraken fetch_tickers failed after retries (%s); using %d cached, %d missing",
-                    type(exc).__name__, len(cached), len(missing),
+        equity = [s for s in symbols if self._is_equity(s)]
+        crypto = [s for s in symbols if not self._is_equity(s)]
+        prices: dict[str, float] = {}
+        if crypto:
+            try:
+                tickers = self._retry(
+                    f"fetch_tickers({len(crypto)})",
+                    lambda: self.exchange.fetch_tickers(crypto),
                 )
-                return cached
-            raise
+                prices.update(
+                    {symbol: float(tickers[symbol]["last"]) for symbol in crypto}
+                )
+            except _RETRYABLE as exc:
+                cached = {s: self._ticker_cache[s] for s in crypto if s in self._ticker_cache}
+                missing = [s for s in crypto if s not in cached]
+                if cached:
+                    logger.warning(
+                        "Kraken fetch_tickers failed after retries (%s); using %d cached, %d missing",
+                        type(exc).__name__,
+                        len(cached),
+                        len(missing),
+                    )
+                    prices.update(cached)
+                else:
+                    raise
+        for symbol in equity:
+            try:
+                prices[symbol] = fetch_equity_ticker(symbol)
+            except Exception as exc:
+                cached = self._ticker_cache.get(symbol)
+                if cached is not None:
+                    logger.warning(
+                        "Equity ticker %s failed (%s); using cached %.4f",
+                        symbol,
+                        exc,
+                        cached,
+                    )
+                    prices[symbol] = cached
+                else:
+                    logger.warning("Equity ticker %s failed (%s); skipping", symbol, exc)
+        if prices:
+            self._ticker_cache.update(prices)
+        return prices
 
     def _has_usd_market(self, asset: str) -> bool:
         if asset in _NON_TRADABLE_ASSETS:
@@ -147,10 +205,17 @@ class KrakenData:
         tf = timeframe or self.candle_timeframe
         key = (symbol, tf)
         try:
-            raw = self._retry(
-                f"fetch_ohlcv({symbol},{tf})",
-                lambda: self.exchange.fetch_ohlcv(symbol, timeframe=tf, limit=self.candle_limit),
-            )
+            if self._is_equity(symbol):
+                raw = fetch_equity_ohlcv(
+                    symbol, timeframe=tf, limit=self.candle_limit
+                )
+            else:
+                raw = self._retry(
+                    f"fetch_ohlcv({symbol},{tf})",
+                    lambda: self.exchange.fetch_ohlcv(
+                        symbol, timeframe=tf, limit=self.candle_limit
+                    ),
+                )
             df = pd.DataFrame(raw, columns=["timestamp", "open", "high", "low", "close", "volume"])
             df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
             self._candle_cache[key] = df

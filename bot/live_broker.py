@@ -9,7 +9,8 @@ from pathlib import Path
 
 import ccxt
 
-from bot.live_guards import LIVE_SYNC_ASSETS, check_live_route
+from bot.equities import is_equity_asset
+from bot.live_guards import LIVE_SYNC_ASSETS, build_live_sync_assets, check_live_route
 from bot.markets import PairInfo, RouteLeg, TradeRoute
 from bot.paper_broker import PaperBroker, PaperState, RiskState
 from bot.strategies.base import Signal
@@ -32,6 +33,8 @@ class LiveBroker:
         allow_triangular: bool = False,
         max_route_legs: int = 1,
         reset: bool = False,
+        equity_assets: frozenset[str] | None = None,
+        sync_assets: frozenset[str] | None = None,
     ):
         self.exchange = exchange
         self.fee_rate = fee_rate
@@ -39,6 +42,10 @@ class LiveBroker:
         self.max_usd_per_trade = max_usd_per_trade
         self.max_usd_per_route = max_usd_per_route
         self.allowed_assets = allowed_assets
+        self.equity_assets = equity_assets or frozenset()
+        self.sync_assets = sync_assets or build_live_sync_assets(
+            allowed_assets, self.equity_assets
+        )
         self.allow_triangular = allow_triangular
         self.max_route_legs = max_route_legs
         self.state_file = state_file
@@ -107,7 +114,7 @@ class LiveBroker:
             return
         totals = raw.get("total") or {}
         for asset, qty in totals.items():
-            if asset not in LIVE_SYNC_ASSETS:
+            if asset not in self.sync_assets:
                 continue
             if qty and float(qty) > 0:
                 self.state.balances[asset] = float(qty)
@@ -394,7 +401,15 @@ class LiveBroker:
             return None
 
         side_str = "buy" if side == Signal.BUY else "sell"
-        order = self.exchange.create_order(symbol, "market", side_str, amount)
+        params: dict = {}
+        if is_equity_asset(base, self.equity_assets):
+            params["asset_class"] = "tokenized_asset"
+        if params:
+            order = self.exchange.create_order(
+                symbol, "market", side_str, amount, params=params
+            )
+        else:
+            order = self.exchange.create_order(symbol, "market", side_str, amount)
         order_id = order.get("id")
         if order_id and order.get("status") != "closed":
             order = self.exchange.fetch_order(order_id, symbol)

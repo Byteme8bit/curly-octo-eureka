@@ -1,0 +1,78 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -64,7 +64,7 @@
+     format_whale_follow_alert,
+     format_whale_follow_skip,
+ )
+-from config import ROOT, Settings, SYMBOL_ASSETS
++from config import ROOT, Settings
+ 
+ 
+ 
+@@ -86,11 +86,19 @@
+ 
+         self.data = KrakenData(settings)
+ 
+-        self.markets = MarketRegistry(self.data.exchange, settings.watch_assets)
++        self.markets = MarketRegistry(
++            self.data.exchange,
++            settings.watch_assets,
++            equity_assets=settings.equity_assets,
++        )
+ 
+         self.display = TerminalDisplay()
+ 
+-        self.file_log = BotFileLogger(settings.log_dir, settings.log_rotate_hours)
++        self.file_log = BotFileLogger(
++            settings.log_dir,
++            settings.log_rotate_hours,
++            symbol_assets=settings.symbol_assets,
++        )
+ 
+         self.receipts = ReceiptWriter(settings.receipts_dir)
+ 
+@@ -130,6 +138,7 @@
+                 allow_triangular=settings.live_allow_triangular,
+                 max_route_legs=settings.live_max_route_legs,
+                 reset=settings.reset_live_state,
++                equity_assets=settings.equity_assets,
+             )
+             self.broker = self.paper_broker
+             self._live_mode = True
+@@ -149,6 +158,7 @@
+                 allow_triangular=settings.live_allow_triangular,
+                 max_route_legs=settings.live_max_route_legs,
+                 reset=settings.reset_live_state,
++                equity_assets=settings.equity_assets,
+             )
+             self._live_mode = True
+         else:
+@@ -267,6 +277,10 @@
+ 
+             strict_eth_floor=_live_execution,
+ 
++            equity_assets=settings.equity_assets,
++
++            max_equity_allocation_pct=settings.max_equity_allocation_pct,
++
+         )
+ 
+         self._live_constraints = (
+@@ -275,6 +289,8 @@
+                 max_alt_allocation_pct=settings.max_alt_allocation_pct,
+                 min_usd_trade=settings.min_usd_trade,
+                 strict_eth_floor=True,
++                equity_assets=settings.equity_assets,
++                max_equity_allocation_pct=settings.max_equity_allocation_pct,
+             )
+             if self._mirror_mode
+             else None
+@@ -1239,7 +1255,7 @@
+         for symbol, df in candles.items():
+             if df is None or len(df) < 2:
+                 continue
+-            asset = SYMBOL_ASSETS.get(symbol)
++            asset = self.settings.symbol_assets.get(symbol)
+             if not asset:
+                 continue
+             prev = float(df["close"].iloc[-2])

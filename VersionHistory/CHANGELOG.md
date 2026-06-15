@@ -2179,3 +2179,147 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +203 / -95
 - **Patch:** `r002--2026-06-15_042757--confidence-mirror-tests.patch`
 
+## .env.example — r022
+
+- **When:** 2026-06-15 04:44:23 PDT
+- **Reason:** expand mirror confidence comments
+- **Request:** 056
+- **Diff:** +6 / -2
+- **Patch:** `r022--2026-06-15_044423--expand-mirror-confidence-comments.patch`
+
+## docs/live-trading.md — r003
+
+- **When:** 2026-06-15 04:44:23 PDT
+- **Reason:** document uncertain_ok mirror tune
+- **Request:** 056
+- **Diff:** +4 / -4
+- **Patch:** `r003--2026-06-15_044423--document-uncertainok-mirror-tune.patch`
+
+## config.py — r022
+
+- **When:** 2026-06-15 10:18:13 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +53 / -2
+- **Patch:** `r022--2026-06-15_101813--kraken-xstocks-spot-v1.patch`
+
+## bot/data.py — r003
+
+- **When:** 2026-06-15 10:18:13 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +92 / -27
+- **Patch:** `r003--2026-06-15_101813--kraken-xstocks-spot-v1.patch`
+
+## bot/markets.py — r002
+
+- **When:** 2026-06-15 10:18:14 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +9 / -1
+- **Patch:** `r002--2026-06-15_101814--kraken-xstocks-spot-v1.patch`
+
+## bot/portfolio_constraints.py — r003
+
+- **When:** 2026-06-15 10:18:14 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +28 / -10
+- **Patch:** `r003--2026-06-15_101814--kraken-xstocks-spot-v1.patch`
+
+## bot/live_broker.py — r003
+
+- **When:** 2026-06-15 10:18:14 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +18 / -3
+- **Patch:** `r003--2026-06-15_101814--kraken-xstocks-spot-v1.patch`
+
+## bot/live_guards.py — r002
+
+- **When:** 2026-06-15 10:18:14 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +12 / -1
+- **Patch:** `r002--2026-06-15_101814--kraken-xstocks-spot-v1.patch`
+
+## bot/engine.py — r034
+
+- **When:** 2026-06-15 10:18:14 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +20 / -4
+- **Patch:** `r034--2026-06-15_101814--kraken-xstocks-spot-v1.patch`
+
+## bot/strategies/cross_momentum.py — r001
+
+- **When:** 2026-06-15 10:18:15 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +6 / -4
+- **Patch:** `r001--2026-06-15_101815--kraken-xstocks-spot-v1.patch`
+
+## bot/strategies/momentum_rotation.py — r002
+
+- **When:** 2026-06-15 10:18:15 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +7 / -5
+- **Patch:** `r002--2026-06-15_101815--kraken-xstocks-spot-v1.patch`
+
+## bot/orchestrator.py — r003
+
+- **When:** 2026-06-15 10:18:15 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +3 / -2
+- **Patch:** `r003--2026-06-15_101815--kraken-xstocks-spot-v1.patch`
+
+## bot/trade_log.py — r002
+
+- **When:** 2026-06-15 10:18:15 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +16 / -6
+- **Patch:** `r002--2026-06-15_101815--kraken-xstocks-spot-v1.patch`
+
+## dashboard/config.py — r006
+
+- **When:** 2026-06-15 10:18:15 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +12 / -0
+- **Patch:** `r006--2026-06-15_101815--kraken-xstocks-spot-v1.patch`
+
+## dashboard/parsers/tradebot.py — r005
+
+- **When:** 2026-06-15 10:18:15 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +16 / -0
+- **Patch:** `r005--2026-06-15_101815--kraken-xstocks-spot-v1.patch`
+
+## .env.example — r023
+
+- **When:** 2026-06-15 10:18:16 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +11 / -0
+- **Patch:** `r023--2026-06-15_101816--kraken-xstocks-spot-v1.patch`
+
+## tests/test_dashboard.py — r009
+
+- **When:** 2026-06-15 10:18:16 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +2 / -0
+- **Patch:** `r009--2026-06-15_101816--kraken-xstocks-spot-v1.patch`
+
+## tests/test_dashboard_live.py — r003
+
+- **When:** 2026-06-15 10:18:16 PDT
+- **Reason:** kraken xstocks spot v1
+- **Request:** 057
+- **Diff:** +2 / -0
+- **Patch:** `r003--2026-06-15_101816--kraken-xstocks-spot-v1.patch`
+

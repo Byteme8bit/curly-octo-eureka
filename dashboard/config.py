@@ -42,10 +42,20 @@ class DashboardSettings:
     error_burst_count: int
     error_burst_minutes: float
     auto_pause_score: int
+    enable_equities: bool
+    equity_assets: frozenset[str]
 
 
 def load_settings() -> DashboardSettings:
+    from bot.equities import parse_equity_watchlist
+
     root = Path(os.getenv("DASHBOARD_BOT_ROOT", str(ROOT)))
+    enable_equities = os.getenv("ENABLE_EQUITIES", "0") == "1"
+    equity_assets = (
+        frozenset(parse_equity_watchlist(os.getenv("EQUITY_WATCHLIST", "AAPLx,TSLAx,SPYx")))
+        if enable_equities
+        else frozenset()
+    )
     log_dir = Path(os.getenv("DASHBOARD_LOG_DIR", str(root / "logs")))
     return DashboardSettings(
         root=root,
@@ -77,4 +87,6 @@ def load_settings() -> DashboardSettings:
         error_burst_count=int(os.getenv("WATCHDOG_ERROR_BURST_COUNT", "5")),
         error_burst_minutes=float(os.getenv("WATCHDOG_ERROR_BURST_MINUTES", "10")),
         auto_pause_score=int(os.getenv("WATCHDOG_AUTO_PAUSE_SCORE", "25")),
+        enable_equities=enable_equities,
+        equity_assets=equity_assets,
     )

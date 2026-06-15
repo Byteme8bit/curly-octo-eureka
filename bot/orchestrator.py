@@ -8,7 +8,7 @@ import pandas as pd
 
 from bot.strategies.base import Signal, Strategy, StrategyContext, StrategyResult, TradeIntent
 from bot.funding_priority import funding_rank
-from config import SYMBOL_ASSETS, Settings
+from config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ class StrategyOrchestrator(Strategy):
     def __init__(self, strategies: list[Strategy], settings: Settings):
         self.strategies = strategies
         self.preferred_start_assets = settings.preferred_start_assets
+        self.symbol_assets = settings.symbol_assets
 
     def evaluate(
         self,
@@ -61,7 +62,7 @@ class StrategyOrchestrator(Strategy):
 
             merged_signals.update(result.signals)
             for symbol, score in result.scores.items():
-                if symbol not in SYMBOL_ASSETS:
+                if symbol not in self.symbol_assets:
                     continue
                 merged_scores[symbol] = max(merged_scores.get(symbol, score), score)
             merged_reasons.update(result.reasons)

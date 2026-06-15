@@ -1,0 +1,57 @@
+--- a/bot/trade_log.py
++++ b/bot/trade_log.py
+@@ -12,9 +12,13 @@
+ from config import SYMBOL_ASSETS
+ 
+ 
+-def _usd_momentum_ranking(scores: dict[str, float]) -> list[tuple[str, float]]:
++def _usd_momentum_ranking(
++    scores: dict[str, float],
++    symbol_assets: dict[str, str] | None = None,
++) -> list[tuple[str, float]]:
+     """Rank momentum scores — only USD pair symbols (excludes stat-arb ratio keys)."""
+-    items = [(symbol, score) for symbol, score in scores.items() if symbol in SYMBOL_ASSETS]
++    catalog = symbol_assets if symbol_assets is not None else SYMBOL_ASSETS
++    items = [(symbol, score) for symbol, score in scores.items() if symbol in catalog]
+     return sorted(items, key=lambda item: item[1], reverse=True)
+ 
+ 
+@@ -164,9 +168,15 @@
+ class BotFileLogger:
+     """Human-readable logs in logs/, rotated every N hours (Pacific time)."""
+ 
+-    def __init__(self, log_dir: Path, rotate_hours: int = 4):
++    def __init__(
++        self,
++        log_dir: Path,
++        rotate_hours: int = 4,
++        symbol_assets: dict[str, str] | None = None,
++    ):
+         self.log_dir = log_dir
+         self.rotate_hours = rotate_hours
++        self.symbol_assets = symbol_assets or SYMBOL_ASSETS
+         self.log_dir.mkdir(parents=True, exist_ok=True)
+         self._window_start = None
+         self._window_end = None
+@@ -264,10 +274,10 @@
+         status: StatusSnapshot,
+         find_path_fn=None,
+     ) -> None:
+-        ranked = _usd_momentum_ranking(result.scores)
++        ranked = _usd_momentum_ranking(result.scores, self.symbol_assets)
+         if ranked:
+             leader_sym, leader_score = ranked[0]
+-            leader = SYMBOL_ASSETS[leader_sym]
++            leader = self.symbol_assets[leader_sym]
+         else:
+             leader, leader_score = "—", 0.0
+ 
+@@ -313,7 +323,7 @@
+             ]
+         )
+         for i, (symbol, score) in enumerate(ranked, 1):
+-            asset = SYMBOL_ASSETS[symbol]
++            asset = self.symbol_assets[symbol]
+             marker = " *" if asset in held else ""
+             lines.append(f"  {i:2}. {asset:6}  {score:+.4f}{marker}")
+ 

@@ -209,6 +209,26 @@
       "removed": 2,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:57 PDT"
+    },
+    {
+      "added": 6,
+      "number": 22,
+      "patch": "r022--2026-06-15_044423--expand-mirror-confidence-comments.patch",
+      "path": ".env.example",
+      "reason": "expand mirror confidence comments",
+      "removed": 2,
+      "request_id": "056",
+      "timestamp": "2026-06-15 04:44:23 PDT"
+    },
+    {
+      "added": 11,
+      "number": 23,
+      "patch": "r023--2026-06-15_101816--kraken-xstocks-spot-v1.patch",
+      "path": ".env.example",
+      "reason": "kraken xstocks spot v1",
+      "removed": 0,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:16 PDT"
     }
   ],
   ".gitignore": [
@@ -547,6 +567,16 @@
       "removed": 2,
       "request_id": "051",
       "timestamp": "2026-06-13 20:32:01 PDT"
+    },
+    {
+      "added": 92,
+      "number": 3,
+      "patch": "r003--2026-06-15_101813--kraken-xstocks-spot-v1.patch",
+      "path": "bot/data.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 27,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:13 PDT"
     }
   ],
   "bot/discord_bot.py": [
@@ -975,6 +1005,16 @@
       "removed": 27,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:56 PDT"
+    },
+    {
+      "added": 20,
+      "number": 34,
+      "patch": "r034--2026-06-15_101814--kraken-xstocks-spot-v1.patch",
+      "path": "bot/engine.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 4,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:14 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1043,6 +1083,16 @@
       "removed": 2,
       "request_id": null,
       "timestamp": "2026-06-14 03:53:21 PDT"
+    },
+    {
+      "added": 18,
+      "number": 3,
+      "patch": "r003--2026-06-15_101814--kraken-xstocks-spot-v1.patch",
+      "path": "bot/live_broker.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 3,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:14 PDT"
     }
   ],
   "bot/live_guards.py": [
@@ -1055,6 +1105,16 @@
       "removed": 0,
       "request_id": null,
       "timestamp": "2026-06-14 03:53:21 PDT"
+    },
+    {
+      "added": 12,
+      "number": 2,
+      "patch": "r002--2026-06-15_101814--kraken-xstocks-spot-v1.patch",
+      "path": "bot/live_guards.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 1,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:14 PDT"
     }
   ],
   "bot/markets.py": [
@@ -1067,6 +1127,16 @@
       "removed": 0,
       "request_id": "048",
       "timestamp": "2026-06-12 08:46:10 PDT"
+    },
+    {
+      "added": 9,
+      "number": 2,
+      "patch": "r002--2026-06-15_101814--kraken-xstocks-spot-v1.patch",
+      "path": "bot/markets.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 1,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:14 PDT"
     }
   ],
   "bot/orchestrator.py": [
@@ -1089,6 +1159,16 @@
       "removed": 3,
       "request_id": "051",
       "timestamp": "2026-06-13 21:30:40 PDT"
+    },
+    {
+      "added": 3,
+      "number": 3,
+      "patch": "r003--2026-06-15_101815--kraken-xstocks-spot-v1.patch",
+      "path": "bot/orchestrator.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 2,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:15 PDT"
     }
   ],
   "bot/paper_broker.py": [
@@ -1143,6 +1223,16 @@
       "removed": 4,
       "request_id": "051",
       "timestamp": "2026-06-13 20:27:21 PDT"
+    },
+    {
+      "added": 28,
+      "number": 3,
+      "patch": "r003--2026-06-15_101814--kraken-xstocks-spot-v1.patch",
+      "path": "bot/portfolio_constraints.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 10,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:14 PDT"
     }
   ],
   "bot/report.py": [
@@ -1283,6 +1373,18 @@
       "timestamp": "2026-06-10 00:21:02 PDT"
     }
   ],
+  "bot/strategies/cross_momentum.py": [
+    {
+      "added": 6,
+      "number": 1,
+      "patch": "r001--2026-06-15_101815--kraken-xstocks-spot-v1.patch",
+      "path": "bot/strategies/cross_momentum.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 4,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:15 PDT"
+    }
+  ],
   "bot/strategies/momentum_rotation.py": [
     {
       "added": 13,
@@ -1293,6 +1395,16 @@
       "removed": 1,
       "request_id": "051",
       "timestamp": "2026-06-13 21:30:41 PDT"
+    },
+    {
+      "added": 7,
+      "number": 2,
+      "patch": "r002--2026-06-15_101815--kraken-xstocks-spot-v1.patch",
+      "path": "bot/strategies/momentum_rotation.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 5,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:15 PDT"
     }
   ],
   "bot/strategies/registry.py": [
@@ -1341,6 +1453,16 @@
       "removed": 0,
       "request_id": "024",
       "timestamp": "2026-05-30 12:37:15 PDT"
+    },
+    {
+      "added": 16,
+      "number": 2,
+      "patch": "r002--2026-06-15_101815--kraken-xstocks-spot-v1.patch",
+      "path": "bot/trade_log.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 6,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:15 PDT"
     }
   ],
   "bot/verifier/__main__.py": [
@@ -1667,6 +1789,16 @@
       "removed": 0,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:56 PDT"
+    },
+    {
+      "added": 53,
+      "number": 22,
+      "patch": "r022--2026-06-15_101813--kraken-xstocks-spot-v1.patch",
+      "path": "config.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 2,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:13 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -1751,6 +1883,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-13 20:52:54 PDT"
+    },
+    {
+      "added": 12,
+      "number": 6,
+      "patch": "r006--2026-06-15_101815--kraken-xstocks-spot-v1.patch",
+      "path": "dashboard/config.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 0,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:15 PDT"
     }
   ],
   "dashboard/parsers/__init__.py": [
@@ -1903,6 +2045,16 @@
       "removed": 124,
       "request_id": "051",
       "timestamp": "2026-06-13 20:52:54 PDT"
+    },
+    {
+      "added": 16,
+      "number": 5,
+      "patch": "r005--2026-06-15_101815--kraken-xstocks-spot-v1.patch",
+      "path": "dashboard/parsers/tradebot.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 0,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:15 PDT"
     }
   ],
   "dashboard/parsers/whales.py": [
@@ -2273,6 +2425,16 @@
       "removed": 1,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:57 PDT"
+    },
+    {
+      "added": 4,
+      "number": 3,
+      "patch": "r003--2026-06-15_044423--document-uncertainok-mirror-tune.patch",
+      "path": "docs/live-trading.md",
+      "reason": "document uncertain_ok mirror tune",
+      "removed": 4,
+      "request_id": "056",
+      "timestamp": "2026-06-15 04:44:23 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
@@ -2557,6 +2719,16 @@
       "removed": 1,
       "request_id": "051",
       "timestamp": "2026-06-13 21:00:25 PDT"
+    },
+    {
+      "added": 2,
+      "number": 9,
+      "patch": "r009--2026-06-15_101816--kraken-xstocks-spot-v1.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 0,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:16 PDT"
     }
   ],
   "tests/test_dashboard_live.py": [
@@ -2579,6 +2751,16 @@
       "removed": 1,
       "request_id": "051",
       "timestamp": "2026-06-13 20:52:56 PDT"
+    },
+    {
+      "added": 2,
+      "number": 3,
+      "patch": "r003--2026-06-15_101816--kraken-xstocks-spot-v1.patch",
+      "path": "tests/test_dashboard_live.py",
+      "reason": "kraken xstocks spot v1",
+      "removed": 0,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:18:16 PDT"
     }
   ],
   "tests/test_discord_commands.py": [
