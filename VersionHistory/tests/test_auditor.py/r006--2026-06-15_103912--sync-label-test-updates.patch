@@ -1,0 +1,39 @@
+--- a/tests/test_auditor.py
++++ b/tests/test_auditor.py
+@@ -694,14 +694,15 @@
+         live_insights=live_insights,
+         goal_view=goal,
+     )
+-    assert "### Paper PnL (simulation)" in md
+-    assert "### Live Kraken PnL (real spot wallet)" in md
++    assert "### Live Kraken spot (real wallet)" in md
++    assert "### Paper simulation only — not your Kraken balance" in md
+     assert "$495.00" in md
+     assert "$1,644.00" in md
+     assert "## Portfolio goals" in md
+     assert "need $8,356 more" in md
+-    assert "statistical confidence" in md or "paper simulation pace" in md
+-    assert "Portfolio goals" in md or "## Portfolio goals" in md
++    assert "Paper strategy attribution (simulation — gross PnL)" in md
++    assert "Paper simulation forecast — not a live prediction" in md
++    assert "Gross PnL** sums to paper gross" in md
+ 
+ 
+ def test_render_discord_live_mode_separates_paper_and_live() -> None:
+@@ -737,11 +738,14 @@
+             },
+         ),
+     )
+-    assert "**Paper** (sim):" in summary
+     assert "**Live Kraken spot:**" in summary
++    assert "**Paper** (sim only — not Kraken):" in summary
+     assert "Next milestone:" in summary
+-    assert "Forecast (paper pace)" in summary
++    assert "Paper simulation forecast — not live" in summary
++    assert "Paper strategies (gross, non-additive)" in summary
+     assert "statistical confidence" in summary
++    # Live block should appear before paper block
++    assert summary.index("**Live Kraken spot:**") < summary.index("**Paper**")
+ 
+ 
+ def test_load_live_audit_snapshot_from_state_file(tmp_path: Path) -> None:

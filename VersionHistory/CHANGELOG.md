@@ -2323,3 +2323,67 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +2 / -0
 - **Patch:** `r003--2026-06-15_101816--kraken-xstocks-spot-v1.patch`
 
+## bot/data.py — r004
+
+- **When:** 2026-06-15 10:38:53 PDT
+- **Reason:** load crypto markets before equities
+- **Request:** 057
+- **Diff:** +2 / -0
+- **Patch:** `r004--2026-06-15_103853--load-crypto-markets-before-equities.patch`
+
+## bot/auditor/report.py — r003
+
+- **When:** 2026-06-15 10:39:11 PDT
+- **Reason:** live-first labels gross strategy
+- **Request:** 058
+- **Diff:** +93 / -40
+- **Patch:** `r003--2026-06-15_103911--live-first-labels-gross-strategy.patch`
+
+## config.py — r023
+
+- **When:** 2026-06-15 10:39:11 PDT
+- **Reason:** profit-only yolo settings
+- **Request:** 058
+- **Diff:** +15 / -4
+- **Patch:** `r023--2026-06-15_103911--profit-only-yolo-settings.patch`
+
+## bot/risk.py — r006
+
+- **When:** 2026-06-15 10:39:11 PDT
+- **Reason:** profit-only net floor
+- **Request:** 058
+- **Diff:** +18 / -5
+- **Patch:** `r006--2026-06-15_103911--profit-only-net-floor.patch`
+
+## bot/engine.py — r035
+
+- **When:** 2026-06-15 10:39:11 PDT
+- **Reason:** profit-only gate mirror probe
+- **Request:** 058
+- **Diff:** +36 / -2
+- **Patch:** `r035--2026-06-15_103911--profit-only-gate-mirror-probe.patch`
+
+## dashboard/service.py — r007
+
+- **When:** 2026-06-15 10:39:12 PDT
+- **Reason:** mirror dual summary strip
+- **Request:** 058
+- **Diff:** +17 / -0
+- **Patch:** `r007--2026-06-15_103912--mirror-dual-summary-strip.patch`
+
+## tests/test_auditor.py — r006
+
+- **When:** 2026-06-15 10:39:12 PDT
+- **Reason:** sync label test updates
+- **Request:** 058
+- **Diff:** +10 / -6
+- **Patch:** `r006--2026-06-15_103912--sync-label-test-updates.patch`
+
+## .env.example — r024
+
+- **When:** 2026-06-15 10:39:12 PDT
+- **Reason:** document profit-only flags
+- **Request:** 058
+- **Diff:** +4 / -0
+- **Patch:** `r024--2026-06-15_103912--document-profit-only-flags.patch`
+

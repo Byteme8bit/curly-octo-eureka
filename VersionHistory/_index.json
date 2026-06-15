@@ -229,6 +229,16 @@
       "removed": 0,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:16 PDT"
+    },
+    {
+      "added": 4,
+      "number": 24,
+      "patch": "r024--2026-06-15_103912--document-profit-only-flags.patch",
+      "path": ".env.example",
+      "reason": "document profit-only flags",
+      "removed": 0,
+      "request_id": "058",
+      "timestamp": "2026-06-15 10:39:12 PDT"
     }
   ],
   ".gitignore": [
@@ -451,6 +461,16 @@
       "removed": 38,
       "request_id": "054",
       "timestamp": "2026-06-14 13:08:15 PDT"
+    },
+    {
+      "added": 93,
+      "number": 3,
+      "patch": "r003--2026-06-15_103911--live-first-labels-gross-strategy.patch",
+      "path": "bot/auditor/report.py",
+      "reason": "live-first labels gross strategy",
+      "removed": 40,
+      "request_id": "058",
+      "timestamp": "2026-06-15 10:39:11 PDT"
     }
   ],
   "bot/auditor/state.py": [
@@ -577,6 +597,16 @@
       "removed": 27,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:13 PDT"
+    },
+    {
+      "added": 2,
+      "number": 4,
+      "patch": "r004--2026-06-15_103853--load-crypto-markets-before-equities.patch",
+      "path": "bot/data.py",
+      "reason": "load crypto markets before equities",
+      "removed": 0,
+      "request_id": "057",
+      "timestamp": "2026-06-15 10:38:53 PDT"
     }
   ],
   "bot/discord_bot.py": [
@@ -1015,6 +1045,16 @@
       "removed": 4,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:14 PDT"
+    },
+    {
+      "added": 36,
+      "number": 35,
+      "patch": "r035--2026-06-15_103911--profit-only-gate-mirror-probe.patch",
+      "path": "bot/engine.py",
+      "reason": "profit-only gate mirror probe",
+      "removed": 2,
+      "request_id": "058",
+      "timestamp": "2026-06-15 10:39:11 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1337,6 +1377,16 @@
       "removed": 2,
       "request_id": "052",
       "timestamp": "2026-06-14 04:14:19 PDT"
+    },
+    {
+      "added": 18,
+      "number": 6,
+      "patch": "r006--2026-06-15_103911--profit-only-net-floor.patch",
+      "path": "bot/risk.py",
+      "reason": "profit-only net floor",
+      "removed": 5,
+      "request_id": "058",
+      "timestamp": "2026-06-15 10:39:11 PDT"
     }
   ],
   "bot/singleton.py": [
@@ -1799,6 +1849,16 @@
       "removed": 2,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:13 PDT"
+    },
+    {
+      "added": 15,
+      "number": 23,
+      "patch": "r023--2026-06-15_103911--profit-only-yolo-settings.patch",
+      "path": "config.py",
+      "reason": "profit-only yolo settings",
+      "removed": 4,
+      "request_id": "058",
+      "timestamp": "2026-06-15 10:39:11 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -2129,6 +2189,16 @@
       "removed": 10,
       "request_id": "051",
       "timestamp": "2026-06-13 20:52:55 PDT"
+    },
+    {
+      "added": 17,
+      "number": 7,
+      "patch": "r007--2026-06-15_103912--mirror-dual-summary-strip.patch",
+      "path": "dashboard/service.py",
+      "reason": "mirror dual summary strip",
+      "removed": 0,
+      "request_id": "058",
+      "timestamp": "2026-06-15 10:39:12 PDT"
     }
   ],
   "dashboard/static/app.js": [
@@ -2605,6 +2675,16 @@
       "removed": 2,
       "request_id": "054",
       "timestamp": "2026-06-14 13:08:15 PDT"
+    },
+    {
+      "added": 10,
+      "number": 6,
+      "patch": "r006--2026-06-15_103912--sync-label-test-updates.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "sync label test updates",
+      "removed": 6,
+      "request_id": "058",
+      "timestamp": "2026-06-15 10:39:12 PDT"
     }
   ],
   "tests/test_auditor_chat.py": [

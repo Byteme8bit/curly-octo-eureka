@@ -1,0 +1,59 @@
+--- a/config.py
++++ b/config.py
+@@ -220,6 +220,8 @@
+     live_mirror_min_confidence: str
+     live_mirror_uncertain: bool
+     live_mirror_skip_log_file: Path
++    profit_only_mode: bool
++    yolo_profitable: bool
+     prop_enabled: bool
+     enable_equities: bool
+     equity_watchlist: tuple[str, ...]
+@@ -396,9 +398,16 @@
+     # env var still overrides. Edges remain fee-protected by preflight, so
+     # "aggressive" means more/larger trades, not unprofitable ones.
+     day_trader = os.getenv("DAY_TRADER_MODE", "0") == "1"
++    profit_only_mode = os.getenv("PROFIT_ONLY_MODE", "0") == "1"
++    yolo_profitable = os.getenv("YOLO_PROFITABLE", "0") == "1"
+ 
+     def _dt(aggressive: str, normal: str) -> str:
+         return aggressive if day_trader else normal
++
++    def _yolo(aggressive: str, normal: str) -> str:
++        if yolo_profitable and profit_only_mode:
++            return aggressive
++        return normal
+ 
+     fields: dict = dict(
+         watch_assets=watch_assets,
+@@ -418,7 +427,7 @@
+         ema_fast=int(os.getenv("EMA_FAST", "9")),
+         ema_slow=int(os.getenv("EMA_SLOW", "21")),
+         momentum_sell=float(os.getenv("MOMENTUM_SELL", "-0.002")),
+-        trade_size_pct=float(os.getenv("TRADE_SIZE_PCT", _dt("0.20", "0.10"))),
++        trade_size_pct=float(os.getenv("TRADE_SIZE_PCT", _yolo("0.15", _dt("0.20", "0.10")))),
+         expansion_size_pct=float(os.getenv("EXPANSION_SIZE_PCT", "0.15")),
+         min_usd_trade=float(os.getenv("MIN_USD_TRADE", "10.0")),
+         diversify_bonus=float(os.getenv("DIVERSIFY_BONUS", "0.0015")),
+@@ -427,9 +436,9 @@
+             os.getenv("DRAWDOWN_HIBERNATE_PCT") or os.getenv("DRAWDOWN_PAUSE_PCT", "0.15")
+         ),
+         hibernate_hours=float(os.getenv("HIBERNATE_HOURS") or os.getenv("PAUSE_HOURS", "12")),
+-        trade_cooldown_seconds=int(os.getenv("TRADE_COOLDOWN_SECONDS", _dt("45", "180"))),
+-        max_trades_per_hour=int(os.getenv("MAX_TRADES_PER_HOUR", _dt("40", "12"))),
+-        min_trade_edge=float(os.getenv("MIN_TRADE_EDGE", _dt("0.004", "0.006"))),
++        trade_cooldown_seconds=int(os.getenv("TRADE_COOLDOWN_SECONDS", _yolo("30", _dt("45", "180")))),
++        max_trades_per_hour=int(os.getenv("MAX_TRADES_PER_HOUR", _yolo("30", _dt("40", "12")))),
++        min_trade_edge=float(os.getenv("MIN_TRADE_EDGE", _yolo("0.002", _dt("0.004", "0.006")))),
+         leader_stable_seconds=int(os.getenv("LEADER_STABLE_SECONDS", _dt("120", "600"))),
+         fee_safety_multiplier=float(os.getenv("FEE_SAFETY_MULTIPLIER", "2.0")),
+         reset_paper_state=os.getenv("RESET_PAPER_STATE", "0") == "1",
+@@ -658,6 +667,8 @@
+         live_mirror_skip_log_file=ROOT / os.getenv(
+             "LIVE_MIRROR_SKIP_LOG_FILE", "logs/live_mirror_skips.log"
+         ),
++        profit_only_mode=profit_only_mode,
++        yolo_profitable=yolo_profitable,
+         prop_enabled=os.getenv("PROP_ENABLED", "0") == "1",
+         enable_equities=enable_equities,
+         equity_watchlist=equity_watchlist,

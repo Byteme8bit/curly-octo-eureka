@@ -82,6 +82,22 @@ def build_overview(settings: DashboardSettings | None = None, *, mode: str = "pa
         limit=25,
     )
     guard = tradebot.get("live_guardrails") or {}
+    dual_summary = None
+    if cfg.live_mirror_paper and cfg.live_enabled:
+        paper_tb = build_tradebot_view(cfg, mode="paper")
+        live_tb = build_tradebot_view(cfg, mode="live")
+        paper_wd = build_watchdog_view(
+            cfg,
+            drawdown_pct=float((paper_tb.get("portfolio") or {}).get("drawdown_pct", 0.0)),
+        )
+        live_wd = build_watchdog_view(
+            cfg,
+            drawdown_pct=float((live_tb.get("portfolio") or {}).get("drawdown_pct", 0.0)),
+        )
+        dual_summary = {
+            "paper": _build_summary_strip(paper_tb, paper_wd, mode="paper"),
+            "live": _build_summary_strip(live_tb, live_wd, mode="live"),
+        }
     return {
         "mode": dashboard_mode,
         "mirror_mode": cfg.live_mirror_paper and cfg.live_enabled,
@@ -97,5 +113,6 @@ def build_overview(settings: DashboardSettings | None = None, *, mode: str = "pa
         "forecasts": forecasts,
         "timeline": timeline,
         "live_guardrails": guard if dashboard_mode == "live" else None,
+        "dual_summary": dual_summary,
         "backlog": _backlog_snippet(cfg.backlog_file),
     }

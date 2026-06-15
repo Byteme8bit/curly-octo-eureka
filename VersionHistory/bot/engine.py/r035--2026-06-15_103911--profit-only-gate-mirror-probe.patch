@@ -1,0 +1,77 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -226,6 +226,8 @@
+                 and not self._mirror_mode
+             ),
+ 
++            profit_only_mode=settings.profit_only_mode,
++
+         )
+ 
+         self.fee_engine = FeeEngine(
+@@ -921,6 +923,14 @@
+         )
+         if not pf.allowed:
+             return None, pf.reason
++        if (
++            self.settings.profit_only_mode
++            and not intent.is_defensive
++            and pf.net_return_pct <= 0.0
++        ):
++            return None, (
++                f"Profit-only mode: expected net {pf.net_return_pct:+.4f} <= 0 after fees"
++            )
+         intent.edge = pf.net_return_pct
+         approval = self.risk.approve_action(
+             "buy" if intent.to_asset != "USD" else "sell",
+@@ -1484,9 +1494,21 @@
+             is_defensive=intent.is_defensive,
+             min_net_profit=self.risk.effective_min_net_profit(),
+         )
+-        if not pf.allowed and not confirm_bypass:
++        allow_mirror_despite_pf = confirm_bypass and not self.settings.profit_only_mode
++        if not pf.allowed and not allow_mirror_despite_pf:
+             self._log_live_mirror_skip(
+                 paper_trade, pf.reason, verify_result=verify_result
++            )
++            return None
++        if (
++            self.settings.profit_only_mode
++            and not intent.is_defensive
++            and pf.net_return_pct <= 0.0
++        ):
++            self._log_live_mirror_skip(
++                paper_trade,
++                f"Profit-only mode: expected net {pf.net_return_pct:+.4f} <= 0 after fees",
++                verify_result=verify_result,
+             )
+             return None
+         mirror_size = min(constraint.size_pct, paper_size_pct)
+@@ -1682,7 +1704,11 @@
+             route_symbols=probe_route.symbols,
+             hops=probe_route.hops,
+             is_defensive=False,
+-            min_net_profit=0.0,
++            min_net_profit=(
++                self.risk.effective_min_net_profit()
++                if self.settings.profit_only_mode
++                else 0.0
++            ),
+         )
+         if not probe_pf.allowed:
+             logger.info("Forced probe skipped — would not clear fees: %s", probe_pf.reason)
+@@ -3095,6 +3121,14 @@
+ 
+         self._seed_portfolio_snapshot()
+ 
++        if self.settings.profit_only_mode:
++            yolo = " + YOLO profitable" if self.settings.yolo_profitable else ""
++            logger.info(
++                "PROFIT_ONLY_MODE active%s — offensive trades require net > 0 after fees; "
++                "defensive exits still allowed",
++                yolo,
++            )
++
+         startup_balances, portfolio_summary = self._startup_portfolio_view()
+ 
+         self.display.startup(
