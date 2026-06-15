@@ -12,7 +12,7 @@ from bot.funding_priority import funding_rank
 
 from bot.strategies.base import Signal, Strategy, StrategyResult, TradeIntent, RotationOption
 
-from config import ASSET_USD_SYMBOLS, SYMBOL_ASSETS, Settings
+from config import Settings
 
 
 
@@ -107,6 +107,8 @@ class MomentumRotationStrategy(Strategy):
         self.preferred_start_assets = settings.preferred_start_assets
 
         self.dust_usd = settings.dust_usd
+        self.symbol_assets = settings.symbol_assets
+        self.asset_usd_symbols = settings.asset_usd_symbols
 
 
 
@@ -138,7 +140,7 @@ class MomentumRotationStrategy(Strategy):
 
     def _asset_score(self, asset: str, scores: dict[str, float]) -> float:
 
-        symbol = ASSET_USD_SYMBOLS.get(asset)
+        symbol = self.asset_usd_symbols.get(asset)
 
         return scores.get(symbol, 0.0) if symbol else 0.0
 
@@ -198,7 +200,7 @@ class MomentumRotationStrategy(Strategy):
 
         ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
 
-        return [SYMBOL_ASSETS[sym] for sym, _ in ranked]
+        return [self.symbol_assets[sym] for sym, _ in ranked]
 
 
 
@@ -696,7 +698,7 @@ class MomentumRotationStrategy(Strategy):
 
         leader_symbol, leader_score = ranked[0]
 
-        leader_asset = SYMBOL_ASSETS[leader_symbol]
+        leader_asset = self.symbol_assets[leader_symbol]
 
         ranked_assets = self._ranked_assets(scores)
 
@@ -758,7 +760,7 @@ class MomentumRotationStrategy(Strategy):
 
             )
 
-            sym = ASSET_USD_SYMBOLS[asset]
+            sym = self.asset_usd_symbols[asset]
 
             signals[sym] = Signal.SELL
 

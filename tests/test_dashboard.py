@@ -49,6 +49,8 @@ def _settings(root: Path) -> DashboardSettings:
         error_burst_count=5,
         error_burst_minutes=10.0,
         auto_pause_score=25,
+        enable_equities=False,
+        equity_assets=frozenset(),
     )
 
 

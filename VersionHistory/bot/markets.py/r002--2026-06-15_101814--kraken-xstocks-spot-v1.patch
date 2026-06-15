@@ -1,0 +1,27 @@
+--- a/bot/markets.py
++++ b/bot/markets.py
+@@ -48,8 +48,14 @@
+ class MarketRegistry:
+     """Kraken market pairs for USD and crypto-to-crypto routes."""
+ 
+-    def __init__(self, exchange: ccxt.kraken, watch_assets: tuple[str, ...]):
++    def __init__(
++        self,
++        exchange: ccxt.kraken,
++        watch_assets: tuple[str, ...],
++        equity_assets: frozenset[str] | None = None,
++    ):
+         self.watch_assets = watch_assets
++        self.equity_assets = equity_assets or frozenset()
+         self.pairs: dict[str, PairInfo] = {}
+         self.usd_by_asset: dict[str, str] = {}
+         self._load(exchange)
+@@ -65,6 +71,8 @@
+                 self.pairs[symbol] = PairInfo(symbol=symbol, base=asset, quote="USD")
+ 
+         for base in asset_set:
++            if base in self.equity_assets:
++                continue
+             for quote in asset_set | {"USD"}:
+                 if base == quote:
+                     continue

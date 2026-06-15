@@ -1,0 +1,92 @@
+--- a/config.py
++++ b/config.py
+@@ -41,6 +41,8 @@
+ DEFAULT_SAFE_ASSETS = "USD,ETH,BTC"
+ DEFAULT_STAT_ARB_PAIRS = "ETH/BTC,SOL/ETH,LINK/ETH,AVAX/ETH"
+ DEFAULT_MOMENTUM_TIMEFRAMES = "15m,1h"
++DEFAULT_EQUITY_WATCHLIST = "AAPLx,TSLAx,SPYx"
++DEFAULT_MAX_EQUITY_ALLOCATION_PCT = "0.15"
+ 
+ 
+ @dataclass(frozen=True)
+@@ -219,6 +221,13 @@
+     live_mirror_uncertain: bool
+     live_mirror_skip_log_file: Path
+     prop_enabled: bool
++    enable_equities: bool
++    equity_watchlist: tuple[str, ...]
++    equity_assets: frozenset[str]
++    equity_usd_symbols: tuple[str, ...]
++    symbol_assets: dict[str, str]
++    asset_usd_symbols: dict[str, str]
++    max_equity_allocation_pct: float
+ 
+ 
+ def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
+@@ -227,6 +236,25 @@
+         if symbol not in SYMBOL_ASSETS:
+             raise ValueError(f"Unsupported symbol: {symbol}")
+     return symbols
++
++
++def _parse_equity_watchlist(raw: str) -> tuple[str, ...]:
++    from bot.equities import parse_equity_watchlist
++
++    return parse_equity_watchlist(raw or DEFAULT_EQUITY_WATCHLIST)
++
++
++def _build_trading_symbol_maps(
++    crypto_usd_symbols: tuple[str, ...],
++    equity_usd_symbols: tuple[str, ...],
++) -> tuple[dict[str, str], dict[str, str]]:
++    symbol_assets: dict[str, str] = {}
++    for symbol in crypto_usd_symbols:
++        symbol_assets[symbol] = SYMBOL_ASSETS[symbol]
++    for symbol in equity_usd_symbols:
++        symbol_assets[symbol] = symbol.split("/", 1)[0]
++    asset_usd = {asset: sym for sym, asset in symbol_assets.items()}
++    return symbol_assets, asset_usd
+ 
+ 
+ def _parse_core_assets(raw: str) -> tuple[str, ...]:
+@@ -346,8 +374,22 @@
+ 
+ 
+ def load_settings() -> Settings:
+-    usd_symbols = _parse_usd_symbols(os.getenv("SYMBOLS", DEFAULT_SYMBOLS))
+-    watch_assets = tuple(SYMBOL_ASSETS[s] for s in usd_symbols)
++    enable_equities = os.getenv("ENABLE_EQUITIES", "0") == "1"
++    equity_watchlist = _parse_equity_watchlist(
++        os.getenv("EQUITY_WATCHLIST", DEFAULT_EQUITY_WATCHLIST)
++    )
++    crypto_usd_symbols = _parse_usd_symbols(os.getenv("SYMBOLS", DEFAULT_SYMBOLS))
++    equity_usd_symbols: tuple[str, ...] = ()
++    if enable_equities:
++        from bot.equities import resolve_watchlist_pairs
++
++        equity_usd_symbols = resolve_watchlist_pairs(equity_watchlist)
++    usd_symbols = crypto_usd_symbols + equity_usd_symbols
++    symbol_assets, asset_usd_symbols = _build_trading_symbol_maps(
++        crypto_usd_symbols, equity_usd_symbols
++    )
++    watch_assets = tuple(symbol_assets[s] for s in usd_symbols)
++    equity_assets = frozenset(equity_watchlist) if enable_equities else frozenset()
+     discord_quiet_mode = os.getenv("DISCORD_QUIET_MODE", "0") == "1"
+     # "Day-trader mode" — opt-in aggressive profile (DAY_TRADER_MODE=1). It only
+     # changes the *defaults* for the cadence/sizing knobs below; any explicit
+@@ -617,6 +659,15 @@
+             "LIVE_MIRROR_SKIP_LOG_FILE", "logs/live_mirror_skips.log"
+         ),
+         prop_enabled=os.getenv("PROP_ENABLED", "0") == "1",
++        enable_equities=enable_equities,
++        equity_watchlist=equity_watchlist,
++        equity_assets=equity_assets,
++        equity_usd_symbols=equity_usd_symbols,
++        symbol_assets=symbol_assets,
++        asset_usd_symbols=asset_usd_symbols,
++        max_equity_allocation_pct=float(
++            os.getenv("MAX_EQUITY_ALLOCATION_PCT", DEFAULT_MAX_EQUITY_ALLOCATION_PCT)
++        ),
+     )
+     _apply_runtime_overrides(fields)
+     if fields["live_enabled"] and not fields["live_mirror_paper"]:

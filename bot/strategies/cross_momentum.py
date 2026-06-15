@@ -9,7 +9,7 @@ import pandas as pd
 
 from bot.strategies.base import Signal, Strategy, StrategyContext, StrategyResult, TradeIntent, RotationOption
 from bot.strategies.momentum_rotation import MomentumRotationStrategy
-from config import ASSET_USD_SYMBOLS, SYMBOL_ASSETS, Settings
+from config import Settings
 
 if TYPE_CHECKING:
     from bot.markets import MarketRegistry
@@ -29,6 +29,8 @@ class CrossMomentumStrategy(Strategy):
     def __init__(self, settings: Settings):
         self.settings = settings
         self.usd_symbols = settings.usd_symbols
+        self.symbol_assets = settings.symbol_assets
+        self.asset_usd_symbols = settings.asset_usd_symbols
         self.ema_fast = settings.ema_fast
         self.ema_slow = settings.ema_slow
         self.trade_size_pct = settings.trade_size_pct
@@ -61,7 +63,7 @@ class CrossMomentumStrategy(Strategy):
         context: StrategyContext | None,
         fallback_candles: dict[str, pd.DataFrame],
     ) -> float:
-        symbol = ASSET_USD_SYMBOLS.get(asset)
+        symbol = self.asset_usd_symbols.get(asset)
         if not symbol:
             return 0.0
 
@@ -106,9 +108,9 @@ class CrossMomentumStrategy(Strategy):
         )
 
         enhanced_scores = {
-            symbol: self._multi_tf_score(SYMBOL_ASSETS[symbol], context, candles)
+            symbol: self._multi_tf_score(self.symbol_assets[symbol], context, candles)
             for symbol in self.usd_symbols
-            if symbol in SYMBOL_ASSETS
+            if symbol in self.symbol_assets
         }
         if any(v != 0 for v in enhanced_scores.values()):
             base.scores = enhanced_scores

@@ -159,6 +159,20 @@ def _load_window_logs(log_dir: Path, *, max_files: int = 2) -> str:
     return "\n".join(chunks)
 
 
+def _equity_holdings(
+    portfolio: dict | None,
+    equity_assets: frozenset[str],
+) -> list[dict]:
+    if not portfolio or not equity_assets:
+        return []
+    rows: list[dict] = []
+    for row in portfolio.get("holdings") or []:
+        asset = row.get("asset", "")
+        if asset in equity_assets and float(row.get("qty") or 0) > 0:
+            rows.append({**row, "asset_class": "equity"})
+    return rows
+
+
 def _build_paper_portfolio(settings: DashboardSettings) -> dict | None:
     portfolio_log = PaperPortfolioLog(settings.paper_portfolio_file)
     snap = portfolio_log.load()
@@ -227,6 +241,7 @@ def _build_paper_tradebot_view(settings: DashboardSettings) -> dict:
     return {
         "mode": "paper",
         "portfolio": portfolio,
+        "equity_holdings": _equity_holdings(portfolio, settings.equity_assets),
         "live_portfolio": None,
         "live_guardrails": None,
         "latest_tick": latest,
@@ -285,6 +300,7 @@ def _build_live_tradebot_view(settings: DashboardSettings) -> dict:
     return {
         "mode": "live",
         "portfolio": portfolio,
+        "equity_holdings": _equity_holdings(portfolio, settings.equity_assets),
         "live_portfolio": live,
         "live_guardrails": live.get("live_guardrails") if live else None,
         "latest_tick": latest,

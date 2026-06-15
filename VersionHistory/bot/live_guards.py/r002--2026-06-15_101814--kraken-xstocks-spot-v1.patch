@@ -1,0 +1,26 @@
+--- a/bot/live_guards.py
++++ b/bot/live_guards.py
+@@ -6,11 +6,22 @@
+ 
+ LIVE_CONFIRM_PHRASE = "I_ACCEPT_REAL_MONEY"
+ 
+-# Balances synced from Kraken when live is armed.
++# Balances synced from Kraken when live is armed (crypto defaults).
+ LIVE_SYNC_ASSETS = frozenset({"ETH", "ADA", "USD", "BTC"})
+ 
+ # BTC may appear only as a bridge leg between allowed assets.
+ LIVE_BRIDGE_ASSETS = frozenset({"BTC"})
++
++
++def build_live_sync_assets(
++    allowed_assets: tuple[str, ...],
++    equity_assets: frozenset[str] | None = None,
++) -> frozenset[str]:
++    """Assets to refresh from Kraken balances during live execution."""
++    sync = set(LIVE_SYNC_ASSETS) | set(allowed_assets)
++    if equity_assets:
++        sync.update(a for a in allowed_assets if a in equity_assets)
++    return frozenset(sync)
+ 
+ 
+ def parse_allowed_assets(raw: str) -> tuple[str, ...]:

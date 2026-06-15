@@ -1,0 +1,20 @@
+--- a/.env.example
++++ b/.env.example
+@@ -307,6 +307,17 @@
+ # PROP_ENABLED=0
+ 
+ # ---------------------------------------------------------------------------
++# Kraken xStocks (tokenized equities/ETFs) — paper spot v1 (default OFF)
++# Uses Kraken REST asset_class=tokenized_asset (not in ccxt default markets).
++# See docs/kraken-equities-futures.md for live allowlist and futures roadmap.
++# ---------------------------------------------------------------------------
++ENABLE_EQUITIES=0
++# EQUITY_WATCHLIST=AAPLx,TSLAx,SPYx
++# Max portfolio share for any single equity/ETF (separate from MAX_ALT_ALLOCATION_PCT)
++# MAX_EQUITY_ALLOCATION_PCT=0.15
++# Live: add approved tickers to LIVE_ALLOWED_ASSETS (e.g. ETH,ADA,AAPLx) — never auto-enabled
++
++# ---------------------------------------------------------------------------
+ # Whale watch — alert-only monitoring of large Kraken trades + volume spikes.
+ # No extra API keys; uses public Kraken market data the bot already reaches.
+ # Persists to .whale_watch_state.json for the dashboard. Does NOT auto-trade.
