@@ -98,6 +98,7 @@ def mirror_engine(tmp_path: Path) -> TradingEngine:
         live_mirror_uncertain=False,
         live_mirror_skip_log_file=tmp_path / "mirror_skips.log",
         trade_verify_skip_kraken=True,
+        profit_only_mode=False,
     )
     engine.markets = MagicMock()
     engine.preflight = MagicMock()
