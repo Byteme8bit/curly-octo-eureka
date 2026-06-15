@@ -80,6 +80,8 @@ class RiskManager:
 
         adaptive_enabled: bool = True,
 
+        profit_only_mode: bool = False,
+
     ):
 
         self.state = risk_state
@@ -87,6 +89,8 @@ class RiskManager:
         self.fee_rate = fee_rate
 
         self.adaptive_enabled = adaptive_enabled
+
+        self.profit_only_mode = profit_only_mode
 
         self.drawdown_hibernate_pct = drawdown_hibernate_pct
 
@@ -294,11 +298,21 @@ class RiskManager:
 
         floor = 0.0001
 
-        return relaxed_threshold(
+        if self.profit_only_mode:
+
+            floor = max(floor, 0.0)
+
+        result = relaxed_threshold(
 
             self.min_net_profit_pct, floor, self.adaptive_status().relax_factor
 
         )
+
+        if self.profit_only_mode:
+
+            return max(result, 0.0)
+
+        return result
 
 
 

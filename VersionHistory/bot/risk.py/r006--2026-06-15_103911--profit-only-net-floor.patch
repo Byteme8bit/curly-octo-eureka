@@ -1,0 +1,51 @@
+--- a/bot/risk.py
++++ b/bot/risk.py
+@@ -80,6 +80,8 @@
+ 
+         adaptive_enabled: bool = True,
+ 
++        profit_only_mode: bool = False,
++
+     ):
+ 
+         self.state = risk_state
+@@ -87,6 +89,8 @@
+         self.fee_rate = fee_rate
+ 
+         self.adaptive_enabled = adaptive_enabled
++
++        self.profit_only_mode = profit_only_mode
+ 
+         self.drawdown_hibernate_pct = drawdown_hibernate_pct
+ 
+@@ -291,16 +295,25 @@
+ 
+ 
+     def effective_min_net_profit(self) -> float:
+-        # Honour negative MIN_NET_PROFIT_PCT (action-hour bleed) instead of
+-        # clamping adaptive relaxation back to a positive floor.
+-        floor = self.min_net_profit_pct if self.min_net_profit_pct < 0 else 0.0001
+-
+-        return relaxed_threshold(
++
++        floor = 0.0001
++
++        if self.profit_only_mode:
++
++            floor = max(floor, 0.0)
++
++        result = relaxed_threshold(
+ 
+             self.min_net_profit_pct, floor, self.adaptive_status().relax_factor
+ 
+         )
+ 
++        if self.profit_only_mode:
++
++            return max(result, 0.0)
++
++        return result
++
+ 
+ 
+     def effective_stat_arb_zscore(self) -> float:
