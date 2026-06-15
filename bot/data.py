@@ -63,6 +63,8 @@ class KrakenData:
         from bot.equities import fetch_tokenized_pairs
 
         try:
+            # Crypto ccxt markets must load first; inject_equity_markets only merges xStocks.
+            self.exchange.load_markets()
             pairs = fetch_tokenized_pairs()
             inject_equity_markets(
                 self.exchange, pairs, tuple(self._equity_symbols)
