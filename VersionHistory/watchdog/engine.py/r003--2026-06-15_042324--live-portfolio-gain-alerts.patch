@@ -1,0 +1,222 @@
+--- a/watchdog/engine.py
++++ b/watchdog/engine.py
+@@ -18,8 +18,9 @@
+ 
+ 
+ 
++from bot.live_portfolio import load_live_portfolio_snapshot
+ from bot.local_time import format_pacific
+-
++from bot.report import pnl_milestone_band
+ from watchdog.alerter import DiscordAlerter
+ 
+ from watchdog.config import WatchdogSettings
+@@ -35,8 +36,6 @@
+     parse_receipt,
+ 
+     parse_runtime_errors,
+-
+-    pnl_milestone_band,
+ 
+     extract_action_context,
+ 
+@@ -397,63 +396,108 @@
+ 
+                 self._last_drawdown = snap.drawdown_pct
+ 
+-                alerts.extend(self._portfolio_alerts(snap))
++                if not self.settings.live_enabled:
++                    alerts.extend(self._portfolio_alerts(snap))
+ 
+         return alerts
+ 
+ 
+ 
+     def _portfolio_alerts(self, snap) -> list[tuple[str, bool]]:
+-
++        return self._portfolio_alerts_for(
++            portfolio=snap.portfolio,
++            pnl=snap.pnl,
++            drawdown_pct=snap.drawdown_pct,
++            baseline=self.state.last_baseline or snap.portfolio - snap.pnl,
++            source="paper",
++        )
++
++    def _portfolio_alerts_for(
++        self,
++        *,
++        portfolio: float,
++        pnl: float,
++        drawdown_pct: float,
++        baseline: float,
++        source: str,
++    ) -> list[tuple[str, bool]]:
+         alerts: list[tuple[str, bool]] = []
+ 
+-        baseline = self.state.last_baseline or snap.portfolio - snap.pnl
+-
+-        if baseline > 0:
+-
++        if baseline > 0 and source == "live":
+             self.state.last_baseline = baseline
+ 
+-
+-
+-        band = pnl_milestone_band(snap.pnl, baseline, self.settings.pnl_pct_threshold)
+-
+-        if band != 0 and band != self.state.last_pnl_band:
+-
+-            self.state.last_pnl_band = band
+-
+-            pct = (snap.pnl / baseline * 100) if baseline > 0 else 0.0
+-
+-            direction = "gain" if band > 0 else "loss"
+-
+-            alerts.append((
+-                f"**Watchdog — major portfolio {direction}**\n"
+-                f"Portfolio ${snap.portfolio:,.2f}  |  PnL {snap.pnl:+.2f} ({pct:+.1f}%)\n"
+-                f"Crossed {abs(band) * self.settings.pnl_pct_threshold:.0%} milestone threshold",
+-                True,
+-            ))
+-
+-
+-
+-        if snap.drawdown_pct >= self.settings.drawdown_warn_pct:
+-
+-            if snap.drawdown_pct > self.state.last_drawdown_warn + 0.01:
+-
+-                self.state.last_drawdown_warn = snap.drawdown_pct
+-
++        threshold = self.settings.pnl_pct_threshold
++        band = pnl_milestone_band(pnl, baseline, threshold)
++        last_band = (
++            self.state.last_live_pnl_band if source == "live" else self.state.last_pnl_band
++        )
++        if band != 0 and band != last_band:
++            cooldown_sec = self.settings.milestone_cooldown_minutes * 60
++            now = time.time()
++            if now - self.state.last_milestone_alert_at >= cooldown_sec:
++                if source == "live":
++                    self.state.last_live_pnl_band = band
++                else:
++                    self.state.last_pnl_band = band
++                self.state.last_milestone_alert_at = now
++                pct = (pnl / baseline * 100) if baseline > 0 else 0.0
++                direction = "gain" if band > 0 else "loss"
++                if source == "live":
++                    portfolio_line = (
++                        f"Live Kraken spot: ${portfolio:,.2f}  |  "
++                        f"Session PnL: ${pnl:+,.2f} ({pct:+.1f}%)"
++                    )
++                else:
++                    portfolio_line = (
++                        f"[Paper sim] Portfolio ${portfolio:,.2f}  |  "
++                        f"PnL {pnl:+.2f} ({pct:+.1f}%)"
++                    )
++                alerts.append((
++                    f"**Watchdog — major portfolio {direction}**\n"
++                    f"{portfolio_line}\n"
++                    f"Crossed {abs(band) * threshold:.0%} milestone threshold",
++                    True,
++                ))
++
++        if drawdown_pct >= self.settings.drawdown_warn_pct:
++            if drawdown_pct > self.state.last_drawdown_warn + 0.01:
++                self.state.last_drawdown_warn = drawdown_pct
++                label = "Live Kraken spot" if source == "live" else "Portfolio"
+                 alerts.append((
+                     f"**Watchdog — drawdown warning**\n"
+-                    f"Portfolio ${snap.portfolio:,.2f}  |  "
+-                    f"drawdown {snap.drawdown_pct:.1%} from peak\n"
++                    f"{label} ${portfolio:,.2f}  |  "
++                    f"drawdown {drawdown_pct:.1%} from peak\n"
+                     f"Circuit breaker triggers at 15% — review holdings.",
+                     False,
+                 ))
+-
+-        elif snap.drawdown_pct < self.settings.drawdown_warn_pct * 0.5:
+-
++        elif drawdown_pct < self.settings.drawdown_warn_pct * 0.5:
+             self.state.last_drawdown_warn = 0.0
+ 
+-
+-
++        return alerts
++
++    def _check_live_portfolio(self) -> list[tuple[str, bool]]:
++        alerts: list[tuple[str, bool]] = []
++        if not self.settings.live_enabled:
++            return alerts
++        snap = load_live_portfolio_snapshot(
++            live_state_file=self.settings.live_state_file,
++            live_session_start_file=self.settings.live_session_start_file,
++            paper_portfolio_file=self.settings.paper_portfolio_file,
++        )
++        if snap is None:
++            return alerts
++        self.state.last_portfolio = snap.portfolio_usd
++        self._last_drawdown = snap.drawdown_pct
++        self.state.last_log_activity = time.time()
++        alerts.extend(
++            self._portfolio_alerts_for(
++                portfolio=snap.portfolio_usd,
++                pnl=snap.session_pnl,
++                drawdown_pct=snap.drawdown_pct,
++                baseline=snap.baseline_portfolio_usd,
++                source="live",
++            )
++        )
+         return alerts
+ 
+ 
+@@ -517,7 +561,7 @@
+ 
+         peak = float(risk.get("peak_portfolio", 0.0))
+ 
+-        if baseline > 0:
++        if baseline > 0 and not self.settings.live_enabled:
+ 
+             self.state.last_baseline = baseline
+ 
+@@ -698,7 +742,21 @@
+ 
+         portfolio = self.state.last_portfolio
+ 
+-        portfolio_note = f"${portfolio:,.2f}" if portfolio > 0 else "n/a"
++        if self.settings.live_enabled:
++            live = load_live_portfolio_snapshot(
++                live_state_file=self.settings.live_state_file,
++                live_session_start_file=self.settings.live_session_start_file,
++                paper_portfolio_file=self.settings.paper_portfolio_file,
++            )
++            if live is not None:
++                portfolio_note = (
++                    f"Live Kraken spot ${live.portfolio_usd:,.2f} "
++                    f"(session PnL {live.session_pnl:+.2f})"
++                )
++            else:
++                portfolio_note = "Live Kraken spot: n/a"
++        else:
++            portfolio_note = f"${portfolio:,.2f}" if portfolio > 0 else "n/a"
+ 
+         counts = (
+ 
+@@ -779,6 +837,8 @@
+             self._check_receipts,
+ 
+             self._check_paper_state,
++
++            self._check_live_portfolio,
+ 
+             self._check_diagnostics,
+ 
+@@ -868,7 +928,8 @@
+ 
+             "**Watchdog started** — monitoring trade bot (same process)\n"
+ 
+-            f"Watching: session logs, `{log_name}`, receipts, paper state, diagnostics\n"
++            f"Watching: session logs, `{log_name}`, receipts, "
++            f"{'live + paper state' if self.settings.live_enabled else 'paper state'}, diagnostics\n"
+ 
+             f"Alerts: errors, PnL ±{self.settings.pnl_pct_threshold:.0%}, "
+ 

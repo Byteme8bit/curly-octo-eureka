@@ -33,6 +33,11 @@ class WatchdogSettings:
     quiet_mode: bool
     error_pin_count: int
     error_pin_window_minutes: float
+    milestone_cooldown_minutes: float
+    live_enabled: bool
+    live_state_file: Path
+    live_session_start_file: Path
+    paper_portfolio_file: Path
     bot_root: Path
     log_dir: Path
     receipts_dir: Path
@@ -77,6 +82,11 @@ def load_settings() -> WatchdogSettings:
         quiet_mode=quiet,
         error_pin_count=int(os.getenv("DISCORD_ERROR_PIN_COUNT", "3")),
         error_pin_window_minutes=float(os.getenv("DISCORD_ERROR_PIN_WINDOW_MINUTES", "30")),
+        milestone_cooldown_minutes=float(os.getenv("WATCHDOG_MILESTONE_COOLDOWN_MINUTES", "60")),
+        live_enabled=os.getenv("LIVE_ENABLED", "0") == "1",
+        live_state_file=root / os.getenv("LIVE_STATE_FILE", ".live_state.json"),
+        live_session_start_file=root / "live_session_start.json",
+        paper_portfolio_file=root / os.getenv("PAPER_PORTFOLIO_FILE", "paper_portfolio.json"),
         bot_root=root,
         log_dir=log_dir,
         receipts_dir=Path(os.getenv("WATCHDOG_RECEIPTS_DIR", str(root / "receipts"))),

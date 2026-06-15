@@ -2083,3 +2083,51 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +207 / -2
 - **Patch:** `r005--2026-06-14_130815--054-ux-tests.patch`
 
+## bot/engine.py — r032
+
+- **When:** 2026-06-15 04:23:23 PDT
+- **Reason:** live milestone and hourly labels
+- **Request:** 055
+- **Diff:** +40 / -2
+- **Patch:** `r032--2026-06-15_042323--live-milestone-and-hourly-labels.patch`
+
+## bot/report.py — r005
+
+- **When:** 2026-06-15 04:23:23 PDT
+- **Reason:** live vs paper milestone labels
+- **Request:** 055
+- **Diff:** +12 / -1
+- **Patch:** `r005--2026-06-15_042323--live-vs-paper-milestone-labels.patch`
+
+## bot/discord_summary.py — r002
+
+- **When:** 2026-06-15 04:23:23 PDT
+- **Reason:** hourly live and paper lines
+- **Request:** 055
+- **Diff:** +12 / -1
+- **Patch:** `r002--2026-06-15_042323--hourly-live-and-paper-lines.patch`
+
+## watchdog/config.py — r002
+
+- **When:** 2026-06-15 04:23:24 PDT
+- **Reason:** live paths milestone cooldown
+- **Request:** 055
+- **Diff:** +10 / -0
+- **Patch:** `r002--2026-06-15_042324--live-paths-milestone-cooldown.patch`
+
+## watchdog/state.py — r001
+
+- **When:** 2026-06-15 04:23:24 PDT
+- **Reason:** live band cooldown fields
+- **Request:** 055
+- **Diff:** +6 / -0
+- **Patch:** `r001--2026-06-15_042324--live-band-cooldown-fields.patch`
+
+## watchdog/engine.py — r003
+
+- **When:** 2026-06-15 04:23:24 PDT
+- **Reason:** live portfolio gain alerts
+- **Request:** 055
+- **Diff:** +107 / -46
+- **Patch:** `r003--2026-06-15_042324--live-portfolio-gain-alerts.patch`
+

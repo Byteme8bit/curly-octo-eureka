@@ -1,0 +1,50 @@
+--- a/watchdog/state.py
++++ b/watchdog/state.py
+@@ -38,6 +38,7 @@
+     file_offsets: dict[str, int] = field(default_factory=dict)
+     seen_receipts: list[str] = field(default_factory=list)
+     last_pnl_band: int = 0
++    last_live_pnl_band: int = 0
+     last_drawdown_warn: float = 0.0
+     seen_error_keys: dict[str, float] = field(default_factory=dict)
+     stale_alert_sent: bool = False
+@@ -55,6 +56,7 @@
+     session_started_at: str | None = None
+     running: bool = False
+     last_heartbeat_at: float = 0.0
++    last_milestone_alert_at: float = 0.0
+     error_pin_windows: dict[str, list[float]] = field(default_factory=dict)
+     recent_errors: list[dict] = field(default_factory=list)
+ 
+@@ -85,6 +87,7 @@
+                 file_offsets={k: int(v) for k, v in data.get("file_offsets", {}).items()},
+                 seen_receipts=list(data.get("seen_receipts", [])),
+                 last_pnl_band=int(data.get("last_pnl_band", 0)),
++                last_live_pnl_band=int(data.get("last_live_pnl_band", 0)),
+                 last_drawdown_warn=float(data.get("last_drawdown_warn", 0.0)),
+                 seen_error_keys=_clean_wallmap(
+                     {k: float(v) for k, v in data.get("seen_error_keys", {}).items()}
+@@ -107,6 +110,7 @@
+                 session_started_at=data.get("session_started_at"),
+                 running=bool(data.get("running", False)),
+                 last_heartbeat_at=last_heartbeat,
++                last_milestone_alert_at=float(data.get("last_milestone_alert_at", 0.0)),
+                 recent_errors=list(data.get("recent_errors", [])),
+                 error_pin_windows=error_pin_windows,
+             )
+@@ -170,6 +174,7 @@
+         re-process historical log lines and re-alert on them.
+         """
+         self.last_pnl_band = 0
++        self.last_live_pnl_band = 0
+         self.last_drawdown_warn = 0.0
+         self.seen_error_keys.clear()
+         self.stale_alert_sent = False
+@@ -180,6 +185,7 @@
+         self.watchdog_pause_count = 0
+         self.last_watchdog_pause_at = None
+         self.last_heartbeat_at = 0.0
++        self.last_milestone_alert_at = 0.0
+         self.recent_errors.clear()
+         self.error_pin_windows.clear()
+ 
