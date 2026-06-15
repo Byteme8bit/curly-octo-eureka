@@ -2131,3 +2131,51 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +107 / -46
 - **Patch:** `r003--2026-06-15_042324--live-portfolio-gain-alerts.patch`
 
+## bot/engine.py — r033
+
+- **When:** 2026-06-15 04:27:56 PDT
+- **Reason:** confidence-gated live mirror
+- **Request:** 056
+- **Diff:** +111 / -27
+- **Patch:** `r033--2026-06-15_042756--confidence-gated-live-mirror.patch`
+
+## bot/verifier/live_tag.py — r002
+
+- **When:** 2026-06-15 04:27:56 PDT
+- **Reason:** export is_multi_hop_trade
+- **Request:** 056
+- **Diff:** +2 / -2
+- **Patch:** `r002--2026-06-15_042756--export-ismultihoptrade.patch`
+
+## config.py — r021
+
+- **When:** 2026-06-15 04:27:56 PDT
+- **Reason:** mirror confidence env knobs
+- **Request:** 056
+- **Diff:** +20 / -0
+- **Patch:** `r021--2026-06-15_042756--mirror-confidence-env-knobs.patch`
+
+## .env.example — r021
+
+- **When:** 2026-06-15 04:27:57 PDT
+- **Reason:** document mirror confidence
+- **Request:** 056
+- **Diff:** +7 / -2
+- **Patch:** `r021--2026-06-15_042757--document-mirror-confidence.patch`
+
+## docs/live-trading.md — r002
+
+- **When:** 2026-06-15 04:27:57 PDT
+- **Reason:** confidence mirror docs
+- **Request:** 056
+- **Diff:** +11 / -1
+- **Patch:** `r002--2026-06-15_042757--confidence-mirror-docs.patch`
+
+## tests/test_live_mirror.py — r002
+
+- **When:** 2026-06-15 04:27:57 PDT
+- **Reason:** confidence mirror tests
+- **Request:** 056
+- **Diff:** +203 / -95
+- **Patch:** `r002--2026-06-15_042757--confidence-mirror-tests.patch`
+

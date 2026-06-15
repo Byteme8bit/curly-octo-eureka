@@ -49,8 +49,14 @@ from bot.trade_log import BotFileLogger, ReceiptWriter
 from bot.watchdog_service import WatchdogService
 from bot.discord_summary import MajorMoveTracker, TradeActivityBuffer, format_hourly_summary
 from bot.whale_follow_log import append_whale_follow_skip, read_whale_follow_skips
+from bot.live_mirror import (
+    append_live_mirror_skip,
+    is_critical_deny,
+    should_mirror_to_live,
+)
 from bot.verifier.kraken import PublicKraken
-from bot.verifier.live_tag import build_live_verify_tag
+from bot.verifier.live_tag import LiveVerifyResult, build_live_verify_tag
+from bot.verifier.models import Verdict
 from bot.whale_watch import WhaleWatcher, append_whale_event_log, format_whale_alert
 from bot.strategies.whale_follow import (
     WhaleFollowCooldown,
@@ -616,11 +622,11 @@ class TradingEngine:
         if self.settings.discord_whale_skip_to_discord and self.settings.discord_enabled:
             self.discord.post_plain(format_whale_follow_skip(event, reason))
 
-    def _live_verify_tag(self, trade: dict, usd_prices: dict[str, float] | None) -> str:
-        if not self.settings.trade_verify_discord_tag:
-            return ""
+    def _live_verify_result(
+        self, trade: dict, usd_prices: dict[str, float] | None
+    ) -> LiveVerifyResult | None:
         try:
-            result = build_live_verify_tag(
+            return build_live_verify_tag(
                 trade,
                 markets=self.markets,
                 kraken=self._live_kraken,
@@ -629,10 +635,15 @@ class TradingEngine:
                 usd_prices=usd_prices,
                 skip_kraken=self.settings.trade_verify_skip_kraken,
             )
-            return result.tag
         except Exception as exc:  # noqa: BLE001
             logger.debug("Live verify tag failed: %s", exc)
+            return None
+
+    def _live_verify_tag(self, trade: dict, usd_prices: dict[str, float] | None) -> str:
+        if not self.settings.trade_verify_discord_tag:
             return ""
+        result = self._live_verify_result(trade, usd_prices)
+        return result.tag if result else ""
 
     def _format_trade_summary_on_demand(self) -> str:
         snap = self._activity_buffer.snapshot()
@@ -1321,6 +1332,7 @@ class TradingEngine:
                 prices,
                 usd_prices,
                 paper_size_pct=intent.size_pct,
+                paper_trade=trade,
             )
             if live_trade:
                 trade["live_mirrored"] = True
@@ -1328,6 +1340,34 @@ class TradingEngine:
                 trade["live_mirror_skipped"] = True
 
         return trade
+
+    def _log_live_mirror_skip(
+        self,
+        paper_trade: dict,
+        reason: str,
+        *,
+        verify_result: LiveVerifyResult | None = None,
+    ) -> None:
+        tag = verify_result.tag if verify_result else ""
+        append_live_mirror_skip(
+            paper_trade,
+            reason,
+            self.settings.live_mirror_skip_log_file,
+            verify_tag=tag,
+        )
+        logger.info("Live mirror skipped — %s", reason)
+        if (
+            verify_result
+            and verify_result.verdict == Verdict.DENY
+            and is_critical_deny(verify_result.tag)
+            and self.settings.discord_enabled
+        ):
+            self.discord.post_important(
+                f"**Live mirror blocked (critical)**\n"
+                f"{paper_trade.get('from_asset')}→{paper_trade.get('to_asset')}: "
+                f"{verify_result.tag}",
+                pin=False,
+            )
 
     def _mirror_intent_to_live(
         self,
@@ -1337,29 +1377,56 @@ class TradingEngine:
         usd_prices: dict[str, float],
         *,
         paper_size_pct: float,
+        paper_trade: dict,
     ) -> dict | None:
-        """Mirror a successful paper trade to Kraken when live gates pass."""
+        """Mirror a successful paper trade to Kraken when confidence + live gates pass."""
         live = self.live_broker
         if live is None:
             return None
+
+        verify_result = self._live_verify_result(paper_trade, usd_prices)
+        if verify_result is None:
+            self._log_live_mirror_skip(paper_trade, "live verify unavailable")
+            return None
+
+        mirror_ok, mirror_reason = should_mirror_to_live(
+            verify_result.verdict,
+            paper_trade,
+            min_confidence=self.settings.live_mirror_min_confidence,
+            mirror_uncertain=self.settings.live_mirror_uncertain,
+            allow_triangular=self.settings.live_allow_triangular,
+        )
+        if not mirror_ok:
+            self._log_live_mirror_skip(
+                paper_trade, mirror_reason, verify_result=verify_result
+            )
+            return None
+
+        confirm_bypass = verify_result.verdict == Verdict.CONFIRM
+
         if live.halted:
-            logger.info(
-                "Live mirror skipped — halted: %s",
-                live.halt_reason or "live broker halted",
+            self._log_live_mirror_skip(
+                paper_trade,
+                f"halted: {live.halt_reason or 'live broker halted'}",
+                verify_result=verify_result,
             )
             return None
         limit = self.settings.live_max_trades
         if limit > 0 and live.risk.live_trades_completed >= limit:
-            logger.info("Live mirror skipped — LIVE_MAX_TRADES (%s) reached", limit)
+            self._log_live_mirror_skip(
+                paper_trade,
+                f"LIVE_MAX_TRADES ({limit}) reached",
+                verify_result=verify_result,
+            )
             return None
         holdings = self._live_holdings()
         eth = holdings.get("ETH", 0.0)
         floor = self.settings.live_min_eth_reserve
         if eth < floor - 1e-9:
-            logger.info(
-                "Live mirror skipped — ETH %.4f below live floor %.2f",
-                eth,
-                floor,
+            self._log_live_mirror_skip(
+                paper_trade,
+                f"ETH {eth:.4f} below live floor {floor:.2f}",
+                verify_result=verify_result,
             )
             return None
         live_ok, live_reason = check_live_route(
@@ -1369,7 +1436,9 @@ class TradingEngine:
             max_route_legs=self.settings.live_max_route_legs,
         )
         if not live_ok:
-            logger.info("Live mirror skipped — %s", live_reason)
+            self._log_live_mirror_skip(
+                paper_trade, live_reason, verify_result=verify_result
+            )
             return None
         live_constraints = self._live_constraints or self.constraints
         required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
@@ -1380,13 +1449,17 @@ class TradingEngine:
             required_edge=required_edge,
         )
         if not constraint.allowed:
-            logger.info("Live mirror skipped — %s", constraint.reason)
+            self._log_live_mirror_skip(
+                paper_trade, constraint.reason, verify_result=verify_result
+            )
             return None
         route_check = live_constraints.check_route_eth_floor(
             route, holdings, constraint.size_pct
         )
         if not route_check.allowed:
-            logger.info("Live mirror skipped — %s", route_check.reason)
+            self._log_live_mirror_skip(
+                paper_trade, route_check.reason, verify_result=verify_result
+            )
             return None
         pf = self.preflight.validate(
             intent,
@@ -1395,8 +1468,10 @@ class TradingEngine:
             is_defensive=intent.is_defensive,
             min_net_profit=self.risk.effective_min_net_profit(),
         )
-        if not pf.allowed:
-            logger.info("Live mirror skipped — %s", pf.reason)
+        if not pf.allowed and not confirm_bypass:
+            self._log_live_mirror_skip(
+                paper_trade, pf.reason, verify_result=verify_result
+            )
             return None
         mirror_size = min(constraint.size_pct, paper_size_pct)
         live_trade = live.execute_path(
@@ -1412,21 +1487,29 @@ class TradingEngine:
                 self.discord.post_important(
                     f"**LIVE HALT — ROUTE FAILURE**\n{live.halt_reason or 'live path failed'}"
                 )
-            logger.warning("Live mirror execution failed for %s", route.path)
+            self._log_live_mirror_skip(
+                paper_trade,
+                "live execution failed",
+                verify_result=verify_result,
+            )
             return None
         receipt_path = self.receipts.save(live_trade)
         live_trade["receipt_file"] = str(receipt_path)
-        live_trade["edge"] = pf.net_return_pct
+        live_trade["edge"] = pf.net_return_pct if pf.allowed else float(
+            paper_trade.get("edge") or paper_trade.get("gross_return_pct") or 0
+        )
         self.auditor.note_trade(live_trade)
         self._after_live_trade()
         if self.settings.discord_enabled:
             live_portfolio = live.portfolio_value(usd_prices)
             baseline = live.risk.baseline_portfolio
             baseline_pnl = live_portfolio - baseline if baseline > 0 else 0.0
-            from bot.report import format_trade_executed_alert
-
+            mirror_note = f"_Mirrored from paper ({verify_result.tag})_"
+            verify_tag = mirror_note
             self.discord.post_important(
-                format_trade_executed_alert(live_trade, live_portfolio, baseline_pnl),
+                format_trade_executed_alert(
+                    live_trade, live_portfolio, baseline_pnl, verify_tag=verify_tag
+                ),
                 pin=False,
             )
         return live_trade
@@ -2831,13 +2914,14 @@ class TradingEngine:
         if self._mirror_mode:
             startup_text += (
                 f"\n:chart_with_upwards_trend: Paper runs continuously in `.paper_state.json`; "
-                f"profitable paper trades mirror to Kraken when live gates pass."
+                f"CONFIRM live-viable paper trades mirror to Kraken "
+                f"(LIVE_MIRROR_MIN_CONFIDENCE={self.settings.live_mirror_min_confidence})."
                 f"\n:rotating_light: **LIVE TRADING ARMED** — REAL MONEY on mirror "
                 f"(confirm `{LIVE_CONFIRM_PHRASE}`)"
                 f"\n:warning: max ${self.settings.live_max_usd_per_trade:,.0f}/trade, "
                 f"assets {','.join(self.settings.live_allowed_assets)}, "
                 f"halt live at {self.settings.live_drawdown_halt_pct:.0%} Kraken drawdown, "
-                f"{self.settings.live_min_eth_reserve:.1f} ETH floor — no multi-hop live"
+                f"{self.settings.live_min_eth_reserve:.1f} ETH floor"
             )
         elif self._live_mode:
             startup_text += (
