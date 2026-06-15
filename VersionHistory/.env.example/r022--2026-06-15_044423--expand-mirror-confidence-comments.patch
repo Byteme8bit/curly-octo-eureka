@@ -1,0 +1,21 @@
+--- a/.env.example
++++ b/.env.example
+@@ -288,12 +288,16 @@
+ LIVE_MIN_ETH_RESERVE=0.5
+ # When 1 (default): no adaptive threshold relaxation or idle probes on live-only mode
+ LIVE_STRICT_PROFIT=1
+-# Paper shadow + live mirror: paper runs in .paper_state.json; CONFIRM live-viable
++# Paper shadow + live mirror: paper runs in .paper_state.json; live-viable
+ # paper trades mirror to Kraken (requires LIVE_ENABLED=1 + API keys).
+ # LIVE_MIRROR_PAPER=0
+ # Minimum live_tag verdict to mirror: confirm | uncertain_ok | always (default confirm)
++#   confirm      — mirror only CONFIRM (est. net positive after Kraken fees)
++#   uncertain_ok — also mirror UNCERTAIN when LIVE_MIRROR_UNCERTAIN=1 (below)
++#   always       — mirror UNCERTAIN even if LIVE_MIRROR_UNCERTAIN=0 (multi-hop still needs triangular)
+ # LIVE_MIRROR_MIN_CONFIDENCE=confirm
+-# When 1, UNCERTAIN single-leg paper trades may mirror (if min_confidence allows)
++# When 1, UNCERTAIN single-leg paper trades may mirror (requires min_confidence uncertain_ok or always)
++# UNCERTAIN multi-hop still requires LIVE_ALLOW_TRIANGULAR=1
+ # LIVE_MIRROR_UNCERTAIN=0
+ # LIVE_MIRROR_SKIP_LOG_FILE=logs/live_mirror_skips.log
+ # RESET_LIVE_STATE=0

@@ -43,6 +43,9 @@ DEFAULT_STAT_ARB_PAIRS = "ETH/BTC,SOL/ETH,LINK/ETH,AVAX/ETH"
 DEFAULT_MOMENTUM_TIMEFRAMES = "15m,1h"
 DEFAULT_EQUITY_WATCHLIST = "AAPLx,TSLAx,SPYx"
 DEFAULT_MAX_EQUITY_ALLOCATION_PCT = "0.15"
+DEFAULT_DCA_INTERVAL_HOURS = "24"
+DEFAULT_DCA_AMOUNT_USD = "15"
+DEFAULT_FUTURES_WATCHLIST = "BTC/USD:USD,ETH/USD:USD,AAPLX/USD:USD"
 
 
 @dataclass(frozen=True)
@@ -230,6 +233,26 @@ class Settings:
     symbol_assets: dict[str, str]
     asset_usd_symbols: dict[str, str]
     max_equity_allocation_pct: float
+    dca_enabled: bool
+    dca_interval_hours: float
+    dca_amount_usd: float
+    dca_per_symbol_usd: float
+    dca_state_file: Path
+    enable_futures: bool
+    live_futures_enabled: bool
+    futures_watchlist: tuple[str, ...]
+    futures_max_leverage: float
+    futures_max_position_usd: float
+    futures_paper_balance_usd: float
+    futures_paper_state_file: Path
+    futures_live_state_file: Path
+    reset_futures_state: bool
+
+
+def _parse_futures_watchlist(raw: str) -> tuple[str, ...]:
+    from bot.futures.markets import parse_futures_watchlist
+
+    return parse_futures_watchlist(raw or DEFAULT_FUTURES_WATCHLIST)
 
 
 def _parse_usd_symbols(raw: str) -> tuple[str, ...]:
@@ -679,7 +702,41 @@ def load_settings() -> Settings:
         max_equity_allocation_pct=float(
             os.getenv("MAX_EQUITY_ALLOCATION_PCT", DEFAULT_MAX_EQUITY_ALLOCATION_PCT)
         ),
+        dca_enabled=os.getenv("DCA_ENABLED", "0") == "1",
+        dca_interval_hours=float(
+            os.getenv("DCA_INTERVAL_HOURS", DEFAULT_DCA_INTERVAL_HOURS)
+        ),
+        dca_amount_usd=float(os.getenv("DCA_AMOUNT_USD", DEFAULT_DCA_AMOUNT_USD)),
+        dca_per_symbol_usd=float(os.getenv("DCA_PER_SYMBOL_USD", "0")),
+        dca_state_file=ROOT / os.getenv("DCA_STATE_FILE", ".dca_state.json"),
+        enable_futures=os.getenv("ENABLE_FUTURES", "0") == "1",
+        live_futures_enabled=os.getenv("LIVE_FUTURES_ENABLED", "0") == "1",
+        futures_watchlist=_parse_futures_watchlist(
+            os.getenv("FUTURES_WATCHLIST", DEFAULT_FUTURES_WATCHLIST)
+        ),
+        futures_max_leverage=float(os.getenv("FUTURES_MAX_LEVERAGE", "5")),
+        futures_max_position_usd=float(os.getenv("FUTURES_MAX_POSITION_USD", "100")),
+        futures_paper_balance_usd=float(os.getenv("FUTURES_PAPER_BALANCE_USD", "1000")),
+        futures_paper_state_file=ROOT / os.getenv(
+            "FUTURES_PAPER_STATE_FILE", ".futures_paper_state.json"
+        ),
+        futures_live_state_file=ROOT / os.getenv(
+            "FUTURES_LIVE_STATE_FILE", ".futures_live_state.json"
+        ),
+        reset_futures_state=os.getenv("RESET_FUTURES_STATE", "0") == "1",
     )
+    if fields["enable_equities"] and fields["live_enabled"]:
+        allowed = frozenset(fields["live_allowed_assets"])
+        for ticker in fields["equity_watchlist"]:
+            if ticker in allowed:
+                continue
+            logger.warning(
+                "Equity %s in EQUITY_WATCHLIST but not LIVE_ALLOWED_ASSETS — "
+                "live mirror will skip xStock trades for this ticker",
+                ticker,
+            )
+    if fields["dca_enabled"] and not fields["enable_equities"]:
+        logger.warning("DCA_ENABLED=1 requires ENABLE_EQUITIES=1 — equity DCA will not run")
     _apply_runtime_overrides(fields)
     if fields["live_enabled"] and not fields["live_mirror_paper"]:
         fields["state_file"] = fields["live_state_file"]

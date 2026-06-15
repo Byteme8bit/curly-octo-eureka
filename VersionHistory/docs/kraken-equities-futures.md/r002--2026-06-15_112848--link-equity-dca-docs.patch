@@ -1,0 +1,21 @@
+--- a/docs/kraken-equities-futures.md
++++ b/docs/kraken-equities-futures.md
+@@ -46,6 +46,18 @@
+ - Equities trade **USD pairs only** — no crypto cross routes (e.g. no `AAPLx/ETH`).
+ - Portfolio cap: `MAX_EQUITY_ALLOCATION_PCT` (default 15%), separate from `MAX_ALT_ALLOCATION_PCT`.
+ - Defensive trims sell overweight equities back to **USD** (not ETH).
++
++### Equity DCA (scheduled accumulation)
++
++See [dca-equities.md](dca-equities.md) for full setup. Summary:
++
++```env
++DCA_ENABLED=1
++DCA_INTERVAL_HOURS=24
++DCA_AMOUNT_USD=30
++```
++
++Runs alongside crypto `triangular_arbitrage`; bypasses profit-only edge checks for buys only.
+ 
+ ### Live equities (explicit allowlist required)
+ 

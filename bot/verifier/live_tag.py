@@ -89,6 +89,13 @@ def build_live_verify_tag(
             source=source,
         )
 
+    if trade.get("is_accumulation") or trade.get("strategy_name") == "equity_dca":
+        return LiveVerifyResult(
+            tag="✓ Scheduled equity DCA — single-leg USD buy (accumulation)",
+            verdict=Verdict.CONFIRM,
+            source=source,
+        )
+
     if not route_symbols or not symbol:
         return LiveVerifyResult(
             tag="✗ Would likely fail live: no route symbol",
@@ -148,6 +155,10 @@ def build_live_verify_tag(
                 edge=float(trade.get("edge", 0)),
                 gross_return_pct=gross,
                 strategy_name=trade.get("strategy_name", ""),
+                is_accumulation=bool(
+                    trade.get("is_accumulation")
+                    or trade.get("strategy_name") == "equity_dca"
+                ),
             )
             pf = preflight.validate(
                 intent,

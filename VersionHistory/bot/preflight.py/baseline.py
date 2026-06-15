@@ -59,16 +59,6 @@ class PreFlightValidator:
                 reason="Defensive exit — pre-flight bypass",
             )
 
-        if intent.is_accumulation or intent.strategy_name == "equity_dca":
-            return PreFlightResult(
-                allowed=True,
-                gross_return_pct=gross,
-                fee_pct=fee_pct,
-                slippage_pct=slippage_pct,
-                net_return_pct=net,
-                reason="Scheduled accumulation — pre-flight bypass (fee drag only)",
-            )
-
         if net <= threshold:
             return PreFlightResult(
                 allowed=False,

@@ -6,8 +6,8 @@
 |---------|-------|-----|-------------|
 | **xStocks (tokenized stocks/ETFs)** | Kraken **Spot** | REST with `asset_class=tokenized_asset` | **Supported** (paper + optional live) |
 | **Crypto spot** | Kraken Spot | ccxt `kraken` | Supported (existing) |
-| **xStocks perpetual futures** | Kraken **Futures** | `ccxt.krakenfutures` / Futures REST | **Phase 2b v1** (paper + optional live) |
-| **Crypto futures / margin** | Kraken Futures | Separate API keys & wallet | Phase 2b (futures v1); spot margin not enabled |
+| **xStocks perpetual futures** | Kraken **Futures** | `ccxt.krakenfutures` / Futures REST | **Phase 2b** (not in v1) |
+| **Crypto futures / margin** | Kraken Futures | Separate API keys & wallet | Phase 2b |
 | **Kraken Trade Prop** | Evaluation accounts | N/A | Not implemented (`PROP_ENABLED=0`) |
 
 ### xStocks on spot (v1)
@@ -47,18 +47,6 @@ EQUITY_WATCHLIST=AAPLx,TSLAx,SPYx
 - Portfolio cap: `MAX_EQUITY_ALLOCATION_PCT` (default 15%), separate from `MAX_ALT_ALLOCATION_PCT`.
 - Defensive trims sell overweight equities back to **USD** (not ETH).
 
-### Equity DCA (scheduled accumulation)
-
-See [dca-equities.md](dca-equities.md) for full setup. Summary:
-
-```env
-DCA_ENABLED=1
-DCA_INTERVAL_HOURS=24
-DCA_AMOUNT_USD=30
-```
-
-Runs alongside crypto `triangular_arbitrage`; bypasses profit-only edge checks for buys only.
-
 ### Live equities (explicit allowlist required)
 
 Live crypto defaults stay `LIVE_ALLOWED_ASSETS=ETH,ADA`. To mirror or execute equity trades:
@@ -72,8 +60,9 @@ LIVE_ALLOWED_ASSETS=ETH,ADA,AAPLx
 
 - Each equity ticker in `LIVE_ALLOWED_ASSETS` must also appear in `EQUITY_WATCHLIST`.
 - `LiveBroker` passes `asset_class=tokenized_asset` on equity orders.
-- Same per-trade caps: `LIVE_MAX_TRADE_USD`, drawdown halt (`LIVE_DRAWDOWN_HALT_PCT=0.10`), ETH reserve.
-- Mirror path: paper trade must be CONFIRM (`LIVE_MIRROR_MIN_CONFIDENCE=confirm`) and pass profit-only gates.
+- Same per-trade caps: `LIVE_MAX_TRADE_USD`, drawdown halt, ETH reserve.
+
+**Do not** add equities to `LIVE_ALLOWED_ASSETS` until paper behavior is verified.
 
 ## ccxt limitations
 
@@ -92,24 +81,12 @@ LIVE_ALLOWED_ASSETS=ETH,ADA,AAPLx
 - Whale watch on large xStock prints.
 - Dashboard chart series for equity holdings.
 
-### Phase 2b — Futures (v1)
+### Phase 2b — Futures
 
-- `ENABLE_FUTURES=0` gate (default off), `ccxt.krakenfutures` via `bot/futures/`.
-- Paper sim in `.futures_paper_state.json`; live behind `LIVE_FUTURES_ENABLED=1`.
-- `FUTURES_WATCHLIST` — crypto perps + xStock perps (e.g. `AAPLX/USD:USD`).
-- Caps: `FUTURES_MAX_LEVERAGE`, `FUTURES_MAX_POSITION_USD`, shared `LIVE_DRAWDOWN_HALT_PCT`.
-- Simple momentum strategy on watchlist; one open/close per tick max.
-- Futures wallet is separate from spot — PnL not merged into spot mirror yet.
-
-### Spot margin limitation
-
-Kraken **spot margin** (leveraged spot borrows) is **not enabled** in TradeBot:
-
-- ccxt `create_order` would need `leverage` / margin mode params and a liquidation model.
-- Current `RiskManager` and `LiveBroker` assume spot wallet balances only.
-- Use futures module for leveraged exposure; keep spot for mirror + arb.
-
-To enable later: new `bot/margin/` module, isolated caps, and explicit opt-in.
+- `ENABLE_FUTURES=0` gate, `ccxt.krakenfutures` instance.
+- `bot/futures/` package: positions, leverage limits, funding rates.
+- xStocks perps watchlist separate from spot `EQUITY_WATCHLIST`.
+- No shared live mirror until spot equities are stable.
 
 ### Phase 3 — Prop / funded accounts
 
@@ -118,7 +95,7 @@ To enable later: new `bot/margin/` module, isolated caps, and explicit opt-in.
 ## Verification
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest tests/test_equities.py tests/test_futures.py -q
+.\.venv\Scripts\python.exe -m pytest tests/test_equities.py -q
 ```
 
 Probe live Kraken catalog (no keys):

@@ -1,0 +1,33 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -28,6 +28,7 @@
+ from bot.markets import MarketRegistry
+ from bot.paper_broker import PaperBroker
+ from bot.live_broker import LiveBroker
++from bot.futures.manager import FuturesManager
+ from bot.live_guards import LIVE_CONFIRM_PHRASE, is_live_armed, check_live_route
+ from bot.paper_portfolio import PaperPortfolioLog
+ from bot.portfolio_constraints import PortfolioConstraints
+@@ -477,6 +478,9 @@
+             cooldown_sec=settings.whale_follow_cooldown_sec,
+             max_per_hour=settings.whale_follow_max_per_hour,
+         )
++        self.futures_manager: FuturesManager | None = None
++        if settings.enable_futures:
++            self.futures_manager = FuturesManager(settings)
+         self.goal_evolution = build_manager_from_settings(settings)
+         self._goal_status = None
+         self._crash_status = None
+@@ -2876,7 +2880,11 @@
+ 
+         )
+ 
+-
++        if self.futures_manager is not None and self.futures_manager.active:
++            try:
++                self.futures_manager.tick()
++            except Exception as exc:
++                logger.warning("Futures tick failed: %s", exc)
+ 
+         return elapsed
+ 

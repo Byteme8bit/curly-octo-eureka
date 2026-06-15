@@ -1,0 +1,29 @@
+--- a/bot/strategies/registry.py
++++ b/bot/strategies/registry.py
+@@ -6,6 +6,7 @@
+ 
+ from bot.strategies.base import Strategy
+ from bot.strategies.cross_momentum import CrossMomentumStrategy
++from bot.strategies.equity_dca import EquityDcaStrategy
+ from bot.strategies.hold import HoldStrategy
+ from bot.strategies.momentum_rotation import MomentumRotationStrategy
+ from bot.strategies.stat_arb import StatArbStrategy
+@@ -20,6 +21,7 @@
+     "triangular_arbitrage": TriangularArbitrageStrategy,
+     "stat_arb": StatArbStrategy,
+     "momentum_rotation": MomentumRotationStrategy,
++    "equity_dca": EquityDcaStrategy,
+     "hold": HoldStrategy,
+ }
+ 
+@@ -38,7 +40,9 @@
+ 
+ 
+ def build_strategies(settings: Settings) -> list[Strategy]:
+-    names = parse_strategy_names(settings.strategies)
++    names = list(parse_strategy_names(settings.strategies))
++    if settings.dca_enabled and "equity_dca" not in names:
++        names.append("equity_dca")
+     return [STRATEGY_REGISTRY[name](settings) for name in names]
+ 
+ 

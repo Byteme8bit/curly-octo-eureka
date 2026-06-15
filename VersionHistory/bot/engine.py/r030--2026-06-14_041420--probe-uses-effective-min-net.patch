@@ -1,0 +1,11 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -1554,7 +1554,7 @@
+             route_symbols=probe_route.symbols,
+             hops=probe_route.hops,
+             is_defensive=False,
+-            min_net_profit=0.0,
++            min_net_profit=self.risk.effective_min_net_profit(),
+         )
+         if not probe_pf.allowed:
+             logger.info("Forced probe skipped — would not clear fees: %s", probe_pf.reason)

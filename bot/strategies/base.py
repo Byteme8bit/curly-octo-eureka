@@ -30,6 +30,7 @@ class TradeIntent:
     size_pct: float
     edge: float
     is_defensive: bool = False
+    is_accumulation: bool = False
     is_held_swap: bool = False
     is_expansion: bool = False
     require_leader_stable: bool = False
