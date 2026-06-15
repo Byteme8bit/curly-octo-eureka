@@ -32,6 +32,8 @@ LIVE_MAX_USD_PER_TRADE=50
 
 # Recommended: paper shadow + live mirror
 LIVE_MIRROR_PAPER=1
+LIVE_MIRROR_MIN_CONFIDENCE=confirm
+# LIVE_MIRROR_UNCERTAIN=0
 LIVE_MIN_ETH_RESERVE=0.5
 LIVE_DRAWDOWN_HALT_PCT=0.10
 LIVE_MAX_TRADES=3
@@ -46,7 +48,13 @@ Restart TradeBot after editing `.env`:
 ## What happens when armed
 
 - **Balance sync** — on each live tick, `LiveBroker` calls `fetch_balance()` and syncs ETH, ADA, USD, and BTC as the source of truth (`.live_state.json`).
-- **Paper mirror mode** (`LIVE_MIRROR_PAPER=1`) — paper runs in `.paper_state.json`; profitable paper trades can mirror to Kraken when live gates pass.
+- **Paper mirror mode** (`LIVE_MIRROR_PAPER=1`) — paper runs in `.paper_state.json`; when a paper trade gets a **CONFIRM** live-viability tag (Kraken fees + ticker), it mirrors to Kraken. Skips are logged to `logs/live_mirror_skips.log` (quiet — no Discord spam).
+- **Confidence gating** — `LIVE_MIRROR_MIN_CONFIDENCE` controls mirroring:
+  - `confirm` (default) — mirror only when live_tag is CONFIRM (est. net positive after fees)
+  - `uncertain_ok` — also allow UNCERTAIN when `LIVE_MIRROR_UNCERTAIN=1`
+  - `always` — mirror UNCERTAIN trades too (multi-hop still needs `LIVE_ALLOW_TRIANGULAR`)
+  - DENY verdicts never mirror
+- When CONFIRM, preflight / `LIVE_STRICT_PROFIT` net-profit blocks are bypassed for the mirror path (safety caps still apply: USD limit, ETH floor, drawdown halt).
 - **Restrictions (default)**:
   - Single-hop **ETH/USD** and **ADA/USD** market orders
   - Multi-hop blocked unless `LIVE_ALLOW_TRIANGULAR=1`
@@ -95,6 +103,8 @@ Restart the bot. Paper simulation continues with no Kraken orders.
 | Trade cap | `LIVE_MAX_TRADE_USD` ≤ 50 to start |
 | Allowed pairs | `LIVE_ALLOWED_ASSETS=ETH,ADA` |
 | Triangular live | default OFF; set `LIVE_ALLOW_TRIANGULAR=1` to enable sequential multi-hop |
+| Mirror confidence | `LIVE_MIRROR_MIN_CONFIDENCE=confirm` (default) |
+| Uncertain mirrors | `LIVE_MIRROR_UNCERTAIN=0` (default OFF) |
 | API withdraw disabled | Kraken key permissions |
 | Secrets not in git | `.env` is local only |
 

@@ -199,6 +199,16 @@
       "removed": 0,
       "request_id": "053",
       "timestamp": "2026-06-14 12:49:05 PDT"
+    },
+    {
+      "added": 7,
+      "number": 21,
+      "patch": "r021--2026-06-15_042757--document-mirror-confidence.patch",
+      "path": ".env.example",
+      "reason": "document mirror confidence",
+      "removed": 2,
+      "request_id": "056",
+      "timestamp": "2026-06-15 04:27:57 PDT"
     }
   ],
   ".gitignore": [
@@ -955,6 +965,16 @@
       "removed": 2,
       "request_id": "055",
       "timestamp": "2026-06-15 04:23:23 PDT"
+    },
+    {
+      "added": 111,
+      "number": 33,
+      "patch": "r033--2026-06-15_042756--confidence-gated-live-mirror.patch",
+      "path": "bot/engine.py",
+      "reason": "confidence-gated live mirror",
+      "removed": 27,
+      "request_id": "056",
+      "timestamp": "2026-06-15 04:27:56 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1369,6 +1389,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-14 03:53:22 PDT"
+    },
+    {
+      "added": 2,
+      "number": 2,
+      "patch": "r002--2026-06-15_042756--export-ismultihoptrade.patch",
+      "path": "bot/verifier/live_tag.py",
+      "reason": "export is_multi_hop_trade",
+      "removed": 2,
+      "request_id": "056",
+      "timestamp": "2026-06-15 04:27:56 PDT"
     }
   ],
   "bot/verifier/report.py": [
@@ -1627,6 +1657,16 @@
       "removed": 0,
       "request_id": "053",
       "timestamp": "2026-06-14 12:49:05 PDT"
+    },
+    {
+      "added": 20,
+      "number": 21,
+      "patch": "r021--2026-06-15_042756--mirror-confidence-env-knobs.patch",
+      "path": "config.py",
+      "reason": "mirror confidence env knobs",
+      "removed": 0,
+      "request_id": "056",
+      "timestamp": "2026-06-15 04:27:56 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -2223,6 +2263,16 @@
       "removed": 6,
       "request_id": "053",
       "timestamp": "2026-06-14 12:49:05 PDT"
+    },
+    {
+      "added": 11,
+      "number": 2,
+      "patch": "r002--2026-06-15_042757--confidence-mirror-docs.patch",
+      "path": "docs/live-trading.md",
+      "reason": "confidence mirror docs",
+      "removed": 1,
+      "request_id": "056",
+      "timestamp": "2026-06-15 04:27:57 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
@@ -2623,6 +2673,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-14 03:53:22 PDT"
+    },
+    {
+      "added": 203,
+      "number": 2,
+      "patch": "r002--2026-06-15_042757--confidence-mirror-tests.patch",
+      "path": "tests/test_live_mirror.py",
+      "reason": "confidence mirror tests",
+      "removed": 95,
+      "request_id": "056",
+      "timestamp": "2026-06-15 04:27:57 PDT"
     }
   ],
   "tests/test_quiet_discord.py": [

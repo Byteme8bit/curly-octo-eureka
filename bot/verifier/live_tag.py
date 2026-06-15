@@ -37,7 +37,7 @@ def _route_symbols(trade: dict) -> tuple[str, ...]:
     return (symbol,) if symbol else ()
 
 
-def _is_multi_hop(trade: dict) -> bool:
+def is_multi_hop_trade(trade: dict) -> bool:
     hops = int(trade.get("hops", 1) or 1)
     trade_type = trade.get("type", "")
     reason = (trade.get("reason") or "").lower()
@@ -82,7 +82,7 @@ def build_live_verify_tag(
     route_symbols = _route_symbols(trade)
     symbol = trade.get("symbol", route_symbols[0] if route_symbols else "")
 
-    if _is_multi_hop(trade):
+    if is_multi_hop_trade(trade):
         return LiveVerifyResult(
             tag="⚠ Paper-only / multi-hop — live execution uncertain",
             verdict=Verdict.UNCERTAIN,

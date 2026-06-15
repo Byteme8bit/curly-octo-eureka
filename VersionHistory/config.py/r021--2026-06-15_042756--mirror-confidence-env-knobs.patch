@@ -1,0 +1,43 @@
+--- a/config.py
++++ b/config.py
+@@ -215,6 +215,9 @@
+     live_strict_profit: bool
+     reset_live_state: bool
+     live_mirror_paper: bool
++    live_mirror_min_confidence: str
++    live_mirror_uncertain: bool
++    live_mirror_skip_log_file: Path
+     prop_enabled: bool
+ 
+ 
+@@ -228,6 +231,16 @@
+ 
+ def _parse_core_assets(raw: str) -> tuple[str, ...]:
+     return tuple(a.strip() for a in raw.split(",") if a.strip())
++
++
++def _parse_live_mirror_min_confidence(raw: str) -> str:
++    val = (raw or "confirm").strip().lower()
++    allowed = ("confirm", "uncertain_ok", "always")
++    if val not in allowed:
++        raise ValueError(
++            f"LIVE_MIRROR_MIN_CONFIDENCE must be one of {allowed}; got {raw!r}"
++        )
++    return val
+ 
+ 
+ def _parse_preferred_start_assets(
+@@ -596,6 +609,13 @@
+         live_strict_profit=os.getenv("LIVE_STRICT_PROFIT", "1") == "1",
+         reset_live_state=os.getenv("RESET_LIVE_STATE", "0") == "1",
+         live_mirror_paper=os.getenv("LIVE_MIRROR_PAPER", "0") == "1",
++        live_mirror_min_confidence=_parse_live_mirror_min_confidence(
++            os.getenv("LIVE_MIRROR_MIN_CONFIDENCE", "confirm")
++        ),
++        live_mirror_uncertain=os.getenv("LIVE_MIRROR_UNCERTAIN", "0") == "1",
++        live_mirror_skip_log_file=ROOT / os.getenv(
++            "LIVE_MIRROR_SKIP_LOG_FILE", "logs/live_mirror_skips.log"
++        ),
+         prop_enabled=os.getenv("PROP_ENABLED", "0") == "1",
+     )
+     _apply_runtime_overrides(fields)
