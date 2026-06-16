@@ -3039,3 +3039,43 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +8 / -0
 - **Patch:** `r030--2026-06-16_075542--document-xstock-all-mode.patch`
 
+## bot/live_portfolio.py — r001
+
+- **When:** 2026-06-16 08:58:13 PDT
+- **Reason:** merge session paper usd prices
+- **Request:** 072
+- **Diff:** +12 / -10
+- **Patch:** `r001--2026-06-16_085813--merge-session-paper-usd-prices.patch`
+
+## dashboard/parsers/live_portfolio.py — r002
+
+- **When:** 2026-06-16 08:58:13 PDT
+- **Reason:** use shared live usd prices
+- **Request:** 072
+- **Diff:** +7 / -17
+- **Patch:** `r002--2026-06-16_085813--use-shared-live-usd-prices.patch`
+
+## bot/engine.py — r048
+
+- **When:** 2026-06-16 08:58:13 PDT
+- **Reason:** live asset price fallback
+- **Request:** 072
+- **Diff:** +18 / -4
+- **Patch:** `r048--2026-06-16_085813--live-asset-price-fallback.patch`
+
+## bot/auditor/context.py — r001
+
+- **When:** 2026-06-16 08:58:14 PDT
+- **Reason:** merge session paper prices
+- **Request:** 072
+- **Diff:** +14 / -10
+- **Patch:** `r001--2026-06-16_085814--merge-session-paper-prices.patch`
+
+## tests/test_dashboard_live.py — r004
+
+- **When:** 2026-06-16 08:58:14 PDT
+- **Reason:** eth divergence regression test
+- **Request:** 072
+- **Diff:** +50 / -0
+- **Patch:** `r004--2026-06-16_085814--eth-divergence-regression-test.patch`
+
