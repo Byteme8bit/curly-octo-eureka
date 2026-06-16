@@ -3351,6 +3351,16 @@
       "removed": 0,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:16 PDT"
+    },
+    {
+      "added": 11,
+      "number": 10,
+      "patch": "r010--2026-06-16_072358--freeze-whale-prune-anchor-time.patch",
+      "path": "tests/test_dashboard.py",
+      "reason": "freeze whale prune anchor time",
+      "removed": 2,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:23:58 PDT"
     }
   ],
   "tests/test_dashboard_live.py": [
@@ -3573,6 +3583,16 @@
       "removed": 95,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:57 PDT"
+    },
+    {
+      "added": 7,
+      "number": 4,
+      "patch": "r004--2026-06-16_072358--mock-crypto-day-trade-settings.patch",
+      "path": "tests/test_live_mirror.py",
+      "reason": "mock crypto day-trade settings",
+      "removed": 1,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:23:58 PDT"
     }
   ],
   "tests/test_live_verify_tag.py": [

@@ -2959,3 +2959,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +1 / -0
 - **Patch:** `r001--2026-06-16_071948--disable-bucket-trim-in-fixture.patch`
 
+## tests/test_dashboard.py — r010
+
+- **When:** 2026-06-16 07:23:58 PDT
+- **Reason:** freeze whale prune anchor time
+- **Request:** 069
+- **Diff:** +11 / -2
+- **Patch:** `r010--2026-06-16_072358--freeze-whale-prune-anchor-time.patch`
+
+## tests/test_live_mirror.py — r004
+
+- **When:** 2026-06-16 07:23:58 PDT
+- **Reason:** mock crypto day-trade settings
+- **Request:** 069
+- **Diff:** +7 / -1
+- **Patch:** `r004--2026-06-16_072358--mock-crypto-day-trade-settings.patch`
+

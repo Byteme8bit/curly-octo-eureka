@@ -1,0 +1,25 @@
+--- a/tests/test_live_mirror.py
++++ b/tests/test_live_mirror.py
+@@ -98,6 +98,10 @@
+         live_mirror_uncertain=False,
+         live_mirror_skip_log_file=tmp_path / "mirror_skips.log",
+         trade_verify_skip_kraken=True,
++        profit_only_mode=False,
++        crypto_day_trade_mode=False,
++        crypto_min_trade_edge=0.0,
++        equity_assets=(),
+     )
+     engine.markets = MagicMock()
+     engine.preflight = MagicMock()
+@@ -221,8 +225,10 @@
+ 
+ 
+ def test_mirror_bypasses_preflight_on_confirm(mirror_engine: TradingEngine) -> None:
++    # Negative net is blocked by _live_mirror_offensive_block even on CONFIRM;
++    # use allowed=False with positive net to exercise preflight bypass only.
+     mirror_engine.preflight.validate.return_value = MagicMock(
+-        allowed=False, reason="net profit too low", net_return_pct=-0.01
++        allowed=False, reason="net profit too low", net_return_pct=0.01
+     )
+     intent, route = _sample_intent_route()
+     with patch.object(
