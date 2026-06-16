@@ -1,0 +1,25 @@
+--- a/docs/live-trading.md
++++ b/docs/live-trading.md
+@@ -50,6 +50,7 @@
+ 
+ - **Balance sync** — on each live tick, `LiveBroker` calls `fetch_balance()` and syncs ETH, ADA, USD, and BTC as the source of truth (`.live_state.json`).
+ - **Paper mirror mode** (`LIVE_MIRROR_PAPER=1`) — paper runs in `.paper_state.json`; when a paper trade passes live_tag confidence gating (CONFIRM, or UNCERTAIN when configured), it mirrors to Kraken. Skips are logged to `logs/live_mirror_skips.log` (quiet — no Discord spam).
++- **Paper anchor** (`PAPER_ANCHOR_TO_LIVE=1`, default on when mirror mode is on) — on each startup and `TradeBot -reset`, paper balances are copied from live Kraken spot so the sim starts near your real book. Paper may diverge during the session as it simulates routes live skips; `TradeBot -portfolio` shows live first, then labeled paper.
+ - **Confidence gating** — `LIVE_MIRROR_MIN_CONFIDENCE` controls mirroring:
+   - `confirm` (default) — mirror only when live_tag is CONFIRM (est. net positive after fees)
+   - `uncertain_ok` — also allow UNCERTAIN when `LIVE_MIRROR_UNCERTAIN=1`
+@@ -79,6 +80,14 @@
+ ```
+ 
+ Prints ETH, ADA, USD balances and portfolio USD without placing orders.
++
++Re-anchor inflated paper balances to live spot without a full bot restart:
++
++```powershell
++.\.venv\Scripts\python.exe scripts\anchor_paper_to_live.py
++```
++
++Requires `LIVE_MIRROR_PAPER=1`, `LIVE_ENABLED=1`, and `PAPER_ANCHOR_TO_LIVE=1`.
+ 
+ ## Dry-run single sell (optional)
+ 

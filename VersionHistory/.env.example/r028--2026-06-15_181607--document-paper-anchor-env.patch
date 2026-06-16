@@ -1,0 +1,19 @@
+--- a/.env.example
++++ b/.env.example
+@@ -359,6 +359,7 @@
+ # LIVE_ENABLED=1
+ # LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY
+ # LIVE_MIRROR_PAPER=1
++# PAPER_ANCHOR_TO_LIVE=1
+ # LIVE_ALLOWED_ASSETS=ETH,ADA,BTC,DOT,UNI,AAVE,SOL,LINK,AAPLx,TSLAx,SPYx
+ # LIVE_ALLOW_TRIANGULAR=1
+ # LIVE_MAX_ROUTE_LEGS=3
+@@ -424,6 +425,8 @@
+ # Tier 2 ($100k+): + triangular_arbitrage, higher exploration
+ # Tier 3 ($1M+): full multi-strategy + whale-follow sizing bump
+ # In LIVE_MIRROR_PAPER mode the bot tracks live Kraken portfolio for goals.
++# PAPER_ANCHOR_TO_LIVE=1 (default when mirror mode is on) resets paper balances
++# to live Kraken spot on each startup and on TradeBot -reset.
+ # ---------------------------------------------------------------------------
+ GOAL_EVOLUTION_ENABLED=1
+ # GOAL_STATE_FILE=.tradebot_goals_state.json

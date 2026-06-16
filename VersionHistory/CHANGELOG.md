@@ -2687,3 +2687,51 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +63 / -35
 - **Patch:** `r041--2026-06-15_180841--wire-live-portfolio-command.patch`
 
+## bot/engine.py — r042
+
+- **When:** 2026-06-15 18:16:06 PDT
+- **Reason:** anchor-paper-to-live-on-startup
+- **Request:** 065
+- **Diff:** +27 / -3
+- **Patch:** `r042--2026-06-15_181606--anchor-paper-to-live-on-startup.patch`
+
+## bot/report.py — r008
+
+- **When:** 2026-06-15 18:16:06 PDT
+- **Reason:** portfolio-anchor-labels
+- **Request:** 065
+- **Diff:** +11 / -1
+- **Patch:** `r008--2026-06-15_181606--portfolio-anchor-labels.patch`
+
+## config.py — r027
+
+- **When:** 2026-06-15 18:16:07 PDT
+- **Reason:** paper-anchor-to-live-config
+- **Request:** 065
+- **Diff:** +6 / -0
+- **Patch:** `r027--2026-06-15_181607--paper-anchor-to-live-config.patch`
+
+## docs/live-trading.md — r006
+
+- **When:** 2026-06-15 18:16:07 PDT
+- **Reason:** document-paper-anchor
+- **Request:** 065
+- **Diff:** +9 / -0
+- **Patch:** `r006--2026-06-15_181607--document-paper-anchor.patch`
+
+## .env.example — r028
+
+- **When:** 2026-06-15 18:16:07 PDT
+- **Reason:** document-paper-anchor-env
+- **Request:** 065
+- **Diff:** +3 / -0
+- **Patch:** `r028--2026-06-15_181607--document-paper-anchor-env.patch`
+
+## tests/test_portfolio_command.py — r001
+
+- **When:** 2026-06-15 18:16:07 PDT
+- **Reason:** anchor-portfolio-label-tests
+- **Request:** 065
+- **Diff:** +23 / -1
+- **Patch:** `r001--2026-06-15_181607--anchor-portfolio-label-tests.patch`
+
