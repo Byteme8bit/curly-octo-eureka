@@ -20,6 +20,13 @@ from watchdog.state import WatchdogState
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "dashboard"
 
 
+def _whale_test_now_ts() -> float:
+    """Anchor 'now' near sample whale event timestamps so prune_events keeps them."""
+    from datetime import datetime, timezone
+
+    return datetime(2026, 6, 10, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+
+
 def _settings(root: Path) -> DashboardSettings:
     return DashboardSettings(
         root=root,
@@ -212,7 +219,8 @@ def test_paper_and_live_tradebot_endpoints():
     assert live["mode"] == "live"
 
 
-def test_build_whale_view(tmp_path: Path):
+def test_build_whale_view(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr("bot.whale_watch.time.time", _whale_test_now_ts)
     state_path = tmp_path / ".whale_watch_state.json"
     state_path.write_text(
         json.dumps(
@@ -242,7 +250,8 @@ def test_build_whale_view(tmp_path: Path):
     assert view["recent_events"][0]["asset"] == "ETH"
 
 
-def test_build_whale_view_includes_follow_status(tmp_path: Path):
+def test_build_whale_view_includes_follow_status(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr("bot.whale_watch.time.time", _whale_test_now_ts)
     state_path = tmp_path / ".whale_watch_state.json"
     state_path.write_text(
         json.dumps(
