@@ -128,6 +128,21 @@ def test_portfolio_constraints_equity_cap() -> None:
     assert result.allowed, result.reason
 
 
+def test_filter_equity_watchlist_splits_valid_and_skipped() -> None:
+    from bot.equities import filter_equity_watchlist
+
+    catalog = {
+        "AAPLxUSD": _mock_pair("AAPLx"),
+        "TSLAxUSD": _mock_pair("TSLAx"),
+    }
+    valid, skipped, symbols = filter_equity_watchlist(
+        ("AAPLx", "TSLAx", "FAKEx"), catalog
+    )
+    assert valid == ("AAPLx", "TSLAx")
+    assert skipped == ("FAKEx",)
+    assert symbols == ("AAPLx/USD", "TSLAx/USD")
+
+
 def test_settings_include_equity_symbols_when_enabled(monkeypatch) -> None:
     from config import load_settings
 

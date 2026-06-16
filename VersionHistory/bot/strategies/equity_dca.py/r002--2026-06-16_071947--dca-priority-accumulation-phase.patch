@@ -1,0 +1,120 @@
+--- a/bot/strategies/equity_dca.py
++++ b/bot/strategies/equity_dca.py
+@@ -109,6 +109,11 @@
+         self.per_symbol_usd = settings.dca_per_symbol_usd
+         self.min_usd_trade = settings.min_usd_trade
+         self.max_equity_allocation_pct = settings.max_equity_allocation_pct
++        self.max_equity_bucket_pct = settings.max_equity_bucket_pct
++        self.target_equity_allocation_pct = settings.target_equity_allocation_pct
++        self.equity_dca_priority = settings.equity_dca_priority
++        self.equity_accumulation_min_pct = settings.equity_accumulation_min_pct
++        self.equity_accumulation_phase = settings.equity_accumulation_phase
+         self.live_enabled = settings.live_enabled
+         self.live_allowed = frozenset(settings.live_allowed_assets)
+         self.state_path = settings.dca_state_file
+@@ -118,6 +123,34 @@
+         """Watchlist tickers that have a USD pair on Kraken."""
+         symbol_bases = {s.split("/", 1)[0] for s in self.equity_usd_symbols}
+         return tuple(a for a in self.equity_watchlist if a in symbol_bases)
++
++    def _equity_bucket_pct(
++        self, holdings: dict[str, float], prices: dict[str, float]
++    ) -> float:
++        portfolio = holdings.get("USD", 0.0) + sum(
++            q * prices.get(a, 0.0) for a, q in holdings.items() if a != "USD"
++        )
++        if portfolio <= 0:
++            return 0.0
++        equity_usd = sum(
++            holdings.get(a, 0.0) * prices.get(a, 0.0) for a in self.equity_assets
++        )
++        return equity_usd / portfolio
++
++    def _in_accumulation(self, holdings: dict[str, float], prices: dict[str, float]) -> bool:
++        equity_pct = self._equity_bucket_pct(holdings, prices)
++        if equity_pct < self.equity_accumulation_min_pct:
++            return True
++        if self.equity_accumulation_phase and equity_pct < self.target_equity_allocation_pct:
++            return True
++        return False
++
++    def _effective_interval_hours(
++        self, holdings: dict[str, float], prices: dict[str, float]
++    ) -> float:
++        if self.equity_dca_priority and self._in_accumulation(holdings, prices):
++            return max(6.0, self.interval_hours * 0.5)
++        return self.interval_hours
+ 
+     def _budget_usd(self, watchlist: tuple[str, ...]) -> float:
+         if self.per_symbol_usd > 0:
+@@ -126,17 +159,19 @@
+             return 0.0
+         return self.amount_usd / len(watchlist)
+ 
+-    def _pick_symbol(self, watchlist: tuple[str, ...]) -> str | None:
++    def _pick_symbol(
++        self, watchlist: tuple[str, ...], *, interval_hours: float
++    ) -> str | None:
+         if not watchlist:
+             return None
+         if self.per_symbol_usd > 0:
+             for asset in watchlist:
+                 elapsed = self._state.hours_since_buy(asset)
+-                if elapsed is None or elapsed >= self.interval_hours:
++                if elapsed is None or elapsed >= interval_hours:
+                     return asset
+             return None
+         elapsed = self._state.hours_since_cycle()
+-        if elapsed is not None and elapsed < self.interval_hours:
++        if elapsed is not None and elapsed < interval_hours:
+             return None
+         idx = self._state.cycle_index % len(watchlist)
+         return watchlist[idx]
+@@ -197,14 +232,29 @@
+                 idle_reason="Equity DCA — no resolved USD pairs on watchlist",
+             )
+ 
+-        asset = self._pick_symbol(watchlist)
++        interval_hours = self._effective_interval_hours(holdings, prices)
++        equity_bucket = self._equity_bucket_pct(holdings, prices)
++        if equity_bucket >= self.max_equity_bucket_pct:
++            return StrategyResult(
++                signals={},
++                scores={},
++                reasons={},
++                sizes={},
++                blocked=[
++                    f"Equity DCA — equity bucket {equity_bucket:.1%} "
++                    f"at cap {self.max_equity_bucket_pct:.0%}"
++                ],
++                idle_reason="Equity DCA — equity bucket at target",
++            )
++
++        asset = self._pick_symbol(watchlist, interval_hours=interval_hours)
+         if asset is None:
+             return StrategyResult(
+                 signals={},
+                 scores={},
+                 reasons={},
+                 sizes={},
+-                idle_reason=f"Equity DCA — next buy in <= {self.interval_hours:.0f}h",
++                idle_reason=f"Equity DCA — next buy in <= {interval_hours:.0f}h",
+             )
+ 
+         if not self._live_allowed(asset):
+@@ -275,12 +325,13 @@
+             )
+ 
+         mode = "per-symbol" if self.per_symbol_usd > 0 else "split"
++        priority = "priority " if self.equity_dca_priority and self._in_accumulation(holdings, prices) else ""
+         intent = TradeIntent(
+             from_asset="USD",
+             to_asset=asset,
+             reason=(
+-                f"Equity DCA ({mode}) — scheduled buy ${trade_usd:.2f} of {asset}/USD "
+-                f"every {self.interval_hours:.0f}h"
++                f"Equity DCA ({priority}{mode}) — scheduled buy ${trade_usd:.2f} of {asset}/USD "
++                f"every {interval_hours:.0f}h (equity bucket {equity_bucket:.1%})"
+             ),
+             size_pct=size_pct,
+             edge=0.0,

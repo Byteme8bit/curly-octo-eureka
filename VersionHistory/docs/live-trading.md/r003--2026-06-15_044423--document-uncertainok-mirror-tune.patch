@@ -1,0 +1,25 @@
+--- a/docs/live-trading.md
++++ b/docs/live-trading.md
+@@ -30,10 +30,10 @@
+ # LIVE_MAX_ROUTE_LEGS=3
+ # LIVE_MAX_ROUTE_USD=50
+ 
+-# Recommended: paper shadow + live mirror
++# Recommended: paper shadow + live mirror (more activity like paper)
+ LIVE_MIRROR_PAPER=1
+-LIVE_MIRROR_MIN_CONFIDENCE=confirm
+-# LIVE_MIRROR_UNCERTAIN=0
++LIVE_MIRROR_MIN_CONFIDENCE=uncertain_ok
++LIVE_MIRROR_UNCERTAIN=1
+ LIVE_MIN_ETH_RESERVE=0.5
+ LIVE_DRAWDOWN_HALT_PCT=0.10
+ LIVE_MAX_TRADES=3
+@@ -48,7 +48,7 @@
+ ## What happens when armed
+ 
+ - **Balance sync** — on each live tick, `LiveBroker` calls `fetch_balance()` and syncs ETH, ADA, USD, and BTC as the source of truth (`.live_state.json`).
+-- **Paper mirror mode** (`LIVE_MIRROR_PAPER=1`) — paper runs in `.paper_state.json`; when a paper trade gets a **CONFIRM** live-viability tag (Kraken fees + ticker), it mirrors to Kraken. Skips are logged to `logs/live_mirror_skips.log` (quiet — no Discord spam).
++- **Paper mirror mode** (`LIVE_MIRROR_PAPER=1`) — paper runs in `.paper_state.json`; when a paper trade passes live_tag confidence gating (CONFIRM, or UNCERTAIN when configured), it mirrors to Kraken. Skips are logged to `logs/live_mirror_skips.log` (quiet — no Discord spam).
+ - **Confidence gating** — `LIVE_MIRROR_MIN_CONFIDENCE` controls mirroring:
+   - `confirm` (default) — mirror only when live_tag is CONFIRM (est. net positive after fees)
+   - `uncertain_ok` — also allow UNCERTAIN when `LIVE_MIRROR_UNCERTAIN=1`

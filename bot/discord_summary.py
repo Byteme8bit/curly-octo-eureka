@@ -134,3 +134,33 @@ def format_hourly_summary(
     if crash_hold:
         lines.append("Crash hold: **active**")
     return "\n".join(lines)
+
+
+def format_tick_activity_line(
+    *,
+    last_scan_at: str,
+    opportunity_count: int,
+    top_block_reason: str = "",
+    poll_interval: int = 15,
+    idle_hours: float = 0.0,
+    paper_trades_session: int = 0,
+    live_trades_session: int = 0,
+    live_halted: bool = False,
+    live_halt_reason: str = "",
+) -> str:
+    """One-line scan summary for heartbeat / portfolio when Discord is quiet."""
+    idle_min = int(round(idle_hours * 60))
+    parts = [
+        f"Last scan {last_scan_at} (every {poll_interval}s)",
+        f"{opportunity_count} routes scored",
+        f"paper {paper_trades_session} live {live_trades_session} this session",
+    ]
+    if idle_min > 0:
+        parts.append(f"idle {idle_min}m since last trade")
+    if live_halted:
+        short = (live_halt_reason or "halted")[:80]
+        parts.append(f"LIVE HALTED: {short}")
+    elif top_block_reason:
+        short = top_block_reason[:100] + ("…" if len(top_block_reason) > 100 else "")
+        parts.append(f"top block: {short}")
+    return "Scan activity — " + " | ".join(parts)

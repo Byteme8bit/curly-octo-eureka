@@ -43,6 +43,11 @@ DEFAULT_STAT_ARB_PAIRS = "ETH/BTC,SOL/ETH,LINK/ETH,AVAX/ETH"
 DEFAULT_MOMENTUM_TIMEFRAMES = "15m,1h"
 DEFAULT_EQUITY_WATCHLIST = "AAPLx,TSLAx,SPYx"
 DEFAULT_MAX_EQUITY_ALLOCATION_PCT = "0.15"
+DEFAULT_TARGET_EQUITY_ALLOCATION_PCT = "0.50"
+DEFAULT_MAX_EQUITY_BUCKET_PCT = "0.55"
+DEFAULT_MAX_CRYPTO_BUCKET_PCT = "0.55"
+DEFAULT_EQUITY_ACCUMULATION_MIN_PCT = "0.45"
+DEFAULT_CRYPTO_MIN_TRADE_EDGE = "0.003"
 DEFAULT_DCA_INTERVAL_HOURS = "24"
 DEFAULT_DCA_AMOUNT_USD = "15"
 DEFAULT_FUTURES_WATCHLIST = "BTC/USD:USD,ETH/USD:USD,AAPLX/USD:USD"
@@ -241,6 +246,16 @@ class Settings:
     symbol_assets: dict[str, str]
     asset_usd_symbols: dict[str, str]
     max_equity_allocation_pct: float
+    target_equity_allocation_pct: float
+    target_crypto_allocation_pct: float
+    max_equity_bucket_pct: float
+    max_crypto_bucket_pct: float
+    equity_accumulation_phase: bool
+    equity_dca_priority: bool
+    equity_accumulation_min_pct: float
+    equity_severe_overweight_pct: float
+    crypto_day_trade_mode: bool
+    crypto_min_trade_edge: float
     dca_enabled: bool
     dca_interval_hours: float
     dca_amount_usd: float
@@ -408,15 +423,39 @@ def _env_int(name: str, default: str, *, quiet: bool = False, quiet_default: str
 
 def load_settings() -> Settings:
     enable_equities = os.getenv("ENABLE_EQUITIES", "0") == "1"
-    equity_watchlist = _parse_equity_watchlist(
+    requested_equity_watchlist = _parse_equity_watchlist(
         os.getenv("EQUITY_WATCHLIST", DEFAULT_EQUITY_WATCHLIST)
     )
-    crypto_usd_symbols = _parse_usd_symbols(os.getenv("SYMBOLS", DEFAULT_SYMBOLS))
+    equity_watchlist = requested_equity_watchlist
     equity_usd_symbols: tuple[str, ...] = ()
+    skipped_equities: tuple[str, ...] = ()
     if enable_equities:
-        from bot.equities import resolve_watchlist_pairs
+        from bot.equities import fetch_tokenized_pairs, filter_equity_watchlist
 
-        equity_usd_symbols = resolve_watchlist_pairs(equity_watchlist)
+        try:
+            catalog = fetch_tokenized_pairs()
+            equity_watchlist, skipped_equities, equity_usd_symbols = filter_equity_watchlist(
+                requested_equity_watchlist, catalog
+            )
+        except Exception as exc:
+            logger.warning(
+                "Could not fetch Kraken xStock pairs (%s) — using resolve_watchlist_pairs fallback",
+                exc,
+            )
+            from bot.equities import resolve_watchlist_pairs
+
+            equity_usd_symbols = resolve_watchlist_pairs(requested_equity_watchlist)
+            equity_watchlist = tuple(
+                s.split("/", 1)[0] for s in equity_usd_symbols
+            )
+            valid_set = frozenset(equity_watchlist)
+            skipped_equities = tuple(a for a in requested_equity_watchlist if a not in valid_set)
+        if skipped_equities:
+            logger.warning(
+                "EQUITY_WATCHLIST assets not on Kraken for this account (skipped): %s",
+                ", ".join(skipped_equities),
+            )
+    crypto_usd_symbols = _parse_usd_symbols(os.getenv("SYMBOLS", DEFAULT_SYMBOLS))
     usd_symbols = crypto_usd_symbols + equity_usd_symbols
     symbol_assets, asset_usd_symbols = _build_trading_symbol_maps(
         crypto_usd_symbols, equity_usd_symbols
@@ -429,8 +468,18 @@ def load_settings() -> Settings:
     # env var still overrides. Edges remain fee-protected by preflight, so
     # "aggressive" means more/larger trades, not unprofitable ones.
     day_trader = os.getenv("DAY_TRADER_MODE", "0") == "1"
+    crypto_day_trade = os.getenv("CRYPTO_DAY_TRADE_MODE", "0") == "1"
     profit_only_mode = os.getenv("PROFIT_ONLY_MODE", "0") == "1"
     yolo_profitable = os.getenv("YOLO_PROFITABLE", "0") == "1"
+    target_equity_pct = float(
+        os.getenv("TARGET_EQUITY_ALLOCATION_PCT", DEFAULT_TARGET_EQUITY_ALLOCATION_PCT)
+    )
+    target_crypto_raw = os.getenv("TARGET_CRYPTO_ALLOCATION_PCT", "").strip()
+    target_crypto_pct = (
+        float(target_crypto_raw)
+        if target_crypto_raw
+        else max(0.0, 1.0 - target_equity_pct)
+    )
 
     def _dt(aggressive: str, normal: str) -> str:
         return aggressive if day_trader else normal
@@ -439,6 +488,14 @@ def load_settings() -> Settings:
         if yolo_profitable and profit_only_mode:
             return aggressive
         return normal
+
+    poll_interval_raw = os.getenv("POLL_INTERVAL")
+    if poll_interval_raw:
+        poll_interval = int(poll_interval_raw)
+    elif crypto_day_trade:
+        poll_interval = 10
+    else:
+        poll_interval = 15
 
     fields: dict = dict(
         watch_assets=watch_assets,
@@ -451,7 +508,7 @@ def load_settings() -> Settings:
         initial_balances=_parse_initial_balances(
             os.getenv("INITIAL_BALANCES", '{"ETH": 1.0, "ADA": 83.0, "USD": 0.0}')
         ),
-        poll_interval=int(os.getenv("POLL_INTERVAL", "15")),
+        poll_interval=poll_interval,
         fee_rate=float(os.getenv("FEE_RATE", "0.0026")),
         candle_timeframe=os.getenv("CANDLE_TIMEFRAME", "5m"),
         candle_limit=int(os.getenv("CANDLE_LIMIT", "60")),
@@ -726,6 +783,26 @@ def load_settings() -> Settings:
         max_equity_allocation_pct=float(
             os.getenv("MAX_EQUITY_ALLOCATION_PCT", DEFAULT_MAX_EQUITY_ALLOCATION_PCT)
         ),
+        target_equity_allocation_pct=target_equity_pct,
+        target_crypto_allocation_pct=target_crypto_pct,
+        max_equity_bucket_pct=float(
+            os.getenv("MAX_EQUITY_BUCKET_PCT", DEFAULT_MAX_EQUITY_BUCKET_PCT)
+        ),
+        max_crypto_bucket_pct=float(
+            os.getenv("MAX_CRYPTO_BUCKET_PCT", DEFAULT_MAX_CRYPTO_BUCKET_PCT)
+        ),
+        equity_accumulation_phase=os.getenv("EQUITY_ACCUMULATION_PHASE", "0") == "1",
+        equity_dca_priority=os.getenv("EQUITY_DCA_PRIORITY", "0") == "1",
+        equity_accumulation_min_pct=float(
+            os.getenv("EQUITY_ACCUMULATION_MIN_PCT", DEFAULT_EQUITY_ACCUMULATION_MIN_PCT)
+        ),
+        equity_severe_overweight_pct=float(
+            os.getenv("EQUITY_SEVERE_OVERWEIGHT_PCT", "0.60")
+        ),
+        crypto_day_trade_mode=crypto_day_trade,
+        crypto_min_trade_edge=float(
+            os.getenv("CRYPTO_MIN_TRADE_EDGE", DEFAULT_CRYPTO_MIN_TRADE_EDGE)
+        ),
         dca_enabled=os.getenv("DCA_ENABLED", "0") == "1",
         dca_interval_hours=float(
             os.getenv("DCA_INTERVAL_HOURS", DEFAULT_DCA_INTERVAL_HOURS)
@@ -749,6 +826,19 @@ def load_settings() -> Settings:
         ),
         reset_futures_state=os.getenv("RESET_FUTURES_STATE", "0") == "1",
     )
+    if enable_equities:
+        valid_equity = frozenset(fields["equity_watchlist"])
+        requested_equity = frozenset(requested_equity_watchlist)
+        filtered_live: list[str] = []
+        for asset in fields["live_allowed_assets"]:
+            if asset in requested_equity and asset not in valid_equity:
+                logger.warning(
+                    "LIVE_ALLOWED_ASSETS: removing %s — not listed on Kraken for this account",
+                    asset,
+                )
+                continue
+            filtered_live.append(asset)
+        fields["live_allowed_assets"] = tuple(filtered_live)
     if fields["enable_equities"] and fields["live_enabled"]:
         allowed = frozenset(fields["live_allowed_assets"])
         for ticker in fields["equity_watchlist"]:
