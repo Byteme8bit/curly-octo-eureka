@@ -109,3 +109,38 @@ def test_live_tag_skip_kraken_uses_fee_engine(single_leg_trade) -> None:
     )
     assert result.verdict == Verdict.CONFIRM
     assert "fee engine" in result.source or "Live-viable" in result.tag
+
+
+def test_public_kraken_symbol_exists_for_xstock(monkeypatch) -> None:
+    from bot.verifier.kraken import PublicKraken
+
+    class _CryptoOnlyExchange:
+        markets = {"ETH/USD": {"active": True}}
+
+        def load_markets(self):
+            return self.markets
+
+    kraken = PublicKraken(exchange=_CryptoOnlyExchange(), timeout_ms=2000)
+    monkeypatch.setattr(
+        "bot.verifier.kraken.PublicKraken._tokenized_symbols",
+        lambda self: frozenset({"TSLAX/USD", "AAPLX/USD"}),
+    )
+    assert kraken.symbol_exists("TSLAx/USD")
+    assert not kraken.symbol_exists("FAKEx/USD")
+
+
+def test_live_tag_equity_dca_not_denied_as_missing_on_kraken() -> None:
+    trade = {
+        "from_asset": "USD",
+        "to_asset": "TSLAx",
+        "symbol": "TSLAx/USD",
+        "side": "buy",
+        "price": 400.0,
+        "strategy_name": "equity_dca",
+        "is_accumulation": True,
+        "hops": 1,
+        "type": "single",
+    }
+    result = build_live_verify_tag(trade, skip_kraken=True)
+    assert result.verdict == Verdict.CONFIRM
+    assert "DCA" in result.tag
