@@ -103,6 +103,22 @@ def test_triangular_rejects_unlisted_asset() -> None:
     assert "UNI" in reason or "AAVE" in reason
 
 
+def test_four_leg_triangular_route_allowed() -> None:
+    route = _route(
+        _leg("ETH", "UNI", Signal.SELL),
+        _leg("UNI", "DOT", Signal.BUY),
+        _leg("DOT", "USD", Signal.SELL),
+        _leg("DOT", "ETH", Signal.SELL),
+    )
+    ok, reason = check_live_route(
+        route,
+        ("ETH", "DOT", "UNI", "AAVE", "SOL", "LINK", "XRP"),
+        allow_triangular=True,
+        max_route_legs=4,
+    )
+    assert ok, reason
+
+
 def test_max_route_legs_cap() -> None:
     route = _route(
         _leg("ETH", "USD", Signal.SELL),
