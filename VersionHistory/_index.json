@@ -269,6 +269,16 @@
       "removed": 1,
       "request_id": "061",
       "timestamp": "2026-06-15 11:33:24 PDT"
+    },
+    {
+      "added": 3,
+      "number": 28,
+      "patch": "r028--2026-06-15_181607--document-paper-anchor-env.patch",
+      "path": ".env.example",
+      "reason": "document-paper-anchor-env",
+      "removed": 0,
+      "request_id": "065",
+      "timestamp": "2026-06-15 18:16:07 PDT"
     }
   ],
   ".gitignore": [
@@ -1145,6 +1155,16 @@
       "removed": 35,
       "request_id": "064",
       "timestamp": "2026-06-15 18:08:41 PDT"
+    },
+    {
+      "added": 27,
+      "number": 42,
+      "patch": "r042--2026-06-15_181606--anchor-paper-to-live-on-startup.patch",
+      "path": "bot/engine.py",
+      "reason": "anchor-paper-to-live-on-startup",
+      "removed": 3,
+      "request_id": "065",
+      "timestamp": "2026-06-15 18:16:06 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1457,6 +1477,16 @@
       "removed": 13,
       "request_id": "064",
       "timestamp": "2026-06-15 18:08:41 PDT"
+    },
+    {
+      "added": 11,
+      "number": 8,
+      "patch": "r008--2026-06-15_181606--portfolio-anchor-labels.patch",
+      "path": "bot/report.py",
+      "reason": "portfolio-anchor-labels",
+      "removed": 1,
+      "request_id": "065",
+      "timestamp": "2026-06-15 18:16:06 PDT"
     }
   ],
   "bot/risk.py": [
@@ -2093,6 +2123,16 @@
       "removed": 0,
       "request_id": "061",
       "timestamp": "2026-06-15 11:33:24 PDT"
+    },
+    {
+      "added": 6,
+      "number": 27,
+      "patch": "r027--2026-06-15_181607--paper-anchor-to-live-config.patch",
+      "path": "config.py",
+      "reason": "paper-anchor-to-live-config",
+      "removed": 0,
+      "request_id": "065",
+      "timestamp": "2026-06-15 18:16:07 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -2781,6 +2821,16 @@
       "removed": 0,
       "request_id": "061",
       "timestamp": "2026-06-15 11:33:25 PDT"
+    },
+    {
+      "added": 9,
+      "number": 6,
+      "patch": "r006--2026-06-15_181607--document-paper-anchor.patch",
+      "path": "docs/live-trading.md",
+      "reason": "document-paper-anchor",
+      "removed": 0,
+      "request_id": "065",
+      "timestamp": "2026-06-15 18:16:07 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
@@ -3265,6 +3315,18 @@
       "removed": 95,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:57 PDT"
+    }
+  ],
+  "tests/test_portfolio_command.py": [
+    {
+      "added": 23,
+      "number": 1,
+      "patch": "r001--2026-06-15_181607--anchor-portfolio-label-tests.patch",
+      "path": "tests/test_portfolio_command.py",
+      "reason": "anchor-portfolio-label-tests",
+      "removed": 1,
+      "request_id": "065",
+      "timestamp": "2026-06-15 18:16:07 PDT"
     }
   ],
   "tests/test_profit_only_mode.py": [

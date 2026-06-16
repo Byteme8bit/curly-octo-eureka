@@ -1,0 +1,43 @@
+--- a/tests/test_portfolio_command.py
++++ b/tests/test_portfolio_command.py
+@@ -37,6 +37,7 @@
+         trading_active=True,
+         live_enabled=True,
+         mirror_mode=True,
++        paper_anchor_to_live=True,
+         live_portfolio=1644.0,
+         live_session_pnl=-10.0,
+         live_drawdown=0.025,
+@@ -45,10 +46,31 @@
+     assert text.index("Live Kraken spot") < text.index("[Paper sim]")
+     assert "Session PnL -10.00" in text
+     assert "Portfolio  $1,644.00" in text
+-    assert "[Paper sim] — not Kraken balance" in text
++    assert "anchored to live at session start" in text
++    assert "PAPER_ANCHOR_TO_LIVE=1" in text
+     assert "Portfolio  $495.00" in text
+     assert "ETH" in text
+     assert "UNI" in text
++
++
++def test_mirror_mode_without_anchor_keeps_legacy_label() -> None:
++    text = format_portfolio_command(
++        portfolio=12000.0,
++        baseline_pnl=500.0,
++        drawdown=0.02,
++        holdings={"USD": 50.0, "ETH": 3.0},
++        usd_prices=_PRICES,
++        trading_active=True,
++        live_enabled=True,
++        mirror_mode=True,
++        paper_anchor_to_live=False,
++        live_portfolio=1644.0,
++        live_session_pnl=-10.0,
++        live_drawdown=0.025,
++        live_holdings={"USD": 149.0, "ETH": 0.87},
++    )
++    assert "[Paper sim] — not Kraken balance" in text
++    assert "anchored to live" not in text
+ 
+ 
+ def test_pure_live_labels_kraken_not_paper() -> None:

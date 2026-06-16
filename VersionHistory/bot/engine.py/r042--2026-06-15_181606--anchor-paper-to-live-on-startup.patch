@@ -1,0 +1,81 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -26,6 +26,7 @@
+ from bot.live_portfolio import load_live_portfolio_snapshot
+ from bot.local_time import format_pacific
+ from bot.markets import MarketRegistry
++from bot.paper_anchor import anchor_paper_broker_to_live
+ from bot.paper_broker import PaperBroker
+ from bot.live_broker import LiveBroker
+ from bot.futures.manager import FuturesManager
+@@ -1191,6 +1192,7 @@
+             live_session_pnl=float(live["session_pnl"]) if live else None,
+             live_drawdown=float(live["drawdown"]) if live else None,
+             live_holdings=dict(live["holdings"]) if live else None,
++            paper_anchor_to_live=self.settings.paper_anchor_to_live,
+         )
+ 
+     def _write_portfolio_file(
+@@ -1283,6 +1285,23 @@
+         except OSError as exc:
+             logger.warning("Could not write trade diagnosis: %s", exc)
+ 
++    def _anchor_paper_to_live(self, *, preserve_trades: bool = True) -> bool:
++        """Sync paper balances to live Kraken spot when mirror anchoring is enabled."""
++        if not self._mirror_mode or not self.settings.paper_anchor_to_live:
++            return False
++        if self.live_broker is None or self.paper_broker is None:
++            return False
++        self.live_broker.sync_from_exchange()
++        usd_prices = self._usd_prices()
++        anchor_paper_broker_to_live(
++            self.paper_broker,
++            self.live_broker,
++            usd_prices,
++            preserve_trades=preserve_trades,
++        )
++        self.circuit_breaker.clear_reevaluation()
++        return True
++
+     def _seed_portfolio_snapshot(self) -> None:
+         """Ensure ``paper_portfolio.json`` exists before the first tick."""
+         try:
+@@ -2288,7 +2307,11 @@
+ 
+         if command == "reset":
+ 
+-            self.broker.reset_state()
++            if self._anchor_paper_to_live(preserve_trades=False):
++                reset_label = "anchored to live Kraken balances"
++            else:
++                self.broker.reset_state()
++                reset_label = "reset to initial balances"
+ 
+             self.circuit_breaker.clear_reevaluation()
+ 
+@@ -2326,7 +2349,7 @@
+ 
+                 f"**Trading bot started and active**\n"
+ 
+-                f"Paper state reset {self._instance_started_at}"
++                f"Paper state {reset_label} {self._instance_started_at}"
+ 
+             )
+ 
+@@ -2344,7 +2367,7 @@
+ 
+             return (
+ 
+-                "Paper state **reset** to initial balances.\n"
++                f"Paper state **{reset_label}**.\n"
+ 
+                 f"Discord: cleared **{channel_stats['pins_cleared']}** pin(s), "
+ 
+@@ -3263,6 +3286,7 @@
+ 
+         )
+ 
++        self._anchor_paper_to_live(preserve_trades=True)
+         self._seed_portfolio_snapshot()
+ 
+         if self.settings.profit_only_mode:

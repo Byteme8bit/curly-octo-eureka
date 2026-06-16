@@ -226,6 +226,7 @@ class Settings:
     live_strict_profit: bool
     reset_live_state: bool
     live_mirror_paper: bool
+    paper_anchor_to_live: bool
     live_mirror_min_confidence: str
     live_mirror_uncertain: bool
     live_mirror_skip_log_file: Path
@@ -697,6 +698,11 @@ def load_settings() -> Settings:
         live_strict_profit=os.getenv("LIVE_STRICT_PROFIT", "1") == "1",
         reset_live_state=os.getenv("RESET_LIVE_STATE", "0") == "1",
         live_mirror_paper=os.getenv("LIVE_MIRROR_PAPER", "0") == "1",
+        paper_anchor_to_live=os.getenv(
+            "PAPER_ANCHOR_TO_LIVE",
+            "1" if os.getenv("LIVE_MIRROR_PAPER", "0") == "1" else "0",
+        )
+        == "1",
         live_mirror_min_confidence=_parse_live_mirror_min_confidence(
             os.getenv("LIVE_MIRROR_MIN_CONFIDENCE", "confirm")
         ),

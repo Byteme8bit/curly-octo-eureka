@@ -67,6 +67,7 @@ def format_portfolio_command(
     risk_note: str = "",
     live_enabled: bool = False,
     mirror_mode: bool = False,
+    paper_anchor_to_live: bool = False,
     live_portfolio: float | None = None,
     live_session_pnl: float | None = None,
     live_drawdown: float | None = None,
@@ -105,7 +106,16 @@ def format_portfolio_command(
                 skip_assets=live_skip,
             )
         )
-        lines.extend(["", "[Paper sim] — not Kraken balance"])
+        if paper_anchor_to_live:
+            lines.extend(
+                [
+                    "",
+                    "[Paper sim] — anchored to live at session start; tracks strategy edge",
+                    "  (PAPER_ANCHOR_TO_LIVE=1 — balances match Kraken on startup/reset)",
+                ]
+            )
+        else:
+            lines.extend(["", "[Paper sim] — not Kraken balance"])
         lines.append(
             f"  Portfolio  ${portfolio:,.2f}  (PnL {baseline_pnl:+.2f} | drawdown {drawdown:.2%})"
         )
