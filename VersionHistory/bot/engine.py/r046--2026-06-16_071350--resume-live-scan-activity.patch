@@ -1,0 +1,179 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -49,7 +49,12 @@
+ from bot.strategies.base import Strategy, StrategyContext
+ from bot.trade_log import BotFileLogger, ReceiptWriter
+ from bot.watchdog_service import WatchdogService
+-from bot.discord_summary import MajorMoveTracker, TradeActivityBuffer, format_hourly_summary
++from bot.discord_summary import (
++    MajorMoveTracker,
++    TradeActivityBuffer,
++    format_hourly_summary,
++    format_tick_activity_line,
++)
+ from bot.force_trade_log import append_force_trade_log
+ from bot.whale_follow_log import append_whale_follow_skip, read_whale_follow_skips
+ from bot.live_mirror import (
+@@ -405,6 +410,10 @@
+         self._instance_started_at: str | None = None
+ 
+         self._last_heartbeat_monotonic: float = 0.0
++
++        self._last_tick_at: str = ""
++        self._last_opportunity_count: int = 0
++        self._last_top_block_reason: str = ""
+ 
+         self._last_pinned_pnl_band: int = 0
+ 
+@@ -1010,7 +1019,10 @@
+     def _force_trade_halt_reason(self) -> str | None:
+         """Return a user-facing halt reason when force cannot run offensive trades."""
+         if self._live_mode and not self._mirror_mode and getattr(self.broker, "halted", False):
+-            return getattr(self.broker, "halt_reason", "") or "Live drawdown halt — trading stopped"
++            reason = getattr(self.broker, "halt_reason", "") or "Live drawdown halt — trading stopped"
++            if "drawdown" not in reason.lower() and "eth floor" not in reason.lower():
++                return f"{reason} — send `TradeBot -resume-live` after review."
++            return f"{reason} — send `TradeBot -resume` after review."
+         if self.circuit_breaker.in_reevaluation():
+             return (
+                 "Re-evaluation mode — offensive trades blocked. "
+@@ -1485,9 +1497,26 @@
+             "holdings": holdings,
+         }
+ 
++    def _tick_activity_line(self) -> str:
++        live_broker = self.live_broker
++        live_halted = bool(live_broker and live_broker.halted)
++        halt_reason = getattr(live_broker, "halt_reason", "") or "" if live_broker else ""
++        live_trades = int(live_broker.risk.live_trades_completed) if live_broker else 0
++        return format_tick_activity_line(
++            last_scan_at=self._last_tick_at or format_pacific(),
++            opportunity_count=self._last_opportunity_count,
++            top_block_reason=self._last_top_block_reason,
++            poll_interval=self.settings.poll_interval,
++            idle_hours=self.risk.idle_hours(),
++            paper_trades_session=int(self.broker.risk.total_trades),
++            live_trades_session=live_trades,
++            live_halted=live_halted,
++            live_halt_reason=halt_reason,
++        )
++
+     def _format_portfolio_response(self, snapshot: TickSnapshot) -> str:
+         live = self._live_portfolio_for_command()
+-        return format_portfolio_command(
++        body = format_portfolio_command(
+             portfolio=snapshot.portfolio,
+             baseline_pnl=snapshot.baseline_pnl,
+             drawdown=snapshot.drawdown,
+@@ -1503,6 +1532,22 @@
+             live_holdings=dict(live["holdings"]) if live else None,
+             paper_anchor_to_live=self.settings.paper_anchor_to_live,
+         )
++        return f"{body}\n\n{self._tick_activity_line()}"
++
++    def _clear_live_route_halt(self) -> str | None:
++        """Clear live broker halt when safe (route failure, not drawdown). Returns note."""
++        broker = self.live_broker if self._mirror_mode else self.broker
++        if broker is None or not getattr(broker, "halted", False):
++            return None
++        reason = getattr(broker, "halt_reason", "") or ""
++        lower = reason.lower()
++        if "drawdown" in lower or "eth floor" in lower or "circuit" in lower:
++            return None
++        broker.halted = False
++        broker.halt_reason = ""
++        if hasattr(broker, "save"):
++            broker.save()
++        return reason[:120] or "route failure"
+ 
+     def _write_portfolio_file(
+         self,
+@@ -2628,31 +2673,45 @@
+ 
+ 
+ 
+-        if command == "resume-trading":
+-
+-            if not self.circuit_breaker.in_reevaluation():
+-
+-                return "Not in re-evaluation mode — circuit breaker is not active."
+-
+-            self.circuit_breaker.clear_reevaluation()
+-
+-            self.risk.state.paused_until = None
+-
+-            self.risk.state.hibernate_alert_sent = False
+-
+-            self.broker.save()
+-
+-            if self.live_circuit_breaker is not None:
++        if command in ("resume-trading", "resume-live"):
++
++            cleared_halt = self._clear_live_route_halt()
++            in_reeval = self.circuit_breaker.in_reevaluation()
++            live_in_reeval = (
++                self.live_circuit_breaker is not None
++                and self.live_circuit_breaker.in_reevaluation()
++            )
++
++            if in_reeval:
++                self.circuit_breaker.clear_reevaluation()
++            if live_in_reeval and self.live_circuit_breaker is not None:
+                 self.live_circuit_breaker.clear_reevaluation()
++            if in_reeval or live_in_reeval or cleared_halt is not None:
++                self.risk.state.paused_until = None
++                self.risk.state.hibernate_alert_sent = False
++                self.broker.save()
+                 if self.live_broker is not None:
+                     self.live_broker.save()
+ 
++            if cleared_halt is not None:
++                msg = f"Live route halt **cleared** ({cleared_halt})."
++                if in_reeval or live_in_reeval:
++                    msg += " Re-evaluation mode cleared."
++                msg += " Send `start` if trading was stopped."
++                return msg
++
++            if not in_reeval and not live_in_reeval:
++                live = self.live_broker if self._mirror_mode else self.broker
++                if live is not None and getattr(live, "halted", False):
++                    return (
++                        "Live broker still halted (drawdown / ETH floor) — "
++                        "manual review required before resuming."
++                    )
++                return "Not in re-evaluation mode — circuit breaker is not active."
++
+             return (
+-
+                 "Re-evaluation mode **cleared** — send `start` if trading was stopped. "
+-
+                 "Peak watermark unchanged; monitor drawdown closely."
+-
+             )
+ 
+ 
+@@ -3280,6 +3339,13 @@
+ 
+         self._activity_buffer.record_blocked(activity_blocked)
+ 
++        snap = self._activity_buffer.snapshot()
++        self._last_tick_at = format_pacific()
++        self._last_opportunity_count = len(result.opportunities)
++        self._last_top_block_reason = snap["top_block_reason"] or (
++            activity_blocked[0] if activity_blocked else (blocked[0] if blocked else "")
++        )
++
+         self._maybe_discord_hourly_summary(portfolio, baseline_pnl)
+ 
+         self._maybe_discord_major_moves(usd_prices)
+@@ -3523,7 +3589,9 @@
+ 
+             self._instance_started_at = format_pacific()
+ 
+-        self.discord.post_plain(f"Monitoring exchange since {self._instance_started_at}")
++        self.discord.post_plain(
++            f"Monitoring exchange since {self._instance_started_at}\n{self._tick_activity_line()}"
++        )
+         if (
+             not self.settings.discord_quiet_mode
+             and self._goal_status

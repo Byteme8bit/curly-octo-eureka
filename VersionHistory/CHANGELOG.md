@@ -2815,3 +2815,163 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +15 / -0
 - **Patch:** `r007--2026-06-15_222714--document-force-command.patch`
 
+## bot/verifier/kraken.py — r001
+
+- **When:** 2026-06-16 07:12:36 PDT
+- **Reason:** xstock symbol_exists in verifier
+- **Request:** 069
+- **Diff:** +29 / -2
+- **Patch:** `r001--2026-06-16_071236--xstock-symbolexists-in-verifier.patch`
+
+## tests/test_live_verify_tag.py — r001
+
+- **When:** 2026-06-16 07:12:36 PDT
+- **Reason:** xstock verifier tests
+- **Request:** 069
+- **Diff:** +35 / -0
+- **Patch:** `r001--2026-06-16_071236--xstock-verifier-tests.patch`
+
+## tests/test_equities.py — r001
+
+- **When:** 2026-06-16 07:12:37 PDT
+- **Reason:** filter watchlist test
+- **Request:** 069
+- **Diff:** +15 / -0
+- **Patch:** `r001--2026-06-16_071237--filter-watchlist-test.patch`
+
+## bot/equities.py — r001
+
+- **When:** 2026-06-16 07:13:50 PDT
+- **Reason:** filter watchlist to kraken pairs
+- **Request:** 069
+- **Diff:** +12 / -0
+- **Patch:** `r001--2026-06-16_071350--filter-watchlist-to-kraken-pairs.patch`
+
+## bot/risk.py — r008
+
+- **When:** 2026-06-16 07:13:50 PDT
+- **Reason:** multihop min-net approve gate
+- **Request:** 069
+- **Diff:** +93 / -88
+- **Patch:** `r008--2026-06-16_071350--multihop-min-net-approve-gate.patch`
+
+## bot/live_broker.py — r005
+
+- **When:** 2026-06-16 07:13:50 PDT
+- **Reason:** route preflight balance chain
+- **Request:** 069
+- **Diff:** +160 / -2
+- **Patch:** `r005--2026-06-16_071350--route-preflight-balance-chain.patch`
+
+## bot/engine.py — r046
+
+- **When:** 2026-06-16 07:13:50 PDT
+- **Reason:** resume-live scan activity
+- **Request:** 069
+- **Diff:** +90 / -22
+- **Patch:** `r046--2026-06-16_071350--resume-live-scan-activity.patch`
+
+## bot/discord_summary.py — r004
+
+- **When:** 2026-06-16 07:13:51 PDT
+- **Reason:** tick activity line formatter
+- **Request:** 069
+- **Diff:** +30 / -0
+- **Patch:** `r004--2026-06-16_071351--tick-activity-line-formatter.patch`
+
+## bot/discord_bot.py — r008
+
+- **When:** 2026-06-16 07:13:51 PDT
+- **Reason:** resume-live command alias
+- **Request:** 069
+- **Diff:** +1 / -0
+- **Patch:** `r008--2026-06-16_071351--resume-live-command-alias.patch`
+
+## config.py — r029
+
+- **When:** 2026-06-16 07:13:51 PDT
+- **Reason:** validate equity allowlist startup
+- **Request:** 069
+- **Diff:** +58 / -6
+- **Patch:** `r029--2026-06-16_071351--validate-equity-allowlist-startup.patch`
+
+## .env.example — r029
+
+- **When:** 2026-06-16 07:19:46 PDT
+- **Reason:** 50-50 bucket allocation knobs
+- **Request:** 070
+- **Diff:** +12 / -3
+- **Patch:** `r029--2026-06-16_071946--50-50-bucket-allocation-knobs.patch`
+
+## bot/portfolio_constraints.py — r005
+
+- **When:** 2026-06-16 07:19:46 PDT
+- **Reason:** crypto-equity bucket rebalance
+- **Request:** 070
+- **Diff:** +231 / -10
+- **Patch:** `r005--2026-06-16_071946--crypto-equity-bucket-rebalance.patch`
+
+## bot/report.py — r009
+
+- **When:** 2026-06-16 07:19:46 PDT
+- **Reason:** portfolio allocation split line
+- **Request:** 070
+- **Diff:** +12 / -2
+- **Patch:** `r009--2026-06-16_071946--portfolio-allocation-split-line.patch`
+
+## bot/strategies/equity_dca.py — r002
+
+- **When:** 2026-06-16 07:19:47 PDT
+- **Reason:** dca priority accumulation phase
+- **Request:** 070
+- **Diff:** +58 / -7
+- **Patch:** `r002--2026-06-16_071947--dca-priority-accumulation-phase.patch`
+
+## docs/dca-equities.md — r001
+
+- **When:** 2026-06-16 07:19:47 PDT
+- **Reason:** 50-50 portfolio section
+- **Request:** 070
+- **Diff:** +12 / -0
+- **Patch:** `r001--2026-06-16_071947--50-50-portfolio-section.patch`
+
+## docs/live-trading.md — r008
+
+- **When:** 2026-06-16 07:19:47 PDT
+- **Reason:** 50-50 profile env block
+- **Request:** 070
+- **Diff:** +25 / -1
+- **Patch:** `r008--2026-06-16_071947--50-50-profile-env-block.patch`
+
+## tests/test_equity_dca.py — r002
+
+- **When:** 2026-06-16 07:19:47 PDT
+- **Reason:** dca bucket settings fixture
+- **Request:** 070
+- **Diff:** +5 / -0
+- **Patch:** `r002--2026-06-16_071947--dca-bucket-settings-fixture.patch`
+
+## tests/test_portfolio_constraints.py — r001
+
+- **When:** 2026-06-16 07:19:48 PDT
+- **Reason:** disable bucket trim in fixture
+- **Request:** 070
+- **Diff:** +1 / -0
+- **Patch:** `r001--2026-06-16_071948--disable-bucket-trim-in-fixture.patch`
+
+## tests/test_dashboard.py — r010
+
+- **When:** 2026-06-16 07:23:58 PDT
+- **Reason:** freeze whale prune anchor time
+- **Request:** 069
+- **Diff:** +11 / -2
+- **Patch:** `r010--2026-06-16_072358--freeze-whale-prune-anchor-time.patch`
+
+## tests/test_live_mirror.py — r004
+
+- **When:** 2026-06-16 07:23:58 PDT
+- **Reason:** mock crypto day-trade settings
+- **Request:** 069
+- **Diff:** +7 / -1
+- **Patch:** `r004--2026-06-16_072358--mock-crypto-day-trade-settings.patch`
+

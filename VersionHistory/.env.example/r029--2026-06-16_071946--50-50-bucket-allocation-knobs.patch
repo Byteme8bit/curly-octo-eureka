@@ -1,0 +1,25 @@
+--- a/.env.example
++++ b/.env.example
+@@ -317,10 +317,19 @@
+ # ---------------------------------------------------------------------------
+ ENABLE_EQUITIES=0
+ # EQUITY_WATCHLIST=AAPLx,TSLAx,SPYx,NVDAx,MSFTx,GOOGLx
+-# Max portfolio share for any single equity/ETF (separate from MAX_ALT_ALLOCATION_PCT)
++# Max portfolio share for any single equity/ETF (separate from bucket caps below)
+ # MAX_EQUITY_ALLOCATION_PCT=0.15
+-# MAX_EQUITY_ALLOCATION_PCT=0.15
+-# Live: add approved tickers to LIVE_ALLOWED_ASSETS (e.g. ETH,ADA,AAPLx,TSLAx,SPYx)
++# 50/50 portfolio bucket targets (crypto vs all xStocks combined):
++# TARGET_EQUITY_ALLOCATION_PCT=0.50
++# TARGET_CRYPTO_ALLOCATION_PCT=0.50
++# MAX_EQUITY_BUCKET_PCT=0.55
++# MAX_CRYPTO_BUCKET_PCT=0.55
++# EQUITY_ACCUMULATION_PHASE=1
++# EQUITY_DCA_PRIORITY=1
++# EQUITY_ACCUMULATION_MIN_PCT=0.45
++# CRYPTO_DAY_TRADE_MODE=1
++# CRYPTO_MIN_TRADE_EDGE=0.003
++# Live: add validated tickers to LIVE_ALLOWED_ASSETS (probe: scripts/probe_xstocks.py)
+ 
+ # ---------------------------------------------------------------------------
+ # Equity DCA — scheduled USD buys into xStocks/ETFs (default OFF)

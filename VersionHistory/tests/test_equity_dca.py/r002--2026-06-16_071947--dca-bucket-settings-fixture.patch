@@ -1,0 +1,14 @@
+--- a/tests/test_equity_dca.py
++++ b/tests/test_equity_dca.py
+@@ -29,6 +29,11 @@
+         dca_state_file=tmp_path / ".dca_state.json",
+         min_usd_trade=10.0,
+         max_equity_allocation_pct=0.15,
++        max_equity_bucket_pct=0.55,
++        target_equity_allocation_pct=0.50,
++        equity_dca_priority=False,
++        equity_accumulation_min_pct=0.45,
++        equity_accumulation_phase=False,
+         live_enabled=True,
+         live_allowed_assets=("ETH", "AAPLx", "TSLAx", "SPYx"),
+         strategies=("cross_momentum", "triangular_arbitrage", "stat_arb"),

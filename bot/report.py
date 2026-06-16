@@ -73,10 +73,11 @@ def format_portfolio_command(
     live_drawdown: float | None = None,
     live_holdings: dict[str, float] | None = None,
     max_holdings_rows: int = 5,
+    allocation_line: str = "",
 ) -> str:
     """Discord ``TradeBot -portfolio`` body — live Kraken first when armed."""
     if not live_enabled:
-        return format_portfolio_summary(
+        body = format_portfolio_summary(
             portfolio=portfolio,
             baseline_pnl=baseline_pnl,
             drawdown=drawdown,
@@ -84,7 +85,9 @@ def format_portfolio_command(
             usd_prices=usd_prices,
             trading_active=trading_active,
             risk_note=risk_note,
+            allocation_line=allocation_line,
         )
+        return body
 
     state = "RUNNING" if trading_active else "STOPPED"
     live_skip = _SKIP_DISPLAY
@@ -120,6 +123,8 @@ def format_portfolio_command(
             f"  Portfolio  ${portfolio:,.2f}  (PnL {baseline_pnl:+.2f} | drawdown {drawdown:.2%})"
         )
         lines.append(f"  Bot state  {state}")
+        if allocation_line:
+            lines.append(f"  {allocation_line}")
         if risk_note:
             lines.append(f"  {risk_note}")
         lines.append("  Holdings:")
@@ -135,6 +140,8 @@ def format_portfolio_command(
         ),
         f"  Bot state  {state}",
     ]
+    if allocation_line:
+        lines.append(f"  {allocation_line}")
     if risk_note:
         lines.append(f"  {risk_note}")
     lines.append("  Holdings:")
@@ -161,12 +168,15 @@ def format_portfolio_summary(
     usd_prices: dict[str, float],
     trading_active: bool,
     risk_note: str = "",
+    allocation_line: str = "",
 ) -> str:
     state = "RUNNING" if trading_active else "STOPPED"
     lines = [
         f"Portfolio  ${portfolio:,.2f}  (PnL {baseline_pnl:+.2f} | drawdown {drawdown:.2%})",
         f"Bot state  {state}",
     ]
+    if allocation_line:
+        lines.append(allocation_line)
     if risk_note:
         lines.append(risk_note)
     lines.append("")

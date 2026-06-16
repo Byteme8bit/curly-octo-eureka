@@ -1,0 +1,97 @@
+--- a/config.py
++++ b/config.py
+@@ -43,6 +43,11 @@
+ DEFAULT_MOMENTUM_TIMEFRAMES = "15m,1h"
+ DEFAULT_EQUITY_WATCHLIST = "AAPLx,TSLAx,SPYx"
+ DEFAULT_MAX_EQUITY_ALLOCATION_PCT = "0.15"
++DEFAULT_TARGET_EQUITY_ALLOCATION_PCT = "0.50"
++DEFAULT_MAX_EQUITY_BUCKET_PCT = "0.55"
++DEFAULT_MAX_CRYPTO_BUCKET_PCT = "0.55"
++DEFAULT_EQUITY_ACCUMULATION_MIN_PCT = "0.45"
++DEFAULT_CRYPTO_MIN_TRADE_EDGE = "0.003"
+ DEFAULT_DCA_INTERVAL_HOURS = "24"
+ DEFAULT_DCA_AMOUNT_USD = "15"
+ DEFAULT_FUTURES_WATCHLIST = "BTC/USD:USD,ETH/USD:USD,AAPLX/USD:USD"
+@@ -241,6 +246,16 @@
+     symbol_assets: dict[str, str]
+     asset_usd_symbols: dict[str, str]
+     max_equity_allocation_pct: float
++    target_equity_allocation_pct: float
++    target_crypto_allocation_pct: float
++    max_equity_bucket_pct: float
++    max_crypto_bucket_pct: float
++    equity_accumulation_phase: bool
++    equity_dca_priority: bool
++    equity_accumulation_min_pct: float
++    equity_severe_overweight_pct: float
++    crypto_day_trade_mode: bool
++    crypto_min_trade_edge: float
+     dca_enabled: bool
+     dca_interval_hours: float
+     dca_amount_usd: float
+@@ -408,15 +423,39 @@
+ 
+ def load_settings() -> Settings:
+     enable_equities = os.getenv("ENABLE_EQUITIES", "0") == "1"
+-    equity_watchlist = _parse_equity_watchlist(
++    requested_equity_watchlist = _parse_equity_watchlist(
+         os.getenv("EQUITY_WATCHLIST", DEFAULT_EQUITY_WATCHLIST)
+     )
++    equity_watchlist = requested_equity_watchlist
++    equity_usd_symbols: tuple[str, ...] = ()
++    skipped_equities: tuple[str, ...] = ()
++    if enable_equities:
++        from bot.equities import fetch_tokenized_pairs, filter_equity_watchlist
++
++        try:
++            catalog = fetch_tokenized_pairs()
++            equity_watchlist, skipped_equities, equity_usd_symbols = filter_equity_watchlist(
++                requested_equity_watchlist, catalog
++            )
++        except Exception as exc:
++            logger.warning(
++                "Could not fetch Kraken xStock pairs (%s) — using resolve_watchlist_pairs fallback",
++                exc,
++            )
++            from bot.equities import resolve_watchlist_pairs
++
++            equity_usd_symbols = resolve_watchlist_pairs(requested_equity_watchlist)
++            equity_watchlist = tuple(
++                s.split("/", 1)[0] for s in equity_usd_symbols
++            )
++            valid_set = frozenset(equity_watchlist)
++            skipped_equities = tuple(a for a in requested_equity_watchlist if a not in valid_set)
++        if skipped_equities:
++            logger.warning(
++                "EQUITY_WATCHLIST assets not on Kraken for this account (skipped): %s",
++                ", ".join(skipped_equities),
++            )
+     crypto_usd_symbols = _parse_usd_symbols(os.getenv("SYMBOLS", DEFAULT_SYMBOLS))
+-    equity_usd_symbols: tuple[str, ...] = ()
+-    if enable_equities:
+-        from bot.equities import resolve_watchlist_pairs
+-
+-        equity_usd_symbols = resolve_watchlist_pairs(equity_watchlist)
+     usd_symbols = crypto_usd_symbols + equity_usd_symbols
+     symbol_assets, asset_usd_symbols = _build_trading_symbol_maps(
+         crypto_usd_symbols, equity_usd_symbols
+@@ -749,6 +788,19 @@
+         ),
+         reset_futures_state=os.getenv("RESET_FUTURES_STATE", "0") == "1",
+     )
++    if enable_equities:
++        valid_equity = frozenset(fields["equity_watchlist"])
++        requested_equity = frozenset(requested_equity_watchlist)
++        filtered_live: list[str] = []
++        for asset in fields["live_allowed_assets"]:
++            if asset in requested_equity and asset not in valid_equity:
++                logger.warning(
++                    "LIVE_ALLOWED_ASSETS: removing %s — not listed on Kraken for this account",
++                    asset,
++                )
++                continue
++            filtered_live.append(asset)
++        fields["live_allowed_assets"] = tuple(filtered_live)
+     if fields["enable_equities"] and fields["live_enabled"]:
+         allowed = frozenset(fields["live_allowed_assets"])
+         for ticker in fields["equity_watchlist"]:

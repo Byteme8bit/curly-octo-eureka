@@ -1,0 +1,198 @@
+--- a/bot/risk.py
++++ b/bot/risk.py
+@@ -690,102 +690,107 @@
+ 
+ 
+ 
+-        if not is_defensive_sell and not is_accumulation and edge < required:
+-
+-            label = "Swap" if is_held_swap else "Trade"
+-
+-            return TradeGate(
+-
+-                False,
+-
+-                f"{label} edge {edge:+.4f} below fee hurdle {required:+.4f}",
++        if not is_defensive_sell and not is_accumulation:
++            if hops > 1:
++                # Multi-hop edge is net-after-fees from preflight — do not re-apply
++                # per-hop swap/trade hurdle (that double-gates profitable loops).
++                min_net = self.effective_min_net_profit()
++                if edge < min_net:
++                    return TradeGate(
++                        False,
++                        f"Net edge {edge:+.4f} below min net {min_net:+.4f}",
++                    )
++            elif edge < required:
++                label = "Swap" if is_held_swap else "Trade"
++                return TradeGate(
++                    False,
++                    f"{label} edge {edge:+.4f} below fee hurdle {required:+.4f}",
++                )
++
++
++
++        if require_leader_stable and not is_defensive_sell and not is_held_swap:
++
++            if not self.leader_is_stable():
++
++                stable = self.leader_stable_for()
++
++                return TradeGate(
++
++                    False,
++
++                    f"Leader not stable yet ({stable}s / {self.effective_leader_stable_seconds()}s)",
++
++                )
++
++
++
++        if trade_usd < fee * 2:
++
++            return TradeGate(False, "Trade size too small relative to fee cost")
++
++
++
++        return TradeGate(True, f"Approved (est. fee ${fee:.2f})")
++
++
++
++    def record_trade(self) -> None:
++
++        self.state.last_trade_at = self._now().isoformat()
++
++        self.state.adaptive_alert_sent = False
++
++        self.state.adaptive_relax_attempts = 0
++
++        self._clear_adaptive_suspend()
++
++        self.state.trades_this_hour += 1
++
++        self._save()
++
++
++
++    def fee_summary(self) -> str:
++
++        status = self.adaptive_status()
++
++        adaptive = ""
++
++        if status.active:
++
++            adaptive = (
++
++                f" | ADAPTIVE {status.relax_factor:.0%} "
++
++                f"({status.idle_hours:.1f}h idle)"
+ 
+             )
+ 
+-
+-
+-        if require_leader_stable and not is_defensive_sell and not is_held_swap:
+-
+-            if not self.leader_is_stable():
+-
+-                stable = self.leader_stable_for()
+-
+-                return TradeGate(
+-
+-                    False,
+-
+-                    f"Leader not stable yet ({stable}s / {self.effective_leader_stable_seconds()}s)",
+-
+-                )
+-
+-
+-
+-        if trade_usd < fee * 2:
+-
+-            return TradeGate(False, "Trade size too small relative to fee cost")
+-
+-
+-
+-        return TradeGate(True, f"Approved (est. fee ${fee:.2f})")
+-
+-
+-
+-    def record_trade(self) -> None:
+-
+-        self.state.last_trade_at = self._now().isoformat()
+-
+-        self.state.adaptive_alert_sent = False
+-
+-        self.state.adaptive_relax_attempts = 0
+-
+-        self._clear_adaptive_suspend()
+-
+-        self.state.trades_this_hour += 1
++        return (
++
++            f"swap edge {self.swap_edge():+.4f} | "
++
++            f"leader edge {self.required_edge():+.4f} | "
++
++            f"2-hop edge {self.path_edge(2):+.4f} | "
++
++            f"hibernate at {self.drawdown_hibernate_pct:.0%} drawdown for {self.hibernate_hours:.0f}h | "
++
++            f"fee {self.fee_rate:.2%}/leg{adaptive}"
++
++        )
++
++
++
++    def mark_hibernate_alert_sent(self) -> None:
++
++        self.state.hibernate_alert_sent = True
+ 
+         self._save()
+ 
+ 
+ 
+-    def fee_summary(self) -> str:
+-
+-        status = self.adaptive_status()
+-
+-        adaptive = ""
+-
+-        if status.active:
+-
+-            adaptive = (
+-
+-                f" | ADAPTIVE {status.relax_factor:.0%} "
+-
+-                f"({status.idle_hours:.1f}h idle)"
+-
+-            )
+-
+-        return (
+-
+-            f"swap edge {self.swap_edge():+.4f} | "
+-
+-            f"leader edge {self.required_edge():+.4f} | "
+-
+-            f"2-hop edge {self.path_edge(2):+.4f} | "
+-
+-            f"hibernate at {self.drawdown_hibernate_pct:.0%} drawdown for {self.hibernate_hours:.0f}h | "
+-
+-            f"fee {self.fee_rate:.2%}/leg{adaptive}"
+-
+-        )
+-
+-
+-
+-    def mark_hibernate_alert_sent(self) -> None:
+-
+-        self.state.hibernate_alert_sent = True
+-
+-        self._save()
+-
+-
+-
+     def needs_hibernate_alert(self) -> bool:
+ 
+         return self.is_paused() and not self.state.hibernate_alert_sent

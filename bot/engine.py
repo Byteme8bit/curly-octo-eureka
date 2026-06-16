@@ -49,7 +49,12 @@ from bot.status import build_status_snapshot
 from bot.strategies.base import Strategy, StrategyContext
 from bot.trade_log import BotFileLogger, ReceiptWriter
 from bot.watchdog_service import WatchdogService
-from bot.discord_summary import MajorMoveTracker, TradeActivityBuffer, format_hourly_summary
+from bot.discord_summary import (
+    MajorMoveTracker,
+    TradeActivityBuffer,
+    format_hourly_summary,
+    format_tick_activity_line,
+)
 from bot.force_trade_log import append_force_trade_log
 from bot.whale_follow_log import append_whale_follow_skip, read_whale_follow_skips
 from bot.live_mirror import (
@@ -269,25 +274,27 @@ class TradingEngine:
                 diagnostic_dir=settings.diagnostic_dir,
             )
 
-        self.constraints = PortfolioConstraints(
-
+        constraint_kwargs = dict(
             min_eth_reserve=(
                 settings.live_min_eth_reserve
                 if _live_execution
                 else settings.min_eth_reserve
             ),
-
             max_alt_allocation_pct=settings.max_alt_allocation_pct,
-
             min_usd_trade=settings.min_usd_trade,
-
             strict_eth_floor=_live_execution,
-
             equity_assets=settings.equity_assets,
-
             max_equity_allocation_pct=settings.max_equity_allocation_pct,
-
+            target_equity_allocation_pct=settings.target_equity_allocation_pct,
+            target_crypto_allocation_pct=settings.target_crypto_allocation_pct,
+            max_equity_bucket_pct=settings.max_equity_bucket_pct,
+            max_crypto_bucket_pct=settings.max_crypto_bucket_pct,
+            equity_accumulation_phase=settings.equity_accumulation_phase,
+            equity_dca_priority=settings.equity_dca_priority,
+            equity_accumulation_min_pct=settings.equity_accumulation_min_pct,
+            equity_severe_overweight_pct=settings.equity_severe_overweight_pct,
         )
+        self.constraints = PortfolioConstraints(**constraint_kwargs)
 
         self._live_constraints = (
             PortfolioConstraints(
@@ -297,6 +304,14 @@ class TradingEngine:
                 strict_eth_floor=True,
                 equity_assets=settings.equity_assets,
                 max_equity_allocation_pct=settings.max_equity_allocation_pct,
+                target_equity_allocation_pct=settings.target_equity_allocation_pct,
+                target_crypto_allocation_pct=settings.target_crypto_allocation_pct,
+                max_equity_bucket_pct=settings.max_equity_bucket_pct,
+                max_crypto_bucket_pct=settings.max_crypto_bucket_pct,
+                equity_accumulation_phase=settings.equity_accumulation_phase,
+                equity_dca_priority=settings.equity_dca_priority,
+                equity_accumulation_min_pct=settings.equity_accumulation_min_pct,
+                equity_severe_overweight_pct=settings.equity_severe_overweight_pct,
             )
             if self._mirror_mode
             else None
@@ -405,6 +420,10 @@ class TradingEngine:
         self._instance_started_at: str | None = None
 
         self._last_heartbeat_monotonic: float = 0.0
+
+        self._last_tick_at: str = ""
+        self._last_opportunity_count: int = 0
+        self._last_top_block_reason: str = ""
 
         self._last_pinned_pnl_band: int = 0
 
@@ -865,6 +884,34 @@ class TradingEngine:
             or getattr(intent, "strategy_name", "") == "equity_dca"
         )
 
+    def _required_edge_for_intent(self, intent, route) -> float:
+        edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+        if not self.settings.crypto_day_trade_mode:
+            return edge
+        if intent.is_defensive or self._is_accumulation_intent(intent):
+            return edge
+        from bot.equities import is_equity_asset
+
+        eq = self.settings.equity_assets
+        if is_equity_asset(intent.from_asset, eq) or is_equity_asset(intent.to_asset, eq):
+            return edge
+        return min(edge, self.settings.crypto_min_trade_edge)
+
+    def _prioritize_intents(
+        self,
+        intents: list,
+        holdings: dict[str, float],
+        prices: dict[str, float],
+    ) -> list:
+        if not self.settings.equity_dca_priority:
+            return intents
+        if not self.constraints.in_equity_accumulation(holdings, prices):
+            return intents
+        defensive = [i for i in intents if i.is_defensive]
+        dca = [i for i in intents if not i.is_defensive and self._is_accumulation_intent(i)]
+        rest = [i for i in intents if not i.is_defensive and not self._is_accumulation_intent(i)]
+        return defensive + dca + rest
+
     def _trade_context_block(self, intent) -> str | None:
         gate = self.trade_context.check_intent(intent)
         if gate.allowed:
@@ -927,7 +974,7 @@ class TradingEngine:
             if not live_ok:
                 return None, live_reason
         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
-        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+        required_edge = self._required_edge_for_intent(intent, route)
         constraint = self.constraints.validate_intent(
             intent,
             holdings,
@@ -1010,7 +1057,10 @@ class TradingEngine:
     def _force_trade_halt_reason(self) -> str | None:
         """Return a user-facing halt reason when force cannot run offensive trades."""
         if self._live_mode and not self._mirror_mode and getattr(self.broker, "halted", False):
-            return getattr(self.broker, "halt_reason", "") or "Live drawdown halt — trading stopped"
+            reason = getattr(self.broker, "halt_reason", "") or "Live drawdown halt — trading stopped"
+            if "drawdown" not in reason.lower() and "eth floor" not in reason.lower():
+                return f"{reason} — send `TradeBot -resume-live` after review."
+            return f"{reason} — send `TradeBot -resume` after review."
         if self.circuit_breaker.in_reevaluation():
             return (
                 "Re-evaluation mode — offensive trades blocked. "
@@ -1060,7 +1110,7 @@ class TradingEngine:
             )
             if not live_ok:
                 return 0.0, False, live_reason, hops
-        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+        required_edge = self._required_edge_for_intent(intent, route)
         constraint = self.constraints.validate_intent(
             intent,
             holdings,
@@ -1161,6 +1211,7 @@ class TradingEngine:
         )
         if trim_intents:
             intents = trim_intents + intents
+        intents = self._prioritize_intents(intents, holdings, usd_prices)
         intents, _, gov_notes = self.governor.apply(
             intents,
             adaptive=self.risk.adaptive_status().active,
@@ -1485,9 +1536,29 @@ class TradingEngine:
             "holdings": holdings,
         }
 
+    def _tick_activity_line(self) -> str:
+        live_broker = self.live_broker
+        live_halted = bool(live_broker and live_broker.halted)
+        halt_reason = getattr(live_broker, "halt_reason", "") or "" if live_broker else ""
+        live_trades = int(live_broker.risk.live_trades_completed) if live_broker else 0
+        return format_tick_activity_line(
+            last_scan_at=self._last_tick_at or format_pacific(),
+            opportunity_count=self._last_opportunity_count,
+            top_block_reason=self._last_top_block_reason,
+            poll_interval=self.settings.poll_interval,
+            idle_hours=self.risk.idle_hours(),
+            paper_trades_session=int(self.broker.risk.total_trades),
+            live_trades_session=live_trades,
+            live_halted=live_halted,
+            live_halt_reason=halt_reason,
+        )
+
     def _format_portfolio_response(self, snapshot: TickSnapshot) -> str:
         live = self._live_portfolio_for_command()
-        return format_portfolio_command(
+        allocation_line = self.constraints.format_allocation_line(
+            snapshot.holdings, snapshot.usd_prices
+        )
+        body = format_portfolio_command(
             portfolio=snapshot.portfolio,
             baseline_pnl=snapshot.baseline_pnl,
             drawdown=snapshot.drawdown,
@@ -1502,7 +1573,24 @@ class TradingEngine:
             live_drawdown=float(live["drawdown"]) if live else None,
             live_holdings=dict(live["holdings"]) if live else None,
             paper_anchor_to_live=self.settings.paper_anchor_to_live,
+            allocation_line=allocation_line,
         )
+        return f"{body}\n\n{self._tick_activity_line()}"
+
+    def _clear_live_route_halt(self) -> str | None:
+        """Clear live broker halt when safe (route failure, not drawdown). Returns note."""
+        broker = self.live_broker if self._mirror_mode else self.broker
+        if broker is None or not getattr(broker, "halted", False):
+            return None
+        reason = getattr(broker, "halt_reason", "") or ""
+        lower = reason.lower()
+        if "drawdown" in lower or "eth floor" in lower or "circuit" in lower:
+            return None
+        broker.halted = False
+        broker.halt_reason = ""
+        if hasattr(broker, "save"):
+            broker.save()
+        return reason[:120] or "route failure"
 
     def _write_portfolio_file(
         self,
@@ -1950,7 +2038,7 @@ class TradingEngine:
             )
             return None
         live_constraints = self._live_constraints or self.constraints
-        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
+        required_edge = self._required_edge_for_intent(intent, route)
         constraint = live_constraints.validate_intent(
             intent,
             holdings,
@@ -2628,31 +2716,45 @@ class TradingEngine:
 
 
 
-        if command == "resume-trading":
+        if command in ("resume-trading", "resume-live"):
 
-            if not self.circuit_breaker.in_reevaluation():
+            cleared_halt = self._clear_live_route_halt()
+            in_reeval = self.circuit_breaker.in_reevaluation()
+            live_in_reeval = (
+                self.live_circuit_breaker is not None
+                and self.live_circuit_breaker.in_reevaluation()
+            )
 
-                return "Not in re-evaluation mode — circuit breaker is not active."
-
-            self.circuit_breaker.clear_reevaluation()
-
-            self.risk.state.paused_until = None
-
-            self.risk.state.hibernate_alert_sent = False
-
-            self.broker.save()
-
-            if self.live_circuit_breaker is not None:
+            if in_reeval:
+                self.circuit_breaker.clear_reevaluation()
+            if live_in_reeval and self.live_circuit_breaker is not None:
                 self.live_circuit_breaker.clear_reevaluation()
+            if in_reeval or live_in_reeval or cleared_halt is not None:
+                self.risk.state.paused_until = None
+                self.risk.state.hibernate_alert_sent = False
+                self.broker.save()
                 if self.live_broker is not None:
                     self.live_broker.save()
 
+            if cleared_halt is not None:
+                msg = f"Live route halt **cleared** ({cleared_halt})."
+                if in_reeval or live_in_reeval:
+                    msg += " Re-evaluation mode cleared."
+                msg += " Send `start` if trading was stopped."
+                return msg
+
+            if not in_reeval and not live_in_reeval:
+                live = self.live_broker if self._mirror_mode else self.broker
+                if live is not None and getattr(live, "halted", False):
+                    return (
+                        "Live broker still halted (drawdown / ETH floor) — "
+                        "manual review required before resuming."
+                    )
+                return "Not in re-evaluation mode — circuit breaker is not active."
+
             return (
-
                 "Re-evaluation mode **cleared** — send `start` if trading was stopped. "
-
                 "Peak watermark unchanged; monitor drawdown closely."
-
             )
 
 
@@ -2976,6 +3078,8 @@ class TradingEngine:
 
             intents = trim_intents + intents
 
+        intents = self._prioritize_intents(intents, holdings, usd_prices)
+
         intents, self._governor_status, gov_notes = self.governor.apply(
 
             intents,
@@ -3074,11 +3178,7 @@ class TradingEngine:
 
                 trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
 
-                required_edge = self.risk.path_edge(
-
-                    route.hops, is_held_swap=intent.is_held_swap
-
-                )
+                required_edge = self._required_edge_for_intent(intent, route)
 
                 constraint = self.constraints.validate_intent(
 
@@ -3279,6 +3379,13 @@ class TradingEngine:
         self._activity_buffer.record_trades(trades)
 
         self._activity_buffer.record_blocked(activity_blocked)
+
+        snap = self._activity_buffer.snapshot()
+        self._last_tick_at = format_pacific()
+        self._last_opportunity_count = len(result.opportunities)
+        self._last_top_block_reason = snap["top_block_reason"] or (
+            activity_blocked[0] if activity_blocked else (blocked[0] if blocked else "")
+        )
 
         self._maybe_discord_hourly_summary(portfolio, baseline_pnl)
 
@@ -3523,7 +3630,9 @@ class TradingEngine:
 
             self._instance_started_at = format_pacific()
 
-        self.discord.post_plain(f"Monitoring exchange since {self._instance_started_at}")
+        self.discord.post_plain(
+            f"Monitoring exchange since {self._instance_started_at}\n{self._tick_activity_line()}"
+        )
         if (
             not self.settings.discord_quiet_mode
             and self._goal_status
