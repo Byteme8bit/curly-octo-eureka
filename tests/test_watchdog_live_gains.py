@@ -10,7 +10,7 @@ from watchdog.config import WatchdogSettings
 from watchdog.engine import WatchdogEngine
 
 
-def _settings(tmp_path: Path, *, live_enabled: bool = True) -> WatchdogSettings:
+def _settings(tmp_path: Path, *, live_enabled: bool = True, quiet_mode: bool = True) -> WatchdogSettings:
     return WatchdogSettings(
         enabled=True,
         poll_seconds=10,
@@ -25,7 +25,7 @@ def _settings(tmp_path: Path, *, live_enabled: bool = True) -> WatchdogSettings:
         error_burst_count=5,
         error_burst_minutes=10,
         heartbeat_minutes=0,
-        quiet_mode=True,
+        quiet_mode=quiet_mode,
         error_pin_count=3,
         error_pin_window_minutes=30,
         milestone_cooldown_minutes=60,
@@ -75,7 +75,7 @@ def test_live_mode_uses_live_portfolio_for_gain_detection(tmp_path: Path) -> Non
         portfolio_balances={"USD": 100.0, "ETH": 0.9, "ADA": 0.0},
         baseline=1630.0,
     )
-    engine = WatchdogEngine(_settings(tmp_path, live_enabled=True))
+    engine = WatchdogEngine(_settings(tmp_path, live_enabled=True, quiet_mode=False))
     engine.state.last_milestone_alert_at = 0.0
     engine.state.last_live_pnl_band = 0
 
@@ -90,7 +90,7 @@ def test_live_mode_milestone_alert_uses_live_label(tmp_path: Path) -> None:
         portfolio_balances={"USD": 100.0, "ETH": 0.9, "ADA": 0.0},
         baseline=1000.0,
     )
-    engine = WatchdogEngine(_settings(tmp_path, live_enabled=True))
+    engine = WatchdogEngine(_settings(tmp_path, live_enabled=True, quiet_mode=False))
     engine.state.last_milestone_alert_at = 0.0
     engine.state.last_live_pnl_band = 0
 
@@ -136,7 +136,7 @@ def test_paper_spike_triggers_paper_alert_only_when_not_live(tmp_path: Path) -> 
         encoding="utf-8",
     )
 
-    engine = WatchdogEngine(_settings(tmp_path, live_enabled=False))
+    engine = WatchdogEngine(_settings(tmp_path, live_enabled=False, quiet_mode=False))
     engine.state.last_milestone_alert_at = 0.0
     engine.state.last_pnl_band = 0
 
@@ -147,8 +147,24 @@ def test_paper_spike_triggers_paper_alert_only_when_not_live(tmp_path: Path) -> 
     assert "$5,688.25" in alerts[0][0]
 
 
+def test_quiet_mode_suppresses_milestone_alerts(tmp_path: Path) -> None:
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    session_log = log_dir / "2026-06-15_00-00_to_2026-06-15_04-00_PDT.log"
+    session_log.write_text(
+        "Portfolio:  $5,688.25  (PnL +4034.31 | drawdown 0.00%)\n",
+        encoding="utf-8",
+    )
+
+    engine = WatchdogEngine(_settings(tmp_path, live_enabled=False, quiet_mode=True))
+    engine.state.last_milestone_alert_at = 0.0
+    engine.state.last_pnl_band = 0
+
+    assert engine._check_session_logs() == []
+
+
 def test_milestone_cooldown_blocks_rapid_respan(tmp_path: Path) -> None:
-    engine = WatchdogEngine(_settings(tmp_path, live_enabled=False))
+    engine = WatchdogEngine(_settings(tmp_path, live_enabled=False, quiet_mode=False))
     engine.state.last_milestone_alert_at = time.time()
     engine.state.last_pnl_band = 48
 

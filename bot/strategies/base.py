@@ -20,6 +20,7 @@ class StrategyContext:
     candles_by_timeframe: dict[str, dict[str, pd.DataFrame]] = field(default_factory=dict)
     pair_prices: dict[str, float] = field(default_factory=dict)
     allowed_strategies: frozenset[str] | None = None
+    live_usd_balance: float | None = None
 
 
 @dataclass

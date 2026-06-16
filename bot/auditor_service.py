@@ -84,7 +84,7 @@ class AuditorService:
         self._lock = threading.Lock()
         self._stop_requested = threading.Event()
         self._thread: threading.Thread | None = None
-        self._last_scheduled_day: str | None = None
+        self._last_scheduled_day: str | None = self._scheduled_day_from_state()
         self._baseline_trade_count: int = self._current_trade_count()
         self._baseline_pnl: float | None = None
 
@@ -633,10 +633,34 @@ class AuditorService:
                 logger.exception("Auditor scheduler tick failed")
             self._stop_requested.wait(self.SCHEDULER_TICK_SECONDS)
 
+    def _scheduled_day_from_state(self) -> str | None:
+        """Pacific YYYY-MM-DD extracted from persisted last_scheduled_run_at."""
+        last = self.state.last_scheduled_run_at
+        if not last:
+            return None
+        return last[:10] if len(last) >= 10 else None
+
+    def _scheduled_already_ran_today(self, today: str) -> bool:
+        last_day = self._scheduled_day_from_state()
+        return bool(today and last_day == today)
+
+    def _discord_worthy_in_quiet(self, proposals: list | None, insights) -> bool:
+        """Whether a quiet-mode audit should still post to Discord."""
+        if bool(getattr(insights, "over_concentrated", None)):
+            return True
+        for proposal in proposals or []:
+            severity = getattr(proposal, "severity", "low")
+            if self.SEVERITY_RANK.get(severity, 0) >= self.SEVERITY_RANK["medium"]:
+                return True
+        return False
+
     def _maybe_scheduled_run(self) -> None:
         now = self._clock()
         today = now.strftime("%Y-%m-%d") if hasattr(now, "strftime") else ""
         if self._last_scheduled_day == today:
+            return
+        if self._scheduled_already_ran_today(today):
+            self._last_scheduled_day = today
             return
         if hasattr(now, "hour") and now.hour < self.config.daily_run_hour_pacific:
             return
@@ -1027,11 +1051,9 @@ class AuditorService:
         if not self.discord:
             return
         if self.config.discord_quiet and trigger.startswith(("scheduled", "event:")):
-            has_proposals = bool(proposals)
-            over_cap = bool(getattr(insights, "over_concentrated", None))
-            if not has_proposals and not over_cap:
+            if not self._discord_worthy_in_quiet(proposals, insights):
                 logger.info(
-                    "Auditor quiet mode — skipping Discord for %s (no proposals/issues)",
+                    "Auditor quiet mode — skipping Discord for %s (no medium+ proposals/issues)",
                     trigger,
                 )
                 return

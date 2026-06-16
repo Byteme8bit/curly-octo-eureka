@@ -221,6 +221,8 @@ class EquityDcaStrategy(Strategy):
 
         budget = self._budget_usd(watchlist)
         usd_balance = holdings.get("USD", 0.0)
+        if context and context.live_usd_balance is not None:
+            usd_balance = max(usd_balance, context.live_usd_balance)
         if usd_balance < self.min_usd_trade:
             return StrategyResult(
                 signals={},

@@ -423,6 +423,9 @@ class WatchdogEngine:
     ) -> list[tuple[str, bool]]:
         alerts: list[tuple[str, bool]] = []
 
+        if self.settings.quiet_mode:
+            return alerts
+
         if baseline > 0 and source == "live":
             self.state.last_baseline = baseline
 

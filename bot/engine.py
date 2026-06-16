@@ -1300,6 +1300,12 @@ class TradingEngine:
 
             allowed_strategies=self._allowed_strategies,
 
+            live_usd_balance=(
+                self._live_holdings().get("USD")
+                if self._mirror_mode and self.live_broker is not None
+                else None
+            ),
+
         )
 
 
