@@ -62,18 +62,6 @@ def fetch_tokenized_pairs(
     return result
 
 
-def filter_equity_watchlist(
-    watchlist: tuple[str, ...],
-    pairs: dict[str, dict[str, Any]] | None = None,
-) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
-    """Return (valid_assets, skipped_assets, resolved_usd_symbols) for Kraken xStocks."""
-    resolved_symbols = resolve_watchlist_pairs(watchlist, pairs)
-    valid_assets = tuple(s.split("/", 1)[0] for s in resolved_symbols)
-    valid_set = frozenset(valid_assets)
-    skipped = tuple(a for a in watchlist if a not in valid_set)
-    return valid_assets, skipped, resolved_symbols
-
-
 def resolve_watchlist_pairs(
     watchlist: tuple[str, ...],
     pairs: dict[str, dict[str, Any]] | None = None,

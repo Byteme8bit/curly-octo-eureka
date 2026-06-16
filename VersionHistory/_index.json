@@ -729,6 +729,16 @@
       "removed": 0,
       "request_id": "067",
       "timestamp": "2026-06-15 22:27:13 PDT"
+    },
+    {
+      "added": 1,
+      "number": 8,
+      "patch": "r008--2026-06-16_071351--resume-live-command-alias.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "resume-live command alias",
+      "removed": 0,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:13:51 PDT"
     }
   ],
   "bot/discord_summary.py": [
@@ -751,6 +761,16 @@
       "removed": 1,
       "request_id": "055",
       "timestamp": "2026-06-15 04:23:23 PDT"
+    },
+    {
+      "added": 30,
+      "number": 4,
+      "patch": "r004--2026-06-16_071351--tick-activity-line-formatter.patch",
+      "path": "bot/discord_summary.py",
+      "reason": "tick activity line formatter",
+      "removed": 0,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:13:51 PDT"
     }
   ],
   "bot/display.py": [
@@ -1195,6 +1215,28 @@
       "removed": 0,
       "request_id": "067",
       "timestamp": "2026-06-15 22:27:14 PDT"
+    },
+    {
+      "added": 90,
+      "number": 46,
+      "patch": "r046--2026-06-16_071350--resume-live-scan-activity.patch",
+      "path": "bot/engine.py",
+      "reason": "resume-live scan activity",
+      "removed": 22,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:13:50 PDT"
+    }
+  ],
+  "bot/equities.py": [
+    {
+      "added": 12,
+      "number": 1,
+      "patch": "r001--2026-06-16_071350--filter-watchlist-to-kraken-pairs.patch",
+      "path": "bot/equities.py",
+      "reason": "filter watchlist to kraken pairs",
+      "removed": 0,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:13:50 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1283,6 +1325,16 @@
       "removed": 6,
       "request_id": "066",
       "timestamp": "2026-06-15 19:30:17 PDT"
+    },
+    {
+      "added": 160,
+      "number": 5,
+      "patch": "r005--2026-06-16_071350--route-preflight-balance-chain.patch",
+      "path": "bot/live_broker.py",
+      "reason": "route preflight balance chain",
+      "removed": 2,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:13:50 PDT"
     }
   ],
   "bot/live_guards.py": [
@@ -1599,6 +1651,16 @@
       "removed": 1,
       "request_id": "060",
       "timestamp": "2026-06-15 11:28:47 PDT"
+    },
+    {
+      "added": 93,
+      "number": 8,
+      "patch": "r008--2026-06-16_071350--multihop-min-net-approve-gate.patch",
+      "path": "bot/risk.py",
+      "reason": "multihop min-net approve gate",
+      "removed": 88,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:13:50 PDT"
     }
   ],
   "bot/singleton.py": [
@@ -1813,6 +1875,18 @@
       "removed": 1,
       "request_id": "047",
       "timestamp": "2026-06-12 01:45:45 PDT"
+    }
+  ],
+  "bot/verifier/kraken.py": [
+    {
+      "added": 29,
+      "number": 1,
+      "patch": "r001--2026-06-16_071236--xstock-symbolexists-in-verifier.patch",
+      "path": "bot/verifier/kraken.py",
+      "reason": "xstock symbol_exists in verifier",
+      "removed": 2,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:12:36 PDT"
     }
   ],
   "bot/verifier/live_tag.py": [
@@ -2183,6 +2257,16 @@
       "removed": 0,
       "request_id": "067",
       "timestamp": "2026-06-15 22:27:14 PDT"
+    },
+    {
+      "added": 58,
+      "number": 29,
+      "patch": "r029--2026-06-16_071351--validate-equity-allowlist-startup.patch",
+      "path": "config.py",
+      "reason": "validate equity allowlist startup",
+      "removed": 6,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:13:51 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -3261,6 +3345,18 @@
       "timestamp": "2026-06-15 22:27:14 PDT"
     }
   ],
+  "tests/test_equities.py": [
+    {
+      "added": 15,
+      "number": 1,
+      "patch": "r001--2026-06-16_071237--filter-watchlist-test.patch",
+      "path": "tests/test_equities.py",
+      "reason": "filter watchlist test",
+      "removed": 0,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:12:37 PDT"
+    }
+  ],
   "tests/test_equity_dca.py": [
     {
       "added": 15,
@@ -3405,6 +3501,18 @@
       "removed": 95,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:57 PDT"
+    }
+  ],
+  "tests/test_live_verify_tag.py": [
+    {
+      "added": 35,
+      "number": 1,
+      "patch": "r001--2026-06-16_071236--xstock-verifier-tests.patch",
+      "path": "tests/test_live_verify_tag.py",
+      "reason": "xstock verifier tests",
+      "removed": 0,
+      "request_id": "069",
+      "timestamp": "2026-06-16 07:12:36 PDT"
     }
   ],
   "tests/test_portfolio_command.py": [

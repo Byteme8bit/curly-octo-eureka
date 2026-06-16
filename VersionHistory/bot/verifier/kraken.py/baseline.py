@@ -29,7 +29,6 @@ class PublicKraken:
         self._fee_engine = FeeEngine(exchange, default_taker=0.0026, force_static=False)
         self._markets_loaded = False
         self._ohlcv_cache: dict[tuple[str, int], tuple[float, float, float]] = {}
-        self._tokenized_wsnames: frozenset[str] | None = None
 
     def ensure_markets(self) -> dict:
         if not self._markets_loaded:
@@ -39,41 +38,15 @@ class PublicKraken:
             self._markets_loaded = True
         return self.exchange.markets or {}
 
-    def _tokenized_symbols(self) -> frozenset[str]:
-        """Online xStock USD pairs (ccxt load_markets omits tokenized_asset)."""
-        if self._tokenized_wsnames is None:
-            try:
-                from bot.equities import fetch_tokenized_pairs
-
-                pairs = fetch_tokenized_pairs()
-                self._tokenized_wsnames = frozenset(
-                    str(info.get("wsname") or "").upper()
-                    for info in pairs.values()
-                    if str(info.get("status", "online")) == "online"
-                    and str(info.get("wsname") or "").endswith("/USD")
-                )
-            except Exception as exc:  # noqa: BLE001
-                logger.debug("Could not load Kraken xStock catalog: %s", exc)
-                self._tokenized_wsnames = frozenset()
-        return self._tokenized_wsnames
-
     def symbol_exists(self, symbol: str) -> bool:
         markets = self.ensure_markets()
-        if symbol in markets:
-            return True
-        return symbol.upper() in self._tokenized_symbols()
+        return symbol in markets
 
     def asset_tradeable(self, asset: str) -> bool:
         if asset in ("USD", "USDT", "USDC"):
             return True
         markets = self.ensure_markets()
-        if (
-            f"{asset}/USD" in markets
-            or f"{asset}/ETH" in markets
-            or f"{asset}/BTC" in markets
-        ):
-            return True
-        return f"{asset}/USD".upper() in self._tokenized_symbols()
+        return f"{asset}/USD" in markets or f"{asset}/ETH" in markets or f"{asset}/BTC" in markets
 
     def taker_fee(self, symbol: str) -> float:
         self.ensure_markets()

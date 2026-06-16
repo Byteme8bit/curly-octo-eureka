@@ -690,17 +690,22 @@ class RiskManager:
 
 
 
-        if not is_defensive_sell and not is_accumulation and edge < required:
-
-            label = "Swap" if is_held_swap else "Trade"
-
-            return TradeGate(
-
-                False,
-
-                f"{label} edge {edge:+.4f} below fee hurdle {required:+.4f}",
-
-            )
+        if not is_defensive_sell and not is_accumulation:
+            if hops > 1:
+                # Multi-hop edge is net-after-fees from preflight — do not re-apply
+                # per-hop swap/trade hurdle (that double-gates profitable loops).
+                min_net = self.effective_min_net_profit()
+                if edge < min_net:
+                    return TradeGate(
+                        False,
+                        f"Net edge {edge:+.4f} below min net {min_net:+.4f}",
+                    )
+            elif edge < required:
+                label = "Swap" if is_held_swap else "Trade"
+                return TradeGate(
+                    False,
+                    f"{label} edge {edge:+.4f} below fee hurdle {required:+.4f}",
+                )
 
 
 

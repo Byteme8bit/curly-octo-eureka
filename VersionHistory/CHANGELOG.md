@@ -2815,3 +2815,83 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +15 / -0
 - **Patch:** `r007--2026-06-15_222714--document-force-command.patch`
 
+## bot/verifier/kraken.py — r001
+
+- **When:** 2026-06-16 07:12:36 PDT
+- **Reason:** xstock symbol_exists in verifier
+- **Request:** 069
+- **Diff:** +29 / -2
+- **Patch:** `r001--2026-06-16_071236--xstock-symbolexists-in-verifier.patch`
+
+## tests/test_live_verify_tag.py — r001
+
+- **When:** 2026-06-16 07:12:36 PDT
+- **Reason:** xstock verifier tests
+- **Request:** 069
+- **Diff:** +35 / -0
+- **Patch:** `r001--2026-06-16_071236--xstock-verifier-tests.patch`
+
+## tests/test_equities.py — r001
+
+- **When:** 2026-06-16 07:12:37 PDT
+- **Reason:** filter watchlist test
+- **Request:** 069
+- **Diff:** +15 / -0
+- **Patch:** `r001--2026-06-16_071237--filter-watchlist-test.patch`
+
+## bot/equities.py — r001
+
+- **When:** 2026-06-16 07:13:50 PDT
+- **Reason:** filter watchlist to kraken pairs
+- **Request:** 069
+- **Diff:** +12 / -0
+- **Patch:** `r001--2026-06-16_071350--filter-watchlist-to-kraken-pairs.patch`
+
+## bot/risk.py — r008
+
+- **When:** 2026-06-16 07:13:50 PDT
+- **Reason:** multihop min-net approve gate
+- **Request:** 069
+- **Diff:** +93 / -88
+- **Patch:** `r008--2026-06-16_071350--multihop-min-net-approve-gate.patch`
+
+## bot/live_broker.py — r005
+
+- **When:** 2026-06-16 07:13:50 PDT
+- **Reason:** route preflight balance chain
+- **Request:** 069
+- **Diff:** +160 / -2
+- **Patch:** `r005--2026-06-16_071350--route-preflight-balance-chain.patch`
+
+## bot/engine.py — r046
+
+- **When:** 2026-06-16 07:13:50 PDT
+- **Reason:** resume-live scan activity
+- **Request:** 069
+- **Diff:** +90 / -22
+- **Patch:** `r046--2026-06-16_071350--resume-live-scan-activity.patch`
+
+## bot/discord_summary.py — r004
+
+- **When:** 2026-06-16 07:13:51 PDT
+- **Reason:** tick activity line formatter
+- **Request:** 069
+- **Diff:** +30 / -0
+- **Patch:** `r004--2026-06-16_071351--tick-activity-line-formatter.patch`
+
+## bot/discord_bot.py — r008
+
+- **When:** 2026-06-16 07:13:51 PDT
+- **Reason:** resume-live command alias
+- **Request:** 069
+- **Diff:** +1 / -0
+- **Patch:** `r008--2026-06-16_071351--resume-live-command-alias.patch`
+
+## config.py — r029
+
+- **When:** 2026-06-16 07:13:51 PDT
+- **Reason:** validate equity allowlist startup
+- **Request:** 069
+- **Diff:** +58 / -6
+- **Patch:** `r029--2026-06-16_071351--validate-equity-allowlist-startup.patch`
+

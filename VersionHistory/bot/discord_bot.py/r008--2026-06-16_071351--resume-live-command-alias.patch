@@ -1,0 +1,10 @@
+--- a/bot/discord_bot.py
++++ b/bot/discord_bot.py
+@@ -43,6 +43,7 @@
+     "stop": "stop",
+     "resume": "resume-trading",
+     "resume-trading": "resume-trading",
++    "resume-live": "resume-live",
+     "reset": "reset",
+     "portfolio": "portfolio",
+     "balance": "portfolio",

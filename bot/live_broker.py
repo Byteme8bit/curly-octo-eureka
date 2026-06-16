@@ -166,14 +166,142 @@ class LiveBroker:
         size_pct: float,
         price: float,
         usd_prices: dict[str, float],
+        *,
+        from_qty_override: float | None = None,
     ) -> float:
         if leg.side == Signal.BUY:
-            quote_bal = self.balance(leg.from_asset)
+            quote_bal = (
+                from_qty_override
+                if from_qty_override is not None
+                else self.balance(leg.from_asset)
+            )
             quote_spend = quote_bal * size_pct
             return quote_spend * self._asset_usd(leg.from_asset, usd_prices)
-        base_bal = self.balance(leg.from_asset)
+        base_bal = (
+            from_qty_override
+            if from_qty_override is not None
+            else self.balance(leg.from_asset)
+        )
         base_qty = base_bal * size_pct
         return base_qty * self._asset_usd(leg.from_asset, usd_prices)
+
+    def _simulate_leg(
+        self,
+        leg: RouteLeg,
+        *,
+        size_pct: float,
+        price: float,
+        usd_prices: dict[str, float],
+        available_from: float,
+        apply_usd_cap: bool,
+    ) -> tuple[float, float, float, str]:
+        """
+        Return (from_qty, to_qty, trade_usd, error_reason).
+        error_reason empty when the leg can fund.
+        """
+        if price <= 0 or available_from <= 0 or size_pct <= 0:
+            return 0.0, 0.0, 0.0, f"Leg cannot fund {leg.from_asset}"
+
+        base = leg.pair.base
+        quote = leg.pair.quote
+
+        if leg.side == Signal.BUY:
+            quote_spend = available_from * size_pct
+            trade_usd = quote_spend * self._asset_usd(quote, usd_prices)
+            if apply_usd_cap:
+                capped = self._cap_size_pct(trade_usd, size_pct)
+                quote_spend = available_from * capped
+                trade_usd = quote_spend * self._asset_usd(quote, usd_prices)
+            if trade_usd < self.min_usd_trade:
+                return (
+                    0.0,
+                    0.0,
+                    trade_usd,
+                    f"Leg {leg.pair.symbol} trade ${trade_usd:.2f} below min ${self.min_usd_trade:.2f}",
+                )
+            to_qty = (quote_spend * (1.0 - self.fee_rate)) / price
+            return quote_spend, to_qty, trade_usd, ""
+
+        base_qty = available_from * size_pct
+        trade_usd = base_qty * self._asset_usd(base, usd_prices)
+        if apply_usd_cap:
+            capped = self._cap_size_pct(trade_usd, size_pct)
+            base_qty = available_from * capped
+            trade_usd = base_qty * self._asset_usd(base, usd_prices)
+        if base_qty <= 0 or trade_usd < self.min_usd_trade:
+            return (
+                0.0,
+                0.0,
+                trade_usd,
+                f"Leg {leg.pair.symbol} trade ${trade_usd:.2f} below min ${self.min_usd_trade:.2f}",
+            )
+        to_qty = base_qty * price * (1.0 - self.fee_rate)
+        return base_qty, to_qty, trade_usd, ""
+
+    def _preflight_route(
+        self,
+        route: TradeRoute,
+        prices: dict[str, float],
+        usd_prices: dict[str, float],
+        size_pct: float,
+    ) -> tuple[bool, str]:
+        """Simulate sequential funding across all legs before placing orders."""
+        if not route.legs:
+            return False, "Empty route"
+        wallet = {k: float(v) for k, v in self.state.balances.items()}
+        route_produced: dict[str, float] = {}
+
+        for index, leg in enumerate(route.legs):
+            price = prices.get(leg.pair.symbol, 0.0)
+            if price <= 0:
+                return False, f"Leg {index + 1}/{route.hops} missing price for {leg.pair.symbol}"
+
+            leg_pct = size_pct if index == 0 else 1.0
+            from_asset = leg.from_asset
+            wallet_bal = wallet.get(from_asset, 0.0)
+            produced = route_produced.get(from_asset, 0.0)
+            if index == 0:
+                available = wallet_bal
+            else:
+                # Later legs spend only what this route produced on the prior leg.
+                available = min(produced, wallet_bal) if produced > 0 else wallet_bal
+
+            if available <= 0:
+                return (
+                    False,
+                    f"Leg {index + 1}/{route.hops} insufficient {from_asset} "
+                    f"(need prior leg output; wallet={wallet_bal:.8f})",
+                )
+
+            from_qty, to_qty, trade_usd, err = self._simulate_leg(
+                leg,
+                size_pct=leg_pct,
+                price=price,
+                usd_prices=usd_prices,
+                available_from=available,
+                apply_usd_cap=index == 0,
+            )
+            if err:
+                return False, f"Leg {index + 1}/{route.hops} {leg.pair.symbol}: {err}"
+
+            market = self.exchange.market(leg.pair.symbol)
+            min_amt = (market.get("limits") or {}).get("amount", {}).get("min")
+            out_asset = leg.to_asset
+            out_qty = to_qty if leg.side == Signal.BUY else to_qty
+            spend_qty = from_qty
+            check_qty = spend_qty if leg.side == Signal.SELL else to_qty
+            if min_amt and check_qty < float(min_amt):
+                return (
+                    False,
+                    f"Leg {index + 1}/{route.hops} {leg.pair.symbol}: "
+                    f"qty {check_qty:.8f} below exchange min {min_amt}",
+                )
+
+            wallet[from_asset] = max(0.0, wallet_bal - spend_qty)
+            route_produced = {out_asset: out_qty}
+            wallet[out_asset] = wallet.get(out_asset, 0.0) + out_qty
+
+        return True, ""
 
     def _cap_route_size_pct(
         self,
@@ -218,10 +346,24 @@ class LiveBroker:
 
         self.sync_from_exchange()
         size_pct = self._cap_route_size_pct(route, prices, usd_prices, size_pct)
+        ok, preflight_reason = self._preflight_route(route, prices, usd_prices, size_pct)
+        if not ok:
+            logger.warning("Live path preflight blocked: %s (%s)", preflight_reason, route.path)
+            return None
+
         leg_trades: list[dict] = []
+        route_produced: dict[str, float] = {}
         for index, leg in enumerate(route.legs):
             price = prices.get(leg.pair.symbol, 0.0)
             leg_size = size_pct if index == 0 else 1.0
+            from_asset = leg.from_asset
+            wallet_bal = self.balance(from_asset)
+            produced = route_produced.get(from_asset, 0.0)
+            if index == 0:
+                max_from = None
+            else:
+                cap = min(produced, wallet_bal) if produced > 0 else wallet_bal
+                max_from = cap if cap > 0 else None
             try:
                 trade = self._execute_leg(
                     leg.pair,
@@ -231,6 +373,7 @@ class LiveBroker:
                     reason=f"{reason} (leg {index + 1}/{route.hops})",
                     size_pct=leg_size,
                     apply_usd_cap=index == 0,
+                    max_from_qty=max_from,
                 )
             except ccxt.BaseError as exc:
                 msg = (
@@ -259,8 +402,18 @@ class LiveBroker:
                     else:
                         msg += " — rollback failed"
                         self.halt(msg)
+                else:
+                    logger.warning(
+                        "Live path leg 1 returned None on %s (%s)",
+                        leg.pair.symbol,
+                        route.path,
+                    )
                 return None
             leg_trades.append(trade)
+            if leg.side == Signal.BUY:
+                route_produced = {leg.to_asset: float(trade.get("to_qty", 0.0))}
+            else:
+                route_produced = {leg.to_asset: float(trade.get("to_qty", 0.0))}
 
         combined = PaperBroker._combine_path_trade(
             None,
@@ -342,6 +495,7 @@ class LiveBroker:
         *,
         skip_route_check: bool = False,
         apply_usd_cap: bool = True,
+        max_from_qty: float | None = None,
     ) -> dict | None:
         if self.halted or side == Signal.HOLD:
             return None
@@ -376,6 +530,8 @@ class LiveBroker:
 
         if side == Signal.BUY:
             quote_bal = self.balance(quote)
+            if max_from_qty is not None:
+                quote_bal = min(quote_bal, max_from_qty)
             quote_spend = quote_bal * size_pct
             quote_usd = self._asset_usd(quote, usd_prices)
             trade_usd = quote_spend * quote_usd
@@ -388,6 +544,8 @@ class LiveBroker:
             base_qty = (quote_spend * (1.0 - self.fee_rate)) / price
         else:
             base_bal = self.balance(base)
+            if max_from_qty is not None:
+                base_bal = min(base_bal, max_from_qty)
             base_qty = base_bal * size_pct
             base_usd = self._asset_usd(base, usd_prices)
             trade_usd = base_qty * base_usd

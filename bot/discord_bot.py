@@ -43,6 +43,7 @@ TRADEBOT_ACTIONS: dict[str, str] = {
     "stop": "stop",
     "resume": "resume-trading",
     "resume-trading": "resume-trading",
+    "resume-live": "resume-live",
     "reset": "reset",
     "portfolio": "portfolio",
     "balance": "portfolio",
