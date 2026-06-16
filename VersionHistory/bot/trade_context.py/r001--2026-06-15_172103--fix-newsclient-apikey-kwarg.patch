@@ -1,0 +1,11 @@
+--- a/bot/trade_context.py
++++ b/bot/trade_context.py
+@@ -182,7 +182,7 @@
+         try:
+             self._news_client = NewsClient(
+                 providers=self._news_provider,
+-                cryptopanic_api_key=self._cryptopanic_api_key or None,
++                api_key=self._cryptopanic_api_key or "",
+                 rss_feeds=parse_rss_feed_env(self._rss_feeds),
+             )
+         except Exception:  # noqa: BLE001

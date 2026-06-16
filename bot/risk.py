@@ -666,6 +666,8 @@ class RiskManager:
 
         is_defensive_sell: bool = False,
 
+        is_accumulation: bool = False,
+
         is_held_swap: bool = False,
 
         hops: int = 1,
@@ -688,7 +690,7 @@ class RiskManager:
 
 
 
-        if not is_defensive_sell and edge < required:
+        if not is_defensive_sell and not is_accumulation and edge < required:
 
             label = "Swap" if is_held_swap else "Trade"
 

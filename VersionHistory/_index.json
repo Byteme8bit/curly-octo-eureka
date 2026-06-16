@@ -239,6 +239,36 @@
       "removed": 0,
       "request_id": "058",
       "timestamp": "2026-06-15 10:39:12 PDT"
+    },
+    {
+      "added": 40,
+      "number": 25,
+      "patch": "r025--2026-06-15_105903--max-kraken-profile-docs.patch",
+      "path": ".env.example",
+      "reason": "max-kraken profile docs",
+      "removed": 2,
+      "request_id": "059",
+      "timestamp": "2026-06-15 10:59:03 PDT"
+    },
+    {
+      "added": 13,
+      "number": 26,
+      "patch": "r026--2026-06-15_112848--document-dca-knobs.patch",
+      "path": ".env.example",
+      "reason": "document DCA knobs",
+      "removed": 1,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:48 PDT"
+    },
+    {
+      "added": 14,
+      "number": 27,
+      "patch": "r027--2026-06-15_113324--trade-news-whale-defaults.patch",
+      "path": ".env.example",
+      "reason": "trade news whale defaults",
+      "removed": 1,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:24 PDT"
     }
   ],
   ".gitignore": [
@@ -1055,6 +1085,36 @@
       "removed": 2,
       "request_id": "058",
       "timestamp": "2026-06-15 10:39:11 PDT"
+    },
+    {
+      "added": 9,
+      "number": 36,
+      "patch": "r036--2026-06-15_105902--futures-manager-tick-hook.patch",
+      "path": "bot/engine.py",
+      "reason": "futures manager tick hook",
+      "removed": 1,
+      "request_id": "059",
+      "timestamp": "2026-06-15 10:59:02 PDT"
+    },
+    {
+      "added": 70,
+      "number": 37,
+      "patch": "r037--2026-06-15_112847--wire-equity-dca-gates.patch",
+      "path": "bot/engine.py",
+      "reason": "wire equity DCA gates",
+      "removed": 6,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:47 PDT"
+    },
+    {
+      "added": 33,
+      "number": 38,
+      "patch": "r038--2026-06-15_113324--wire-trade-context-gates.patch",
+      "path": "bot/engine.py",
+      "reason": "wire trade context gates",
+      "removed": 0,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:24 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1275,6 +1335,18 @@
       "timestamp": "2026-06-15 10:18:14 PDT"
     }
   ],
+  "bot/preflight.py": [
+    {
+      "added": 10,
+      "number": 1,
+      "patch": "r001--2026-06-15_112847--accumulation-preflight-bypass.patch",
+      "path": "bot/preflight.py",
+      "reason": "accumulation preflight bypass",
+      "removed": 0,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:47 PDT"
+    }
+  ],
   "bot/report.py": [
     {
       "added": 7,
@@ -1325,6 +1397,16 @@
       "removed": 1,
       "request_id": "055",
       "timestamp": "2026-06-15 04:23:23 PDT"
+    },
+    {
+      "added": 1,
+      "number": 6,
+      "patch": "r006--2026-06-15_112848--equitydca-strategy-label.patch",
+      "path": "bot/report.py",
+      "reason": "equity_dca strategy label",
+      "removed": 0,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:48 PDT"
     }
   ],
   "bot/risk.py": [
@@ -1387,6 +1469,16 @@
       "removed": 5,
       "request_id": "058",
       "timestamp": "2026-06-15 10:39:11 PDT"
+    },
+    {
+      "added": 3,
+      "number": 7,
+      "patch": "r007--2026-06-15_112847--skip-edge-hurdle-accumulation.patch",
+      "path": "bot/risk.py",
+      "reason": "skip edge hurdle accumulation",
+      "removed": 1,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:47 PDT"
     }
   ],
   "bot/singleton.py": [
@@ -1421,6 +1513,16 @@
       "removed": 0,
       "request_id": "042",
       "timestamp": "2026-06-10 00:21:02 PDT"
+    },
+    {
+      "added": 1,
+      "number": 3,
+      "patch": "r003--2026-06-15_112847--add-isaccumulation-intent-flag.patch",
+      "path": "bot/strategies/base.py",
+      "reason": "add is_accumulation intent flag",
+      "removed": 0,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:47 PDT"
     }
   ],
   "bot/strategies/cross_momentum.py": [
@@ -1467,6 +1569,16 @@
       "removed": 1,
       "request_id": "051",
       "timestamp": "2026-06-13 21:30:41 PDT"
+    },
+    {
+      "added": 5,
+      "number": 2,
+      "patch": "r002--2026-06-15_112847--register-equitydca-strategy.patch",
+      "path": "bot/strategies/registry.py",
+      "reason": "register equity_dca strategy",
+      "removed": 1,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:47 PDT"
     }
   ],
   "bot/strategies/stat_arb.py": [
@@ -1491,6 +1603,16 @@
       "removed": 21,
       "request_id": "030",
       "timestamp": "2026-06-01 07:53:37 PDT"
+    },
+    {
+      "added": 6,
+      "number": 2,
+      "patch": "r002--2026-06-15_112847--exclude-equity-from-arb-loops.patch",
+      "path": "bot/strategies/triangular_arbitrage.py",
+      "reason": "exclude equity from arb loops",
+      "removed": 1,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:47 PDT"
     }
   ],
   "bot/trade_log.py": [
@@ -1571,6 +1693,16 @@
       "removed": 2,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:56 PDT"
+    },
+    {
+      "added": 11,
+      "number": 3,
+      "patch": "r003--2026-06-15_112848--confirm-dca-live-tag.patch",
+      "path": "bot/verifier/live_tag.py",
+      "reason": "confirm DCA live tag",
+      "removed": 0,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:48 PDT"
     }
   ],
   "bot/verifier/report.py": [
@@ -1859,6 +1991,36 @@
       "removed": 4,
       "request_id": "058",
       "timestamp": "2026-06-15 10:39:11 PDT"
+    },
+    {
+      "added": 41,
+      "number": 24,
+      "patch": "r024--2026-06-15_105902--futures-settings-equity-live-warn.patch",
+      "path": "config.py",
+      "reason": "futures settings, equity live warn",
+      "removed": 0,
+      "request_id": "059",
+      "timestamp": "2026-06-15 10:59:02 PDT"
+    },
+    {
+      "added": 16,
+      "number": 25,
+      "patch": "r025--2026-06-15_112848--dca-env-settings.patch",
+      "path": "config.py",
+      "reason": "DCA env settings",
+      "removed": 0,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:48 PDT"
+    },
+    {
+      "added": 14,
+      "number": 26,
+      "patch": "r026--2026-06-15_113324--trade-context-env-knobs.patch",
+      "path": "config.py",
+      "reason": "trade context env knobs",
+      "removed": 0,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:24 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -2475,6 +2637,28 @@
       "timestamp": "2026-06-10 11:56:19 PDT"
     }
   ],
+  "docs/kraken-equities-futures.md": [
+    {
+      "added": 22,
+      "number": 1,
+      "patch": "r001--2026-06-15_105903--futures-v1-margin-note.patch",
+      "path": "docs/kraken-equities-futures.md",
+      "reason": "futures v1, margin note",
+      "removed": 11,
+      "request_id": "059",
+      "timestamp": "2026-06-15 10:59:03 PDT"
+    },
+    {
+      "added": 12,
+      "number": 2,
+      "patch": "r002--2026-06-15_112848--link-equity-dca-docs.patch",
+      "path": "docs/kraken-equities-futures.md",
+      "reason": "link equity DCA docs",
+      "removed": 0,
+      "request_id": "060",
+      "timestamp": "2026-06-15 11:28:48 PDT"
+    }
+  ],
   "docs/live-trading.md": [
     {
       "added": 18,
@@ -2505,6 +2689,26 @@
       "removed": 4,
       "request_id": "056",
       "timestamp": "2026-06-15 04:44:23 PDT"
+    },
+    {
+      "added": 4,
+      "number": 4,
+      "patch": "r004--2026-06-15_105903--equities-live-allowlist.patch",
+      "path": "docs/live-trading.md",
+      "reason": "equities live allowlist",
+      "removed": 2,
+      "request_id": "059",
+      "timestamp": "2026-06-15 10:59:03 PDT"
+    },
+    {
+      "added": 34,
+      "number": 5,
+      "patch": "r005--2026-06-15_113325--decision-stack-section.patch",
+      "path": "docs/live-trading.md",
+      "reason": "decision stack section",
+      "removed": 0,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:25 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
@@ -2901,6 +3105,18 @@
       "timestamp": "2026-06-13 20:32:06 PDT"
     }
   ],
+  "tests/test_live_broker.py": [
+    {
+      "added": 31,
+      "number": 1,
+      "patch": "r001--2026-06-15_105903--equity-assetclass-test.patch",
+      "path": "tests/test_live_broker.py",
+      "reason": "equity asset_class test",
+      "removed": 2,
+      "request_id": "059",
+      "timestamp": "2026-06-15 10:59:03 PDT"
+    }
+  ],
   "tests/test_live_eth_floor.py": [
     {
       "added": 0,
@@ -2945,6 +3161,18 @@
       "removed": 95,
       "request_id": "056",
       "timestamp": "2026-06-15 04:27:57 PDT"
+    }
+  ],
+  "tests/test_profit_only_mode.py": [
+    {
+      "added": 4,
+      "number": 1,
+      "patch": "r001--2026-06-15_113325--mock-trade-context-helper.patch",
+      "path": "tests/test_profit_only_mode.py",
+      "reason": "mock trade context helper",
+      "removed": 0,
+      "request_id": "061",
+      "timestamp": "2026-06-15 11:33:25 PDT"
     }
   ],
   "tests/test_quiet_discord.py": [

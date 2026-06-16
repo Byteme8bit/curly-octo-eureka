@@ -20,7 +20,8 @@ KRAKEN_API_SECRET=your_secret
 LIVE_ENABLED=1
 LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY
 
-# Restrict live to your holdings (default: single-hop */USD only)
+# Restrict live to holdings you approve (comma-separated tickers, not pair names):
+# LIVE_ALLOWED_ASSETS=ETH,ADA,BTC,DOT,UNI,AAVE,SOL,LINK,AAPLx,TSLAx,SPYx
 LIVE_ALLOWED_ASSETS=ETH,ADA
 LIVE_MAX_TRADE_USD=50
 LIVE_MAX_USD_PER_TRADE=50
@@ -60,7 +61,8 @@ Restart TradeBot after editing `.env`:
   - Multi-hop blocked unless `LIVE_ALLOW_TRIANGULAR=1`
 - **Triangular live** (`LIVE_ALLOW_TRIANGULAR=1`):
   - Legs execute **sequentially** on Kraken (not atomic like paper)
-  - Allowed assets: ETH, ADA, USD (+ BTC as bridge only)
+  - Allowed assets: any in `LIVE_ALLOWED_ASSETS` + USD (+ BTC bridge only)
+  - xStocks: add tickers to `LIVE_ALLOWED_ASSETS` and `EQUITY_WATCHLIST`; `asset_class=tokenized_asset` on orders
   - Caps: `LIVE_MAX_ROUTE_LEGS`, `LIVE_MAX_TRADE_USD` per leg, `LIVE_MAX_ROUTE_USD` route total
   - Mid-route failure: rollback completed legs; halt + Discord alert if unwind fails
 - **Shared safety**:
@@ -107,6 +109,40 @@ Restart the bot. Paper simulation continues with no Kraken orders.
 | Uncertain mirrors | `LIVE_MIRROR_UNCERTAIN=0` (default OFF) |
 | API withdraw disabled | Kraken key permissions |
 | Secrets not in git | `.env` is local only |
+
+## Decision stack (news, flow, fees)
+
+Each tick refreshes market context before any offensive trade is considered:
+
+```text
+1. Fetch candles + news headlines (TRADE_NEWS_CHECK_ENABLED, TRADE_FLOW_CHECK_ENABLED)
+2. Market-flow regime — risk_off when ≥55% of watched assets are weak (TRADE_FLOW_RISK_OFF_RATIO)
+3. News gate — block offensive entries into assets hit by severe headlines (TRADE_NEWS_BLOCK_SEVERE)
+4. Strategy signals (momentum, stat_arb, triangular_arb, whale_follow, equity_dca)
+5. Portfolio constraints + crash hold + circuit breaker
+6. Pre-flight — net = gross − fees − slippage; must clear MIN_NET_PROFIT_PCT
+7. PROFIT_ONLY_MODE — reject offensive trades with expected net ≤ 0
+8. Risk.approve_action — edge vs fee hurdle, cooldown, leader stability
+9. Live mirror — same fee stack unless CONFIRM bypass (LIVE_STRICT_PROFIT); DENY never mirrors
+```
+
+**Bypasses (by design):**
+- **Defensive trims** — loss mitigation; preflight bypass
+- **Equity DCA** — scheduled accumulation; not blocked by news/flow unless `TRADE_NEWS_BLOCK_DCA=1`
+- **Whale follow** — bypasses news/flow gates; still requires net edge after fees (`WHALE_FOLLOW_MIN_NET_PROFIT`)
+
+**Whale matching:** enable `WHALE_WATCH_ENABLED=1` and `WHALE_FOLLOW_ENABLED=1`. The bot mirrors large Kraken trades / volume spikes when cooldown, portfolio rails, and fee gates all pass — not blind copy.
+
+**Key env vars:**
+
+| Variable | Default | Role |
+|----------|---------|------|
+| `PROFIT_ONLY_MODE` | `0` (set `1` for live) | Block offensive net ≤ 0 |
+| `MIN_NET_PROFIT_PCT` | `0.0005` | Pre-flight floor after fees + slippage |
+| `WHALE_WATCH_ENABLED` | `0` | Poll large trades / spikes |
+| `WHALE_FOLLOW_ENABLED` | `0` | Mirror whale signals when profitable |
+| `TRADE_NEWS_CHECK_ENABLED` | `1` | Fetch headlines on trade path |
+| `TRADE_FLOW_CHECK_ENABLED` | `1` | Momentum regime gate |
 
 ## Related docs
 

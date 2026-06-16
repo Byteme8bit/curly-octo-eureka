@@ -28,6 +28,7 @@ from bot.local_time import format_pacific
 from bot.markets import MarketRegistry
 from bot.paper_broker import PaperBroker
 from bot.live_broker import LiveBroker
+from bot.futures.manager import FuturesManager
 from bot.live_guards import LIVE_CONFIRM_PHRASE, is_live_armed, check_live_route
 from bot.paper_portfolio import PaperPortfolioLog
 from bot.portfolio_constraints import PortfolioConstraints
@@ -58,6 +59,7 @@ from bot.verifier.kraken import PublicKraken
 from bot.verifier.live_tag import LiveVerifyResult, build_live_verify_tag
 from bot.verifier.models import Verdict
 from bot.whale_watch import WhaleWatcher, append_whale_event_log, format_whale_alert
+from bot.trade_context import TradeContextChecker
 from bot.strategies.whale_follow import (
     WhaleFollowCooldown,
     evaluate_whale_follow,
@@ -477,6 +479,24 @@ class TradingEngine:
             cooldown_sec=settings.whale_follow_cooldown_sec,
             max_per_hour=settings.whale_follow_max_per_hour,
         )
+        self.trade_context = TradeContextChecker(
+            news_check_enabled=settings.trade_news_check_enabled,
+            news_block_severe=settings.trade_news_block_severe,
+            news_block_dca=settings.trade_news_block_dca,
+            flow_check_enabled=settings.trade_flow_check_enabled,
+            flow_momentum_threshold=settings.trade_flow_momentum_threshold,
+            flow_risk_off_ratio=settings.trade_flow_risk_off_ratio,
+            news_enabled=settings.auditor_news_enabled,
+            news_provider=settings.auditor_news_provider,
+            cryptopanic_api_key=settings.auditor_cryptopanic_api_key,
+            rss_feeds=settings.auditor_rss_feeds,
+            news_max_items=settings.auditor_news_max_items,
+            watch_assets=settings.watch_assets,
+            symbol_assets=settings.symbol_assets,
+        )
+        self.futures_manager: FuturesManager | None = None
+        if settings.enable_futures:
+            self.futures_manager = FuturesManager(settings)
         self.goal_evolution = build_manager_from_settings(settings)
         self._goal_status = None
         self._crash_status = None
@@ -849,6 +869,27 @@ class TradingEngine:
                 source="TradeBot",
             )
 
+    def _is_accumulation_intent(self, intent) -> bool:
+        return bool(
+            getattr(intent, "is_accumulation", False)
+            or getattr(intent, "strategy_name", "") == "equity_dca"
+        )
+
+    def _trade_context_block(self, intent) -> str | None:
+        gate = self.trade_context.check_intent(intent)
+        if gate.allowed:
+            return None
+        return gate.reason
+
+    def _record_strategy_fill(self, intent) -> None:
+        for strat in getattr(self.strategy, "strategies", []):
+            on_fill = getattr(strat, "on_trade_executed", None)
+            if callable(on_fill):
+                try:
+                    on_fill(intent)
+                except Exception:
+                    logger.exception("Strategy %s on_trade_executed failed", getattr(strat, "name", "?"))
+
     def _try_execute_intent(
         self,
         intent,
@@ -878,6 +919,9 @@ class TradingEngine:
             and not intent.is_defensive
         ):
             return None, "Crash hold — new risk blocked"
+        ctx_reason = self._trade_context_block(intent)
+        if ctx_reason:
+            return None, ctx_reason
         route = getattr(intent, "route", None) or self.markets.find_path(
             intent.from_asset, intent.to_asset
         )
@@ -916,9 +960,13 @@ class TradingEngine:
             hops=route.hops,
             is_defensive=intent.is_defensive,
             min_net_profit=(
-                min_net_profit
-                if min_net_profit is not None
-                else self.risk.effective_min_net_profit()
+                -1.0
+                if self._is_accumulation_intent(intent)
+                else (
+                    min_net_profit
+                    if min_net_profit is not None
+                    else self.risk.effective_min_net_profit()
+                )
             ),
         )
         if not pf.allowed:
@@ -926,6 +974,7 @@ class TradingEngine:
         if (
             self.settings.profit_only_mode
             and not intent.is_defensive
+            and not self._is_accumulation_intent(intent)
             and pf.net_return_pct <= 0.0
         ):
             return None, (
@@ -937,6 +986,7 @@ class TradingEngine:
             intent.edge,
             trade_usd,
             is_defensive_sell=intent.is_defensive,
+            is_accumulation=self._is_accumulation_intent(intent),
             is_held_swap=intent.is_held_swap,
             hops=route.hops,
             require_leader_stable=intent.require_leader_stable,
@@ -949,6 +999,7 @@ class TradingEngine:
         trade["edge"] = intent.edge
         trade["gross_return_pct"] = intent.gross_return_pct
         trade["is_defensive"] = intent.is_defensive
+        trade["is_accumulation"] = self._is_accumulation_intent(intent)
         trade["is_expansion"] = intent.is_expansion
         trade["is_held_swap"] = intent.is_held_swap
         trade["is_whale_follow"] = intent.strategy_name == "whale_follow"
@@ -961,6 +1012,7 @@ class TradingEngine:
         )
         self.risk.record_trade()
         self.auditor.note_trade(trade)
+        self._record_strategy_fill(intent)
         if self._live_mode and not self._mirror_mode:
             self._after_live_trade()
         return trade, ""
@@ -1492,7 +1544,11 @@ class TradingEngine:
             route_symbols=route.symbols,
             hops=route.hops,
             is_defensive=intent.is_defensive,
-            min_net_profit=self.risk.effective_min_net_profit(),
+            min_net_profit=(
+                -1.0
+                if self._is_accumulation_intent(intent)
+                else self.risk.effective_min_net_profit()
+            ),
         )
         allow_mirror_despite_pf = confirm_bypass and not self.settings.profit_only_mode
         if not pf.allowed and not allow_mirror_despite_pf:
@@ -1503,6 +1559,7 @@ class TradingEngine:
         if (
             self.settings.profit_only_mode
             and not intent.is_defensive
+            and not self._is_accumulation_intent(intent)
             and pf.net_return_pct <= 0.0
         ):
             self._log_live_mirror_skip(
@@ -1862,7 +1919,18 @@ class TradingEngine:
         if getattr(self, "_mirror_mode", False):
             return
         if self.settings.discord_quiet_mode:
-            trades = [t for t in trades if t.get("live")]
+            from bot.verifier.parsers import estimate_trade_usd
+
+            quiet_threshold = self.settings.discord_pin_trade_usd
+            filtered: list[dict] = []
+            for trade in trades:
+                if trade.get("live"):
+                    filtered.append(trade)
+                    continue
+                if trade.get("strategy_name") == "equity_dca" or trade.get("is_accumulation"):
+                    if estimate_trade_usd(trade, usd_prices) >= quiet_threshold:
+                        filtered.append(trade)
+            trades = filtered
             if not trades:
                 return
         threshold = self.settings.discord_pin_trade_usd
@@ -1873,6 +1941,8 @@ class TradingEngine:
             msg = format_trade_executed_alert(
                 trade, portfolio, baseline_pnl, verify_tag=verify_tag
             )
+            if trade.get("strategy_name") == "equity_dca" or trade.get("is_accumulation"):
+                msg = msg.replace("**Trade executed**", "**Scheduled equity DCA**", 1)
             if pin:
                 direction = "gain" if gain >= 0 else "loss"
                 msg = msg.replace(
@@ -1939,6 +2009,7 @@ class TradingEngine:
         usd_prices = self._usd_prices()
 
         candles = self.data.fetch_all_candles()
+        self.trade_context.refresh(candles)
 
         holdings = self._holdings()
 
@@ -2134,6 +2205,11 @@ class TradingEngine:
 
             self.broker.save()
 
+            if self.live_circuit_breaker is not None:
+                self.live_circuit_breaker.clear_reevaluation()
+                if self.live_broker is not None:
+                    self.live_broker.save()
+
             return (
 
                 "Re-evaluation mode **cleared** — send `start` if trading was stopped. "
@@ -2294,6 +2370,7 @@ class TradingEngine:
             self.broker.sync_from_exchange()
 
         candles = self.data.fetch_all_candles()
+        self.trade_context.refresh(candles)
 
         holdings = self._holdings()
 
@@ -2566,6 +2643,12 @@ class TradingEngine:
 
                     continue
 
+                ctx_reason = self._trade_context_block(intent)
+                if ctx_reason:
+                    blocked.append(ctx_reason)
+                    activity_blocked.append(ctx_reason)
+                    continue
+
                 route = getattr(intent, "route", None) or self.markets.find_path(
                     intent.from_asset, intent.to_asset
                 )
@@ -2630,7 +2713,11 @@ class TradingEngine:
 
                     is_defensive=intent.is_defensive,
 
-                    min_net_profit=self.risk.effective_min_net_profit(),
+                    min_net_profit=(
+                        -1.0
+                        if self._is_accumulation_intent(intent)
+                        else self.risk.effective_min_net_profit()
+                    ),
 
                 )
 
@@ -2639,6 +2726,19 @@ class TradingEngine:
                     blocked.append(pf.reason)
                     activity_blocked.append(pf.reason)
 
+                    continue
+
+                if (
+                    self.settings.profit_only_mode
+                    and not intent.is_defensive
+                    and not self._is_accumulation_intent(intent)
+                    and pf.net_return_pct <= 0.0
+                ):
+                    reason = (
+                        f"Profit-only mode: expected net {pf.net_return_pct:+.4f} <= 0 after fees"
+                    )
+                    blocked.append(reason)
+                    activity_blocked.append(reason)
                     continue
 
                 edge_qualified = True
@@ -2655,6 +2755,8 @@ class TradingEngine:
                     trade_usd,
 
                     is_defensive_sell=intent.is_defensive,
+
+                    is_accumulation=self._is_accumulation_intent(intent),
 
                     is_held_swap=intent.is_held_swap,
 
@@ -2683,6 +2785,8 @@ class TradingEngine:
 
                     trade["is_defensive"] = intent.is_defensive
 
+                    trade["is_accumulation"] = self._is_accumulation_intent(intent)
+
                     trade["is_expansion"] = intent.is_expansion
 
                     trade["is_held_swap"] = intent.is_held_swap
@@ -2706,6 +2810,8 @@ class TradingEngine:
                     self.risk.record_trade()
 
                     self.auditor.note_trade(trade)
+
+                    self._record_strategy_fill(intent)
 
                     if self._live_mode and not self._mirror_mode:
                         self._after_live_trade()
@@ -2876,7 +2982,11 @@ class TradingEngine:
 
         )
 
-
+        if self.futures_manager is not None and self.futures_manager.active:
+            try:
+                self.futures_manager.tick()
+            except Exception as exc:
+                logger.warning("Futures tick failed: %s", exc)
 
         return elapsed
 

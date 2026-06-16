@@ -1,0 +1,46 @@
+--- a/config.py
++++ b/config.py
+@@ -43,6 +43,8 @@
+ DEFAULT_MOMENTUM_TIMEFRAMES = "15m,1h"
+ DEFAULT_EQUITY_WATCHLIST = "AAPLx,TSLAx,SPYx"
+ DEFAULT_MAX_EQUITY_ALLOCATION_PCT = "0.15"
++DEFAULT_DCA_INTERVAL_HOURS = "24"
++DEFAULT_DCA_AMOUNT_USD = "15"
+ DEFAULT_FUTURES_WATCHLIST = "BTC/USD:USD,ETH/USD:USD,AAPLX/USD:USD"
+ 
+ 
+@@ -231,6 +233,11 @@
+     symbol_assets: dict[str, str]
+     asset_usd_symbols: dict[str, str]
+     max_equity_allocation_pct: float
++    dca_enabled: bool
++    dca_interval_hours: float
++    dca_amount_usd: float
++    dca_per_symbol_usd: float
++    dca_state_file: Path
+     enable_futures: bool
+     live_futures_enabled: bool
+     futures_watchlist: tuple[str, ...]
+@@ -695,6 +702,13 @@
+         max_equity_allocation_pct=float(
+             os.getenv("MAX_EQUITY_ALLOCATION_PCT", DEFAULT_MAX_EQUITY_ALLOCATION_PCT)
+         ),
++        dca_enabled=os.getenv("DCA_ENABLED", "0") == "1",
++        dca_interval_hours=float(
++            os.getenv("DCA_INTERVAL_HOURS", DEFAULT_DCA_INTERVAL_HOURS)
++        ),
++        dca_amount_usd=float(os.getenv("DCA_AMOUNT_USD", DEFAULT_DCA_AMOUNT_USD)),
++        dca_per_symbol_usd=float(os.getenv("DCA_PER_SYMBOL_USD", "0")),
++        dca_state_file=ROOT / os.getenv("DCA_STATE_FILE", ".dca_state.json"),
+         enable_futures=os.getenv("ENABLE_FUTURES", "0") == "1",
+         live_futures_enabled=os.getenv("LIVE_FUTURES_ENABLED", "0") == "1",
+         futures_watchlist=_parse_futures_watchlist(
+@@ -721,6 +735,8 @@
+                 "live mirror will skip xStock trades for this ticker",
+                 ticker,
+             )
++    if fields["dca_enabled"] and not fields["enable_equities"]:
++        logger.warning("DCA_ENABLED=1 requires ENABLE_EQUITIES=1 — equity DCA will not run")
+     _apply_runtime_overrides(fields)
+     if fields["live_enabled"] and not fields["live_mirror_paper"]:
+         fields["state_file"] = fields["live_state_file"]

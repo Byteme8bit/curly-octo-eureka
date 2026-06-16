@@ -227,6 +227,7 @@ STRATEGY_DESCRIPTIONS: dict[str, str] = {
     "triangular_arbitrage": "Triangular arbitrage (3-leg cross-pair loops)",
     "stat_arb": "Statistical arbitrage (Z-score mean reversion)",
     "momentum_rotation": "Momentum rotation (single-strategy legacy)",
+    "equity_dca": "Equity DCA — scheduled USD buys into xStocks/ETFs",
     "hold": "Hold — no trades (data-feed test mode)",
     "orchestrator": "Multi-strategy orchestrator",
     "whale_follow": "Whale follow — mirror large moves when rails allow",

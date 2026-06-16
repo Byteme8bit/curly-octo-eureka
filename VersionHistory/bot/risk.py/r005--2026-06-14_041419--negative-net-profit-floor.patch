@@ -1,0 +1,14 @@
+--- a/bot/risk.py
++++ b/bot/risk.py
+@@ -291,8 +291,9 @@
+ 
+ 
+     def effective_min_net_profit(self) -> float:
+-
+-        floor = 0.0001
++        # Honour negative MIN_NET_PROFIT_PCT (action-hour bleed) instead of
++        # clamping adaptive relaxation back to a positive floor.
++        floor = self.min_net_profit_pct if self.min_net_profit_pct < 0 else 0.0001
+ 
+         return relaxed_threshold(
+ 

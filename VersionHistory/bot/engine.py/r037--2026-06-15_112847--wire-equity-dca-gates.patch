@@ -1,0 +1,183 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -853,6 +853,21 @@
+                 source="TradeBot",
+             )
+ 
++    def _is_accumulation_intent(self, intent) -> bool:
++        return bool(
++            getattr(intent, "is_accumulation", False)
++            or getattr(intent, "strategy_name", "") == "equity_dca"
++        )
++
++    def _record_strategy_fill(self, intent) -> None:
++        for strat in getattr(self.strategy, "strategies", []):
++            on_fill = getattr(strat, "on_trade_executed", None)
++            if callable(on_fill):
++                try:
++                    on_fill(intent)
++                except Exception:
++                    logger.exception("Strategy %s on_trade_executed failed", getattr(strat, "name", "?"))
++
+     def _try_execute_intent(
+         self,
+         intent,
+@@ -920,9 +935,13 @@
+             hops=route.hops,
+             is_defensive=intent.is_defensive,
+             min_net_profit=(
+-                min_net_profit
+-                if min_net_profit is not None
+-                else self.risk.effective_min_net_profit()
++                -1.0
++                if self._is_accumulation_intent(intent)
++                else (
++                    min_net_profit
++                    if min_net_profit is not None
++                    else self.risk.effective_min_net_profit()
++                )
+             ),
+         )
+         if not pf.allowed:
+@@ -930,6 +949,7 @@
+         if (
+             self.settings.profit_only_mode
+             and not intent.is_defensive
++            and not self._is_accumulation_intent(intent)
+             and pf.net_return_pct <= 0.0
+         ):
+             return None, (
+@@ -941,6 +961,7 @@
+             intent.edge,
+             trade_usd,
+             is_defensive_sell=intent.is_defensive,
++            is_accumulation=self._is_accumulation_intent(intent),
+             is_held_swap=intent.is_held_swap,
+             hops=route.hops,
+             require_leader_stable=intent.require_leader_stable,
+@@ -953,6 +974,7 @@
+         trade["edge"] = intent.edge
+         trade["gross_return_pct"] = intent.gross_return_pct
+         trade["is_defensive"] = intent.is_defensive
++        trade["is_accumulation"] = self._is_accumulation_intent(intent)
+         trade["is_expansion"] = intent.is_expansion
+         trade["is_held_swap"] = intent.is_held_swap
+         trade["is_whale_follow"] = intent.strategy_name == "whale_follow"
+@@ -965,6 +987,7 @@
+         )
+         self.risk.record_trade()
+         self.auditor.note_trade(trade)
++        self._record_strategy_fill(intent)
+         if self._live_mode and not self._mirror_mode:
+             self._after_live_trade()
+         return trade, ""
+@@ -1496,7 +1519,11 @@
+             route_symbols=route.symbols,
+             hops=route.hops,
+             is_defensive=intent.is_defensive,
+-            min_net_profit=self.risk.effective_min_net_profit(),
++            min_net_profit=(
++                -1.0
++                if self._is_accumulation_intent(intent)
++                else self.risk.effective_min_net_profit()
++            ),
+         )
+         allow_mirror_despite_pf = confirm_bypass and not self.settings.profit_only_mode
+         if not pf.allowed and not allow_mirror_despite_pf:
+@@ -1507,6 +1534,7 @@
+         if (
+             self.settings.profit_only_mode
+             and not intent.is_defensive
++            and not self._is_accumulation_intent(intent)
+             and pf.net_return_pct <= 0.0
+         ):
+             self._log_live_mirror_skip(
+@@ -1866,7 +1894,18 @@
+         if getattr(self, "_mirror_mode", False):
+             return
+         if self.settings.discord_quiet_mode:
+-            trades = [t for t in trades if t.get("live")]
++            from bot.verifier.parsers import estimate_trade_usd
++
++            quiet_threshold = self.settings.discord_pin_trade_usd
++            filtered: list[dict] = []
++            for trade in trades:
++                if trade.get("live"):
++                    filtered.append(trade)
++                    continue
++                if trade.get("strategy_name") == "equity_dca" or trade.get("is_accumulation"):
++                    if estimate_trade_usd(trade, usd_prices) >= quiet_threshold:
++                        filtered.append(trade)
++            trades = filtered
+             if not trades:
+                 return
+         threshold = self.settings.discord_pin_trade_usd
+@@ -1877,6 +1916,8 @@
+             msg = format_trade_executed_alert(
+                 trade, portfolio, baseline_pnl, verify_tag=verify_tag
+             )
++            if trade.get("strategy_name") == "equity_dca" or trade.get("is_accumulation"):
++                msg = msg.replace("**Trade executed**", "**Scheduled equity DCA**", 1)
+             if pin:
+                 direction = "gain" if gain >= 0 else "loss"
+                 msg = msg.replace(
+@@ -2634,7 +2675,11 @@
+ 
+                     is_defensive=intent.is_defensive,
+ 
+-                    min_net_profit=self.risk.effective_min_net_profit(),
++                    min_net_profit=(
++                        -1.0
++                        if self._is_accumulation_intent(intent)
++                        else self.risk.effective_min_net_profit()
++                    ),
+ 
+                 )
+ 
+@@ -2645,6 +2690,19 @@
+ 
+                     continue
+ 
++                if (
++                    self.settings.profit_only_mode
++                    and not intent.is_defensive
++                    and not self._is_accumulation_intent(intent)
++                    and pf.net_return_pct <= 0.0
++                ):
++                    reason = (
++                        f"Profit-only mode: expected net {pf.net_return_pct:+.4f} <= 0 after fees"
++                    )
++                    blocked.append(reason)
++                    activity_blocked.append(reason)
++                    continue
++
+                 edge_qualified = True
+                 intent.edge = pf.net_return_pct
+ 
+@@ -2660,6 +2718,8 @@
+ 
+                     is_defensive_sell=intent.is_defensive,
+ 
++                    is_accumulation=self._is_accumulation_intent(intent),
++
+                     is_held_swap=intent.is_held_swap,
+ 
+                     hops=route.hops,
+@@ -2687,6 +2747,8 @@
+ 
+                     trade["is_defensive"] = intent.is_defensive
+ 
++                    trade["is_accumulation"] = self._is_accumulation_intent(intent)
++
+                     trade["is_expansion"] = intent.is_expansion
+ 
+                     trade["is_held_swap"] = intent.is_held_swap
+@@ -2710,6 +2772,8 @@
+                     self.risk.record_trade()
+ 
+                     self.auditor.note_trade(trade)
++
++                    self._record_strategy_fill(intent)
+ 
+                     if self._live_mode and not self._mirror_mode:
+                         self._after_live_trade()

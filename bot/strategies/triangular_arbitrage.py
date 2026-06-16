@@ -39,6 +39,7 @@ class TriangularArbitrageStrategy(Strategy):
 
     def __init__(self, settings: Settings):
         self.watch_assets = settings.watch_assets
+        self.equity_assets = getattr(settings, "equity_assets", None) or frozenset()
         self.trade_size_pct = settings.trade_size_pct
         self.fee_rate = settings.fee_rate
         self.min_net_profit_pct = settings.min_net_profit_pct
@@ -153,7 +154,11 @@ class TriangularArbitrageStrategy(Strategy):
 
         min_net = risk.effective_min_net_profit() if risk else self.min_net_profit_pct
 
-        assets = [a for a in self.watch_assets if a != "USD"]
+        assets = [
+            a
+            for a in self.watch_assets
+            if a != "USD" and a not in self.equity_assets
+        ]
         held = [
             a
             for a, q in holdings.items()

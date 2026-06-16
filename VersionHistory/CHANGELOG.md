@@ -2387,3 +2387,198 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +4 / -0
 - **Patch:** `r024--2026-06-15_103912--document-profit-only-flags.patch`
 
+## config.py — r024
+
+- **When:** 2026-06-15 10:59:02 PDT
+- **Reason:** futures settings, equity live warn
+- **Request:** 059
+- **Diff:** +41 / -0
+- **Patch:** `r024--2026-06-15_105902--futures-settings-equity-live-warn.patch`
+
+## bot/engine.py — r036
+
+- **When:** 2026-06-15 10:59:02 PDT
+- **Reason:** futures manager tick hook
+- **Request:** 059
+- **Diff:** +9 / -1
+- **Patch:** `r036--2026-06-15_105902--futures-manager-tick-hook.patch`
+
+## tests/test_live_broker.py — r001
+
+- **When:** 2026-06-15 10:59:03 PDT
+- **Reason:** equity asset_class test
+- **Request:** 059
+- **Diff:** +31 / -2
+- **Patch:** `r001--2026-06-15_105903--equity-assetclass-test.patch`
+
+## .env.example — r025
+
+- **When:** 2026-06-15 10:59:03 PDT
+- **Reason:** max-kraken profile docs
+- **Request:** 059
+- **Diff:** +40 / -2
+- **Patch:** `r025--2026-06-15_105903--max-kraken-profile-docs.patch`
+
+## docs/kraken-equities-futures.md — r001
+
+- **When:** 2026-06-15 10:59:03 PDT
+- **Reason:** futures v1, margin note
+- **Request:** 059
+- **Diff:** +22 / -11
+- **Patch:** `r001--2026-06-15_105903--futures-v1-margin-note.patch`
+
+## docs/live-trading.md — r004
+
+- **When:** 2026-06-15 10:59:03 PDT
+- **Reason:** equities live allowlist
+- **Request:** 059
+- **Diff:** +4 / -2
+- **Patch:** `r004--2026-06-15_105903--equities-live-allowlist.patch`
+
+
+> _2026-06-15 11:00:21 PDT_ — no-op snapshot requested for `bot/data.py` (reason: 'load crypto before equities') - no change since r004
+
+## bot/strategies/base.py — r003
+
+- **When:** 2026-06-15 11:28:47 PDT
+- **Reason:** add is_accumulation intent flag
+- **Request:** 060
+- **Diff:** +1 / -0
+- **Patch:** `r003--2026-06-15_112847--add-isaccumulation-intent-flag.patch`
+
+## bot/strategies/triangular_arbitrage.py — r002
+
+- **When:** 2026-06-15 11:28:47 PDT
+- **Reason:** exclude equity from arb loops
+- **Request:** 060
+- **Diff:** +6 / -1
+- **Patch:** `r002--2026-06-15_112847--exclude-equity-from-arb-loops.patch`
+
+## bot/strategies/registry.py — r002
+
+- **When:** 2026-06-15 11:28:47 PDT
+- **Reason:** register equity_dca strategy
+- **Request:** 060
+- **Diff:** +5 / -1
+- **Patch:** `r002--2026-06-15_112847--register-equitydca-strategy.patch`
+
+## bot/preflight.py — r001
+
+- **When:** 2026-06-15 11:28:47 PDT
+- **Reason:** accumulation preflight bypass
+- **Request:** 060
+- **Diff:** +10 / -0
+- **Patch:** `r001--2026-06-15_112847--accumulation-preflight-bypass.patch`
+
+## bot/risk.py — r007
+
+- **When:** 2026-06-15 11:28:47 PDT
+- **Reason:** skip edge hurdle accumulation
+- **Request:** 060
+- **Diff:** +3 / -1
+- **Patch:** `r007--2026-06-15_112847--skip-edge-hurdle-accumulation.patch`
+
+## bot/engine.py — r037
+
+- **When:** 2026-06-15 11:28:47 PDT
+- **Reason:** wire equity DCA gates
+- **Request:** 060
+- **Diff:** +70 / -6
+- **Patch:** `r037--2026-06-15_112847--wire-equity-dca-gates.patch`
+
+## bot/verifier/live_tag.py — r003
+
+- **When:** 2026-06-15 11:28:48 PDT
+- **Reason:** confirm DCA live tag
+- **Request:** 060
+- **Diff:** +11 / -0
+- **Patch:** `r003--2026-06-15_112848--confirm-dca-live-tag.patch`
+
+## bot/report.py — r006
+
+- **When:** 2026-06-15 11:28:48 PDT
+- **Reason:** equity_dca strategy label
+- **Request:** 060
+- **Diff:** +1 / -0
+- **Patch:** `r006--2026-06-15_112848--equitydca-strategy-label.patch`
+
+## config.py — r025
+
+- **When:** 2026-06-15 11:28:48 PDT
+- **Reason:** DCA env settings
+- **Request:** 060
+- **Diff:** +16 / -0
+- **Patch:** `r025--2026-06-15_112848--dca-env-settings.patch`
+
+## .env.example — r026
+
+- **When:** 2026-06-15 11:28:48 PDT
+- **Reason:** document DCA knobs
+- **Request:** 060
+- **Diff:** +13 / -1
+- **Patch:** `r026--2026-06-15_112848--document-dca-knobs.patch`
+
+## docs/kraken-equities-futures.md — r002
+
+- **When:** 2026-06-15 11:28:48 PDT
+- **Reason:** link equity DCA docs
+- **Request:** 060
+- **Diff:** +12 / -0
+- **Patch:** `r002--2026-06-15_112848--link-equity-dca-docs.patch`
+
+## config.py — r026
+
+- **When:** 2026-06-15 11:33:24 PDT
+- **Reason:** trade context env knobs
+- **Request:** 061
+- **Diff:** +14 / -0
+- **Patch:** `r026--2026-06-15_113324--trade-context-env-knobs.patch`
+
+## bot/engine.py — r038
+
+- **When:** 2026-06-15 11:33:24 PDT
+- **Reason:** wire trade context gates
+- **Request:** 061
+- **Diff:** +33 / -0
+- **Patch:** `r038--2026-06-15_113324--wire-trade-context-gates.patch`
+
+## .env.example — r027
+
+- **When:** 2026-06-15 11:33:24 PDT
+- **Reason:** trade news whale defaults
+- **Request:** 061
+- **Diff:** +14 / -1
+- **Patch:** `r027--2026-06-15_113324--trade-news-whale-defaults.patch`
+
+## docs/live-trading.md — r005
+
+- **When:** 2026-06-15 11:33:25 PDT
+- **Reason:** decision stack section
+- **Request:** 061
+- **Diff:** +34 / -0
+- **Patch:** `r005--2026-06-15_113325--decision-stack-section.patch`
+
+## tests/test_profit_only_mode.py — r001
+
+- **When:** 2026-06-15 11:33:25 PDT
+- **Reason:** mock trade context helper
+- **Request:** 061
+- **Diff:** +4 / -0
+- **Patch:** `r001--2026-06-15_113325--mock-trade-context-helper.patch`
+
+## bot/trade_context.py — r001
+
+- **When:** 2026-06-15 17:21:03 PDT
+- **Reason:** fix NewsClient api_key kwarg
+- **Request:** 061
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-15_172103--fix-newsclient-apikey-kwarg.patch`
+
+## bot/engine.py — r039
+
+- **When:** 2026-06-15 17:21:03 PDT
+- **Reason:** resume clears live CB too
+- **Request:** 061
+- **Diff:** +5 / -0
+- **Patch:** `r039--2026-06-15_172103--resume-clears-live-cb-too.patch`
+

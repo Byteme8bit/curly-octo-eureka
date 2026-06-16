@@ -1,0 +1,31 @@
+--- a/.env.example
++++ b/.env.example
+@@ -319,7 +319,19 @@
+ # EQUITY_WATCHLIST=AAPLx,TSLAx,SPYx,NVDAx,MSFTx,GOOGLx
+ # Max portfolio share for any single equity/ETF (separate from MAX_ALT_ALLOCATION_PCT)
+ # MAX_EQUITY_ALLOCATION_PCT=0.15
++# MAX_EQUITY_ALLOCATION_PCT=0.15
+ # Live: add approved tickers to LIVE_ALLOWED_ASSETS (e.g. ETH,ADA,AAPLx,TSLAx,SPYx)
++
++# ---------------------------------------------------------------------------
++# Equity DCA — scheduled USD buys into xStocks/ETFs (default OFF)
++# Runs parallel to triangular_arbitrage; see docs/dca-equities.md
++# ---------------------------------------------------------------------------
++# DCA_ENABLED=0
++# DCA_INTERVAL_HOURS=24
++# DCA_AMOUNT_USD=30
++# Fixed USD per symbol (overrides split); 0 = split DCA_AMOUNT_USD across watchlist
++# DCA_PER_SYMBOL_USD=0
++# DCA_STATE_FILE=.dca_state.json
+ 
+ # ---------------------------------------------------------------------------
+ # Kraken Futures (perpetuals) — paper sim v1 (default OFF)
+@@ -355,7 +367,7 @@
+ # PROFIT_ONLY_MODE=1
+ # LIVE_DRAWDOWN_HALT_PCT=0.10
+ # ENABLE_FUTURES=1
+-# STRATEGIES=cross_momentum,triangular_arbitrage,stat_arb
++# STRATEGIES=cross_momentum,triangular_arbitrage,stat_arb,equity_dca
+ # Kraken spot margin: NOT enabled — requires separate leverage/liquidation model.
+ # See docs/kraken-equities-futures.md#spot-margin-limitation
+ 
