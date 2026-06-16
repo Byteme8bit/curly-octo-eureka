@@ -46,20 +46,7 @@ def _read_json(path) -> dict | None:
 
 
 def _load_usd_prices(settings, portfolio_log=None) -> dict[str, float]:
-    from bot.live_portfolio import load_live_usd_prices
-
-    session_file = getattr(settings, "live_session_start_file", None)
-    if session_file is None:
-        session_file = Path(
-            getattr(settings, "live_state_file", Path(".live_state.json")).parent
-            / "live_session_start.json"
-        )
-    prices = load_live_usd_prices(
-        live_session_start_file=_as_path(session_file),
-        paper_portfolio_file=_as_path(
-            getattr(settings, "paper_portfolio_file", Path("paper_portfolio.json"))
-        ),
-    )
+    prices: dict[str, float] = {"USD": 1.0}
     if portfolio_log is not None:
         try:
             snap = portfolio_log.load()
@@ -67,8 +54,17 @@ def _load_usd_prices(settings, portfolio_log=None) -> dict[str, float]:
                 px = float(row.get("usd_price", 0.0))
                 if px > 0:
                     prices[str(asset)] = px
+            if len(prices) > 1:
+                return prices
         except Exception:  # noqa: BLE001
             pass
+    paper = _read_json(getattr(settings, "paper_portfolio_file", Path("paper_portfolio.json")))
+    if paper:
+        for asset, row in (paper.get("holdings") or {}).items():
+            if isinstance(row, dict):
+                px = float(row.get("usd_price", 0.0))
+                if px > 0:
+                    prices[str(asset)] = px
     return prices
 
 

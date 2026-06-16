@@ -1,0 +1,51 @@
+--- a/bot/live_portfolio.py
++++ b/bot/live_portfolio.py
+@@ -28,28 +28,30 @@
+     return data if isinstance(data, dict) else None
+ 
+ 
+-def _load_usd_prices(
++def load_live_usd_prices(
+     *,
+     live_session_start_file: Path,
+     paper_portfolio_file: Path | None = None,
+ ) -> dict[str, float]:
++    """Merge session-anchor and paper prices so live-only holdings (e.g. ETH) stay priced."""
++    prices: dict[str, float] = {"USD": 1.0}
++
++    session = _read_json(live_session_start_file)
++    if session:
++        for asset, px in (session.get("usd_prices") or {}).items():
++            if isinstance(px, (int, float)) and float(px) > 0:
++                prices[str(asset)] = float(px)
++
+     if paper_portfolio_file is not None:
+         paper = _read_json(paper_portfolio_file)
+         if paper:
+-            prices: dict[str, float] = {"USD": 1.0}
+             for asset, row in (paper.get("holdings") or {}).items():
+                 if isinstance(row, dict):
+                     px = float(row.get("usd_price", 0.0))
+                     if px > 0:
+                         prices[str(asset)] = px
+-            if len(prices) > 1:
+-                return prices
+ 
+-    session = _read_json(live_session_start_file)
+-    if session:
+-        raw = session.get("usd_prices") or {}
+-        return {str(k): float(v) for k, v in raw.items() if isinstance(v, (int, float))}
+-    return {"USD": 1.0}
++    return prices
+ 
+ 
+ def _portfolio_usd(balances: dict[str, float], usd_prices: dict[str, float]) -> float:
+@@ -90,7 +92,7 @@
+     if peak <= 0 and session:
+         peak = float(session.get("peak_portfolio_usd", baseline))
+ 
+-    usd_prices = _load_usd_prices(
++    usd_prices = load_live_usd_prices(
+         live_session_start_file=live_session_start_file,
+         paper_portfolio_file=paper_portfolio_file,
+     )

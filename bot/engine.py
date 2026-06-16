@@ -1747,10 +1747,24 @@ class TradingEngine:
 
 
     def _usd_prices(self) -> dict[str, float]:
+        assets = set(self._holdings().keys())
+        if self._mirror_mode and self.live_broker is not None:
+            assets.update(self.live_broker.state.balances.keys())
+        prices = self.data.fetch_usd_prices(list(assets))
+        missing = [a for a in assets if a != "USD" and prices.get(a, 0.0) <= 0]
+        if missing:
+            from bot.live_portfolio import load_live_usd_prices
 
-        assets = list(self._holdings().keys())
-
-        return self.data.fetch_usd_prices(assets)
+            fallback = load_live_usd_prices(
+                live_session_start_file=self.settings.live_state_file.parent
+                / "live_session_start.json",
+                paper_portfolio_file=self.settings.paper_portfolio_file,
+            )
+            for asset in missing:
+                px = fallback.get(asset, 0.0)
+                if px > 0:
+                    prices[asset] = px
+        return prices
 
 
 
