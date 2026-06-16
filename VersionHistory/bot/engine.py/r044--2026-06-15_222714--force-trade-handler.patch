@@ -1,0 +1,350 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -50,6 +50,7 @@
+ from bot.trade_log import BotFileLogger, ReceiptWriter
+ from bot.watchdog_service import WatchdogService
+ from bot.discord_summary import MajorMoveTracker, TradeActivityBuffer, format_hourly_summary
++from bot.force_trade_log import append_force_trade_log
+ from bot.whale_follow_log import append_whale_follow_skip, read_whale_follow_skips
+ from bot.live_mirror import (
+     append_live_mirror_skip,
+@@ -1005,6 +1006,326 @@
+         if self._live_mode and not self._mirror_mode:
+             self._after_live_trade()
+         return trade, ""
++
++    def _force_trade_halt_reason(self) -> str | None:
++        """Return a user-facing halt reason when force cannot run offensive trades."""
++        if self._live_mode and not self._mirror_mode and getattr(self.broker, "halted", False):
++            return getattr(self.broker, "halt_reason", "") or "Live drawdown halt — trading stopped"
++        if self.circuit_breaker.in_reevaluation():
++            return (
++                "Re-evaluation mode — offensive trades blocked. "
++                "Send `TradeBot -resume` after review."
++            )
++        if (
++            self._mirror_mode
++            and self.live_circuit_breaker is not None
++            and self.live_circuit_breaker.in_reevaluation()
++        ):
++            return (
++                "Live circuit breaker in re-evaluation — offensive mirror blocked. "
++                "Send `TradeBot -resume` after review."
++            )
++        return None
++
++    def _evaluate_force_intent(
++        self,
++        intent,
++        *,
++        holdings: dict[str, float],
++        usd_prices: dict[str, float],
++        in_reevaluation: bool,
++        crash_hold: bool,
++    ) -> tuple[float, bool, str, int]:
++        """Score one intent for force-trade selection. Returns (net_edge, allowed, reason, hops)."""
++        is_dca = self._is_accumulation_intent(intent)
++        if in_reevaluation and not intent.is_defensive and not is_dca:
++            return 0.0, False, "Re-evaluation mode — non-defensive trades blocked", 0
++        if crash_hold and not intent.is_defensive and not is_dca:
++            return 0.0, False, "Crash hold — new risk blocked", 0
++        ctx_reason = self._trade_context_block(intent)
++        if ctx_reason:
++            return 0.0, False, ctx_reason, 0
++        route = getattr(intent, "route", None) or self.markets.find_path(
++            intent.from_asset, intent.to_asset
++        )
++        if not route:
++            return 0.0, False, f"No route: {intent.from_asset} -> {intent.to_asset}", 0
++        hops = getattr(route, "hops", 1)
++        if self._live_mode and not self._mirror_mode:
++            live_ok, live_reason = check_live_route(
++                route,
++                self.settings.live_allowed_assets,
++                allow_triangular=self.settings.live_allow_triangular,
++                max_route_legs=self.settings.live_max_route_legs,
++            )
++            if not live_ok:
++                return 0.0, False, live_reason, hops
++        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
++        constraint = self.constraints.validate_intent(
++            intent,
++            holdings,
++            usd_prices,
++            required_edge=required_edge,
++        )
++        if not constraint.allowed:
++            return 0.0, False, constraint.reason, hops
++        intent.size_pct = constraint.size_pct
++        if self._live_mode and not self._mirror_mode:
++            route_check = self.constraints.check_route_eth_floor(
++                route, holdings, constraint.size_pct
++            )
++            if not route_check.allowed:
++                return 0.0, False, route_check.reason, hops
++        pf = self.preflight.validate(
++            intent,
++            route_symbols=route.symbols,
++            hops=route.hops,
++            is_defensive=intent.is_defensive,
++            min_net_profit=(
++                -1.0
++                if is_dca
++                else self.risk.effective_min_net_profit()
++            ),
++        )
++        net_edge = pf.net_return_pct if pf.allowed else pf.net_return_pct
++        if not pf.allowed:
++            return net_edge, False, pf.reason, hops
++        if (
++            self.settings.profit_only_mode
++            and not intent.is_defensive
++            and not is_dca
++            and pf.net_return_pct <= 0.0
++        ):
++            return (
++                pf.net_return_pct,
++                False,
++                f"Profit-only mode: expected net {pf.net_return_pct:+.4f} <= 0 after fees",
++                hops,
++            )
++        intent.edge = pf.net_return_pct
++        trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
++        approval = self.risk.approve_action(
++            "buy" if intent.to_asset != "USD" else "sell",
++            intent.edge,
++            trade_usd,
++            is_defensive_sell=intent.is_defensive,
++            is_accumulation=is_dca,
++            is_held_swap=intent.is_held_swap,
++            hops=route.hops,
++            require_leader_stable=intent.require_leader_stable,
++        )
++        if not approval.allowed:
++            return intent.edge, False, approval.reason, hops
++        return intent.edge, True, "", hops
++
++    def _handle_force_trade(self) -> str:
++        """Scan for the best gated offensive trade and execute immediately on paper."""
++        halt = self._force_trade_halt_reason()
++        if halt:
++            append_force_trade_log(
++                self.settings.force_trade_log_file,
++                outcome="HALTED",
++                detail=halt,
++            )
++            return f"**Force trade blocked**\n{halt}"
++
++        try:
++            usd_prices = self._usd_prices()
++            candles = self.data.fetch_all_candles()
++            self.trade_context.refresh(candles)
++            holdings = self._holdings()
++            portfolio = self.broker.portfolio_value(usd_prices)
++        except Exception as exc:
++            logger.exception("Force trade market refresh failed")
++            append_force_trade_log(
++                self.settings.force_trade_log_file,
++                outcome="ERROR",
++                detail=str(exc),
++            )
++            return f"**Force trade failed** — could not refresh market data: {exc}"
++
++        in_reevaluation = self.circuit_breaker.in_reevaluation()
++        crash_hold = bool(self._crash_status and self._crash_status.blocks_new_risk)
++
++        result = self.strategy.evaluate(
++            candles,
++            usd_prices,
++            holdings,
++            risk=self.risk,
++            markets=self.markets,
++            context=self._build_context(),
++        )
++        intents = list(result.intents)
++        trim_intents = self.constraints.trim_overweight_intents(
++            holdings, usd_prices, self.markets.find_path
++        )
++        if trim_intents:
++            intents = trim_intents + intents
++        intents, _, gov_notes = self.governor.apply(
++            intents,
++            adaptive=self.risk.adaptive_status().active,
++        )
++
++        offensive: list[tuple] = []
++        dca_candidates: list[tuple] = []
++        for intent in intents:
++            net_edge, allowed, reason, hops = self._evaluate_force_intent(
++                intent,
++                holdings=holdings,
++                usd_prices=usd_prices,
++                in_reevaluation=in_reevaluation,
++                crash_hold=crash_hold,
++            )
++            entry = (net_edge, intent, allowed, reason, hops)
++            if self._is_accumulation_intent(intent):
++                dca_candidates.append(entry)
++            elif not intent.is_defensive:
++                offensive.append(entry)
++
++        offensive.sort(key=lambda x: x[0], reverse=True)
++        dca_candidates.sort(key=lambda x: x[0], reverse=True)
++
++        chosen = None
++        for entry in offensive:
++            if entry[2]:
++                chosen = entry
++                break
++
++        used_dca_fallback = False
++        if chosen is None and self.settings.dca_enabled and dca_candidates:
++            for entry in dca_candidates:
++                if entry[2]:
++                    chosen = entry
++                    used_dca_fallback = True
++                    break
++
++        if chosen is None:
++            pool = offensive or dca_candidates
++            if not pool:
++                detail = "no strategy intents available"
++                append_force_trade_log(
++                    self.settings.force_trade_log_file,
++                    outcome="BLOCKED",
++                    detail=detail,
++                )
++                notes = ""
++                if gov_notes:
++                    notes = "\nGovernor: " + "; ".join(gov_notes[:3])
++                return (
++                    "**Force trade — nothing to evaluate**\n"
++                    "No offensive routes from current strategies."
++                    f"{notes}"
++                )
++            best_edge, best_intent, _, best_reason, best_hops = pool[0]
++            route_label = (
++                f"{best_hops}-hop " if best_hops > 1 else ""
++            )
++            strat = best_intent.strategy_name or "unknown"
++            detail = (
++                f"best={best_intent.from_asset}->{best_intent.to_asset} "
++                f"net={best_edge:+.4f} strategy={strat} reason={best_reason}"
++            )
++            append_force_trade_log(
++                self.settings.force_trade_log_file,
++                outcome="BLOCKED",
++                detail=detail,
++            )
++            return (
++                "**Force trade — no profitable route after fees**\n"
++                f"Best {route_label}edge: **{best_intent.from_asset} → {best_intent.to_asset}** "
++                f"({strat}, net {best_edge:+.4%} after fees)\n"
++                f"Blocked: {best_reason}"
++            )
++
++        net_edge, intent, _, _, hops = chosen
++        trade, block_reason = self._try_execute_intent(
++            intent,
++            holdings=holdings,
++            usd_prices=usd_prices,
++            portfolio=portfolio,
++            in_reevaluation=in_reevaluation,
++        )
++        if not trade:
++            detail = (
++                f"{intent.from_asset}->{intent.to_asset} net={net_edge:+.4f} "
++                f"execute_failed={block_reason}"
++            )
++            append_force_trade_log(
++                self.settings.force_trade_log_file,
++                outcome="BLOCKED",
++                detail=detail,
++            )
++            return (
++                "**Force trade — execution blocked**\n"
++                f"Selected **{intent.from_asset} → {intent.to_asset}** "
++                f"(net {net_edge:+.4%} after fees)\n"
++                f"Blocked: {block_reason}"
++            )
++
++        trade["edge"] = intent.edge
++        trade["gross_return_pct"] = intent.gross_return_pct
++        trade["is_defensive"] = intent.is_defensive
++        trade["is_accumulation"] = self._is_accumulation_intent(intent)
++        trade["is_expansion"] = intent.is_expansion
++        trade["is_held_swap"] = intent.is_held_swap
++        trade["is_force"] = True
++        receipt_path = self.receipts.save(trade)
++        trade["receipt_file"] = str(receipt_path)
++        self.governor.record_trade(
++            intent.strategy_name or "force",
++            portfolio,
++            float(trade.get("gain_loss", 0.0)),
++        )
++        self.risk.record_trade()
++        self.auditor.note_trade(trade)
++        self._record_strategy_fill(intent)
++
++        portfolio = self.broker.portfolio_value(usd_prices)
++        baseline_pnl = self.risk.pnl_from_baseline(portfolio)
++        drawdown = self.risk.drawdown_pct(portfolio)
++        self._write_portfolio_file(
++            holdings=self._holdings(),
++            usd_prices=usd_prices,
++            portfolio=portfolio,
++            baseline_pnl=baseline_pnl,
++            drawdown=drawdown,
++        )
++
++        mirror_note = ""
++        if self._mirror_mode:
++            if trade.get("live_mirrored"):
++                mirror_note = "\nLive mirror: **executed** on Kraken."
++            elif trade.get("live_mirror_skipped"):
++                mirror_note = "\nLive mirror: skipped (see `logs/live_mirror_skips.log`)."
++            if self.live_broker is not None and self.live_broker.halted:
++                mirror_note += (
++                    f"\nLive broker halted: {self.live_broker.halt_reason or 'drawdown halt'}."
++                )
++
++        hop_label = f"{hops}-hop " if hops > 1 else ""
++        fallback_note = " (DCA fallback)" if used_dca_fallback else ""
++        strat = intent.strategy_name or "unknown"
++        log_detail = (
++            f"{intent.from_asset}->{intent.to_asset} net={net_edge:+.4f} "
++            f"strategy={strat} hops={hops} "
++            f"live_mirrored={'yes' if trade.get('live_mirrored') else 'no'}"
++        )
++        append_force_trade_log(
++            self.settings.force_trade_log_file,
++            outcome="EXECUTED",
++            detail=log_detail,
++        )
++
++        body = format_trade_executed_alert(trade, portfolio, baseline_pnl)
++        headline = "**Force trade executed**"
++        if used_dca_fallback:
++            headline += " (DCA fallback)"
++        body = body.replace("**Trade executed**", headline, 1)
++        return (
++            f"{body}\n"
++            f"Selected best {hop_label}offensive edge: {net_edge:+.4%} ({strat}){fallback_note}"
++            f"{mirror_note}"
++        )
+ 
+     def _maybe_whale_follow(self, event) -> None:
+         if not self.settings.whale_follow_enabled:
+@@ -2275,6 +2596,12 @@
+ 
+ 
+ 
++        if command == "force":
++
++            return self._handle_force_trade()
++
++
++
+         if command == "start":
+ 
+             self.runtime.set_trading_active(True)

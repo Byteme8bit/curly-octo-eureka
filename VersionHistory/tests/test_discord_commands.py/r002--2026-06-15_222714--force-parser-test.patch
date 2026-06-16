@@ -1,0 +1,11 @@
+--- a/tests/test_discord_commands.py
++++ b/tests/test_discord_commands.py
+@@ -48,6 +48,8 @@
+         ("TradeBot -strategies", "strategy"),
+         ("TradeBot -focus", "strategy"),
+         ("TradeBot -help", "tradebot-help"),
++        ("TradeBot -force", "force"),
++        ("TB -force-trade", "force"),
+         # WatchDog prefix variants
+         ("WatchDog -status", "watchdog"),
+         ("watchdog -status", "watchdog"),

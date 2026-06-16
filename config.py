@@ -91,6 +91,7 @@ class Settings:
     trade_verify_discord_tag: bool
     trade_verify_skip_kraken: bool
     whale_follow_skip_log_file: Path
+    force_trade_log_file: Path
     discord_error_cooldown_minutes: int
     discord_error_pin_count: int
     discord_error_pin_window_minutes: int
@@ -501,6 +502,9 @@ def load_settings() -> Settings:
         trade_verify_skip_kraken=os.getenv("TRADE_VERIFY_SKIP_KRAKEN", "0") == "1",
         whale_follow_skip_log_file=ROOT / os.getenv(
             "WHALE_FOLLOW_SKIP_LOG_FILE", "logs/whale_follow_skips.log"
+        ),
+        force_trade_log_file=ROOT / os.getenv(
+            "FORCE_TRADE_LOG_FILE", "logs/force_trade.log"
         ),
         discord_error_cooldown_minutes=int(os.getenv("DISCORD_ERROR_COOLDOWN_MINUTES", "15")),
         discord_error_pin_count=int(os.getenv("DISCORD_ERROR_PIN_COUNT", "3")),

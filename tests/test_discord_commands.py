@@ -48,6 +48,8 @@ from bot.discord_bot import (
         ("TradeBot -strategies", "strategy"),
         ("TradeBot -focus", "strategy"),
         ("TradeBot -help", "tradebot-help"),
+        ("TradeBot -force", "force"),
+        ("TB -force-trade", "force"),
         # WatchDog prefix variants
         ("WatchDog -status", "watchdog"),
         ("watchdog -status", "watchdog"),
