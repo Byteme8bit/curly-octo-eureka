@@ -293,6 +293,8 @@ class TradingEngine:
             equity_dca_priority=settings.equity_dca_priority,
             equity_accumulation_min_pct=settings.equity_accumulation_min_pct,
             equity_severe_overweight_pct=settings.equity_severe_overweight_pct,
+            max_equity_positions=settings.max_equity_positions,
+            dust_usd=settings.dust_usd,
         )
         self.constraints = PortfolioConstraints(**constraint_kwargs)
 
@@ -312,6 +314,8 @@ class TradingEngine:
                 equity_dca_priority=settings.equity_dca_priority,
                 equity_accumulation_min_pct=settings.equity_accumulation_min_pct,
                 equity_severe_overweight_pct=settings.equity_severe_overweight_pct,
+                max_equity_positions=settings.max_equity_positions,
+                dust_usd=settings.dust_usd,
             )
             if self._mirror_mode
             else None

@@ -12,11 +12,81 @@ logger = logging.getLogger(__name__)
 KRAKEN_PUBLIC_API = "https://api.kraken.com/0/public"
 TOKENIZED_ASSET_CLASS = "tokenized_asset"
 DEFAULT_EQUITY_WATCHLIST = ("AAPLx", "TSLAx", "SPYx")
+ALL_EQUITY_WATCHLIST_SENTINELS = frozenset({"*", "all"})
 
 
 def parse_equity_watchlist(raw: str) -> tuple[str, ...]:
     assets = tuple(a.strip() for a in raw.split(",") if a.strip())
     return assets or DEFAULT_EQUITY_WATCHLIST
+
+
+def is_all_equity_watchlist(raw: str) -> bool:
+    return (raw or "").strip().lower() in ALL_EQUITY_WATCHLIST_SENTINELS
+
+
+def parse_equity_preference_tickers(raw: str) -> tuple[str, ...]:
+    return tuple(a.strip() for a in raw.split(",") if a.strip())
+
+
+def list_online_usd_equities(
+    pairs: dict[str, dict[str, Any]] | None = None,
+) -> tuple[str, ...]:
+    """Unique online xStock base tickers with USD pairs, sorted alphabetically."""
+    catalog = pairs if pairs is not None else fetch_tokenized_pairs()
+    seen: set[str] = set()
+    assets: list[str] = []
+    for info in catalog.values():
+        ws = str(info.get("wsname") or "")
+        if str(info.get("status", "")) != "online" or not ws.upper().endswith("/USD"):
+            continue
+        base = ws.split("/", 1)[0]
+        if base not in seen:
+            seen.add(base)
+            assets.append(base)
+    return tuple(sorted(assets))
+
+
+def cap_equity_watchlist(
+    watchlist: tuple[str, ...],
+    *,
+    max_count: int,
+    preferences: tuple[str, ...] = (),
+) -> tuple[str, ...]:
+    """Trim watchlist while keeping preference tickers first."""
+    if max_count <= 0 or len(watchlist) <= max_count:
+        return watchlist
+    pref = [a for a in preferences if a in watchlist]
+    pref_set = frozenset(pref)
+    rest = [a for a in watchlist if a not in pref_set]
+    allowed = max_count - len(pref)
+    if allowed < 0:
+        return tuple(pref[:max_count])
+    return tuple(pref + rest[:allowed])
+
+
+def resolve_equity_watchlist_request(
+    raw: str,
+    *,
+    mode: str | None = None,
+    pairs: dict[str, dict[str, Any]] | None = None,
+    max_count: int = 0,
+    preferences: tuple[str, ...] = (),
+) -> tuple[str, ...]:
+    """Expand * / all mode, validate against Kraken catalog, cap with prefs first."""
+    mode_val = (mode or "").strip().lower()
+    use_all = is_all_equity_watchlist(raw) or mode_val == "all"
+    if use_all:
+        requested = list_online_usd_equities(pairs)
+    else:
+        requested = parse_equity_watchlist(raw)
+    if not requested:
+        return DEFAULT_EQUITY_WATCHLIST
+    valid, _, _ = filter_equity_watchlist(requested, pairs)
+    pref = [a for a in preferences if a in valid]
+    pref_set = frozenset(pref)
+    rest = sorted(a for a in valid if a not in pref_set)
+    ordered = tuple(pref + rest)
+    return cap_equity_watchlist(ordered, max_count=max_count, preferences=preferences)
 
 
 def equity_usd_symbol(asset: str) -> str:

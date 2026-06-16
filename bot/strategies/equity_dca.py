@@ -102,6 +102,7 @@ class EquityDcaStrategy(Strategy):
     def __init__(self, settings: Settings):
         self.enabled = settings.dca_enabled and settings.enable_equities
         self.equity_watchlist = settings.equity_watchlist
+        self.equity_preference_tickers = settings.equity_preference_tickers
         self.equity_assets = settings.equity_assets
         self.equity_usd_symbols = settings.equity_usd_symbols
         self.interval_hours = settings.dca_interval_hours
@@ -123,6 +124,18 @@ class EquityDcaStrategy(Strategy):
         """Watchlist tickers that have a USD pair on Kraken."""
         symbol_bases = {s.split("/", 1)[0] for s in self.equity_usd_symbols}
         return tuple(a for a in self.equity_watchlist if a in symbol_bases)
+
+    def _preference_weight(self, asset: str) -> int:
+        if not self.equity_preference_tickers:
+            return 1
+        return 2 if asset in frozenset(self.equity_preference_tickers) else 1
+
+    def _weighted_watchlist(self, watchlist: tuple[str, ...]) -> list[str]:
+        """Preference tickers appear twice for round-robin / budget weighting."""
+        out: list[str] = []
+        for asset in watchlist:
+            out.extend([asset] * self._preference_weight(asset))
+        return out
 
     def _equity_bucket_pct(
         self, holdings: dict[str, float], prices: dict[str, float]
@@ -152,20 +165,25 @@ class EquityDcaStrategy(Strategy):
             return max(6.0, self.interval_hours * 0.5)
         return self.interval_hours
 
-    def _budget_usd(self, watchlist: tuple[str, ...]) -> float:
+    def _budget_usd(self, watchlist: tuple[str, ...], asset: str) -> float:
         if self.per_symbol_usd > 0:
-            return self.per_symbol_usd
+            weight = self._preference_weight(asset)
+            return self.per_symbol_usd * weight
         if not watchlist:
             return 0.0
-        return self.amount_usd / len(watchlist)
+        total_weight = sum(self._preference_weight(a) for a in watchlist)
+        if total_weight <= 0:
+            return 0.0
+        return self.amount_usd * self._preference_weight(asset) / total_weight
 
     def _pick_symbol(
         self, watchlist: tuple[str, ...], *, interval_hours: float
     ) -> str | None:
         if not watchlist:
             return None
+        weighted = self._weighted_watchlist(watchlist)
         if self.per_symbol_usd > 0:
-            for asset in watchlist:
+            for asset in weighted:
                 elapsed = self._state.hours_since_buy(asset)
                 if elapsed is None or elapsed >= interval_hours:
                     return asset
@@ -173,8 +191,8 @@ class EquityDcaStrategy(Strategy):
         elapsed = self._state.hours_since_cycle()
         if elapsed is not None and elapsed < interval_hours:
             return None
-        idx = self._state.cycle_index % len(watchlist)
-        return watchlist[idx]
+        idx = self._state.cycle_index % len(weighted)
+        return weighted[idx]
 
     def _live_allowed(self, asset: str) -> bool:
         if not self.live_enabled:
@@ -190,8 +208,9 @@ class EquityDcaStrategy(Strategy):
         self._state.last_buy[asset] = now
         if self.per_symbol_usd <= 0:
             watchlist = self._resolved_watchlist()
-            if watchlist:
-                self._state.cycle_index = (self._state.cycle_index + 1) % len(watchlist)
+            weighted = self._weighted_watchlist(watchlist)
+            if weighted:
+                self._state.cycle_index = (self._state.cycle_index + 1) % len(weighted)
             self._state.last_cycle_at = now
         self._state.save(self.state_path)
 
@@ -269,7 +288,7 @@ class EquityDcaStrategy(Strategy):
                 idle_reason="Equity DCA — waiting for live allowlist",
             )
 
-        budget = self._budget_usd(watchlist)
+        budget = self._budget_usd(watchlist, asset)
         usd_balance = holdings.get("USD", 0.0)
         if context and context.live_usd_balance is not None:
             usd_balance = max(usd_balance, context.live_usd_balance)

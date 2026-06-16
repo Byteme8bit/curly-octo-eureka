@@ -289,6 +289,16 @@
       "removed": 3,
       "request_id": "070",
       "timestamp": "2026-06-16 07:19:46 PDT"
+    },
+    {
+      "added": 8,
+      "number": 30,
+      "patch": "r030--2026-06-16_075542--document-xstock-all-mode.patch",
+      "path": ".env.example",
+      "reason": "document xstock all mode",
+      "removed": 0,
+      "request_id": "071",
+      "timestamp": "2026-06-16 07:55:42 PDT"
     }
   ],
   ".gitignore": [
@@ -667,6 +677,16 @@
       "removed": 0,
       "request_id": "057",
       "timestamp": "2026-06-15 10:38:53 PDT"
+    },
+    {
+      "added": 35,
+      "number": 5,
+      "patch": "r005--2026-06-16_075540--equity-ohlcv-scan-rotation.patch",
+      "path": "bot/data.py",
+      "reason": "equity ohlcv scan rotation",
+      "removed": 2,
+      "request_id": "071",
+      "timestamp": "2026-06-16 07:55:40 PDT"
     }
   ],
   "bot/discord_bot.py": [
@@ -1235,6 +1255,16 @@
       "removed": 22,
       "request_id": "069",
       "timestamp": "2026-06-16 07:13:50 PDT"
+    },
+    {
+      "added": 62,
+      "number": 47,
+      "patch": "r047--2026-06-16_075542--pass-max-equity-positions.patch",
+      "path": "bot/engine.py",
+      "reason": "pass max equity positions",
+      "removed": 17,
+      "request_id": "071",
+      "timestamp": "2026-06-16 07:55:42 PDT"
     }
   ],
   "bot/equities.py": [
@@ -1247,6 +1277,16 @@
       "removed": 0,
       "request_id": "069",
       "timestamp": "2026-06-16 07:13:50 PDT"
+    },
+    {
+      "added": 70,
+      "number": 2,
+      "patch": "r002--2026-06-16_075539--all-mode-watchlist-expansion.patch",
+      "path": "bot/equities.py",
+      "reason": "all-mode watchlist expansion",
+      "removed": 0,
+      "request_id": "071",
+      "timestamp": "2026-06-16 07:55:39 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1505,6 +1545,16 @@
       "removed": 10,
       "request_id": "070",
       "timestamp": "2026-06-16 07:19:46 PDT"
+    },
+    {
+      "added": 24,
+      "number": 6,
+      "patch": "r006--2026-06-16_075541--max-equity-positions-cap.patch",
+      "path": "bot/portfolio_constraints.py",
+      "reason": "max equity positions cap",
+      "removed": 0,
+      "request_id": "071",
+      "timestamp": "2026-06-16 07:55:41 PDT"
     }
   ],
   "bot/preflight.py": [
@@ -1757,6 +1807,16 @@
       "removed": 4,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:15 PDT"
+    },
+    {
+      "added": 7,
+      "number": 2,
+      "patch": "r002--2026-06-16_075540--preference-score-boost.patch",
+      "path": "bot/strategies/cross_momentum.py",
+      "reason": "preference score boost",
+      "removed": 0,
+      "request_id": "071",
+      "timestamp": "2026-06-16 07:55:40 PDT"
     }
   ],
   "bot/strategies/equity_dca.py": [
@@ -1779,6 +1839,16 @@
       "removed": 7,
       "request_id": "070",
       "timestamp": "2026-06-16 07:19:47 PDT"
+    },
+    {
+      "added": 28,
+      "number": 3,
+      "patch": "r003--2026-06-16_075541--preference-weighted-dca.patch",
+      "path": "bot/strategies/equity_dca.py",
+      "reason": "preference-weighted dca",
+      "removed": 9,
+      "request_id": "071",
+      "timestamp": "2026-06-16 07:55:41 PDT"
     }
   ],
   "bot/strategies/momentum_rotation.py": [
@@ -2307,6 +2377,16 @@
       "removed": 6,
       "request_id": "069",
       "timestamp": "2026-06-16 07:13:51 PDT"
+    },
+    {
+      "added": 113,
+      "number": 30,
+      "patch": "r030--2026-06-16_075540--xstock-universe-env-knobs.patch",
+      "path": "config.py",
+      "reason": "xstock universe env knobs",
+      "removed": 5,
+      "request_id": "071",
+      "timestamp": "2026-06-16 07:55:40 PDT"
     }
   ],
   "dashboard/app.py": [

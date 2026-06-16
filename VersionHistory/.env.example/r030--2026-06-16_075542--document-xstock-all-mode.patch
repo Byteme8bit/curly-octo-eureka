@@ -1,0 +1,17 @@
+--- a/.env.example
++++ b/.env.example
+@@ -317,6 +317,14 @@
+ # ---------------------------------------------------------------------------
+ ENABLE_EQUITIES=0
+ # EQUITY_WATCHLIST=AAPLx,TSLAx,SPYx,NVDAx,MSFTx,GOOGLx
++# EQUITY_WATCHLIST_MODE=all
++# EQUITY_WATCHLIST=*
++# EQUITY_PREFERENCE_TICKERS=NVDAx,AMDx
++# MAX_EQUITY_WATCHLIST=0
++# EQUITY_MOMENTUM_SCAN_MAX=50
++# MAX_EQUITY_POSITIONS=15
++# EQUITY_PREFERENCE_SCORE_BOOST=0.02
++# LIVE_EQUITY_AUTO_ALLOW=1
+ # Max portfolio share for any single equity/ETF (separate from bucket caps below)
+ # MAX_EQUITY_ALLOCATION_PCT=0.15
+ # 50/50 portfolio bucket targets (crypto vs all xStocks combined):

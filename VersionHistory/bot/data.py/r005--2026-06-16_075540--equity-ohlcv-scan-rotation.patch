@@ -1,0 +1,70 @@
+--- a/bot/data.py
++++ b/bot/data.py
+@@ -47,6 +47,13 @@
+         self.usd_symbols = settings.usd_symbols
+         self.equity_assets = getattr(settings, "equity_assets", frozenset())
+         self._equity_symbols = set(getattr(settings, "equity_usd_symbols", ()) or ())
++        self._equity_preference_tickers = frozenset(
++            getattr(settings, "equity_preference_tickers", ()) or ()
++        )
++        self._equity_momentum_scan_max = int(
++            getattr(settings, "equity_momentum_scan_max", 0) or 0
++        )
++        self._equity_scan_offset = 0
+         if getattr(settings, "enable_equities", False) and self._equity_symbols:
+             self._load_equity_markets()
+         self.candle_timeframe = settings.candle_timeframe
+@@ -80,6 +87,30 @@
+         return symbol in self._equity_symbols or is_equity_symbol(
+             symbol, self.equity_assets
+         )
++
++    def _equity_candle_symbols(self) -> list[str]:
++        """Subset of equity USD pairs for momentum OHLCV (rate-limit friendly)."""
++        equity = [s for s in self.usd_symbols if s in self._equity_symbols]
++        scan_max = self._equity_momentum_scan_max
++        if scan_max <= 0 or len(equity) <= scan_max:
++            return equity
++        pref_syms = [
++            s for s in equity if s.split("/", 1)[0] in self._equity_preference_tickers
++        ]
++        pref_set = set(pref_syms)
++        rest = [s for s in equity if s not in pref_set]
++        budget = max(0, scan_max - len(pref_syms))
++        batch: list[str] = []
++        if budget > 0 and rest:
++            start = self._equity_scan_offset % len(rest)
++            for i in range(min(budget, len(rest))):
++                batch.append(rest[(start + i) % len(rest)])
++            self._equity_scan_offset = (start + len(batch)) % len(rest)
++        return pref_syms + batch
++
++    def _candle_fetch_symbols(self) -> list[str]:
++        crypto = [s for s in self.usd_symbols if s not in self._equity_symbols]
++        return crypto + self._equity_candle_symbols()
+ 
+     def _retry(self, label: str, fn: Callable[[], T]) -> T:
+         """Run fn with timeout-aware retries. Last exception is re-raised."""
+@@ -234,8 +265,9 @@
+ 
+     def fetch_all_candles(self) -> dict[str, pd.DataFrame]:
+         candles: dict[str, pd.DataFrame] = {}
++        symbols = self._candle_fetch_symbols()
+         with ThreadPoolExecutor(max_workers=self._workers) as pool:
+-            futures = {pool.submit(self.fetch_candles, s): s for s in self.usd_symbols}
++            futures = {pool.submit(self.fetch_candles, s): s for s in symbols}
+             for future in as_completed(futures):
+                 symbol = futures[future]
+                 try:
+@@ -246,9 +278,10 @@
+ 
+     def fetch_candles_by_timeframe(self, timeframe: str) -> dict[str, pd.DataFrame]:
+         candles: dict[str, pd.DataFrame] = {}
++        symbols = self._candle_fetch_symbols()
+         with ThreadPoolExecutor(max_workers=self._workers) as pool:
+             futures = {
+-                pool.submit(self.fetch_candles, s, timeframe): s for s in self.usd_symbols
++                pool.submit(self.fetch_candles, s, timeframe): s for s in symbols
+             }
+             for future in as_completed(futures):
+                 symbol = futures[future]
