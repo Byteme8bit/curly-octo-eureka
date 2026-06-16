@@ -222,8 +222,10 @@ def test_mirror_skips_on_deny_verdict(mirror_engine: TradingEngine) -> None:
 
 
 def test_mirror_bypasses_preflight_on_confirm(mirror_engine: TradingEngine) -> None:
+    # Negative net is blocked by _live_mirror_offensive_block even on CONFIRM;
+    # use allowed=False with positive net to exercise preflight bypass only.
     mirror_engine.preflight.validate.return_value = MagicMock(
-        allowed=False, reason="net profit too low", net_return_pct=-0.01
+        allowed=False, reason="net profit too low", net_return_pct=0.01
     )
     intent, route = _sample_intent_route()
     with patch.object(

@@ -151,3 +151,80 @@ def test_try_execute_intent_allows_defensive_when_profit_only() -> None:
     )
     assert trade is not None
     assert reason == ""
+
+
+def test_mirror_blocks_non_positive_net_when_profit_only() -> None:
+    from bot.engine import TradingEngine
+    from bot.markets import PairInfo, RouteLeg, TradeRoute
+    from bot.strategies.base import Signal, TradeIntent
+
+    engine = TradingEngine.__new__(TradingEngine)
+    engine.settings = MagicMock(
+        profit_only_mode=True,
+        live_strict_profit=True,
+        slippage_buffer_pct=0.0005,
+    )
+    engine._is_accumulation_intent = MagicMock(return_value=False)
+    engine.risk = MagicMock()
+    engine.risk.effective_min_net_profit.return_value = 0.0005
+
+    intent = TradeIntent(
+        from_asset="ETH",
+        to_asset="ETH",
+        reason="triangular loop",
+        size_pct=0.05,
+        edge=0.01,
+        gross_return_pct=0.01,
+        strategy_name="triangular_arbitrage",
+    )
+    route = TradeRoute(
+        legs=(
+            RouteLeg(
+                pair=PairInfo(symbol="ETH/USD", base="ETH", quote="USD"),
+                side=Signal.SELL,
+                from_asset="ETH",
+                to_asset="USD",
+            ),
+        )
+    )
+    reason = TradingEngine._live_mirror_offensive_block(engine, intent, route, 0.0)
+    assert "Profit-only mode" in reason
+
+
+def test_mirror_blocks_four_leg_offensive_under_live_strict() -> None:
+    from bot.engine import TradingEngine
+    from bot.markets import PairInfo, RouteLeg, TradeRoute
+    from bot.strategies.base import Signal, TradeIntent
+
+    engine = TradingEngine.__new__(TradingEngine)
+    engine.settings = MagicMock(
+        profit_only_mode=True,
+        live_strict_profit=True,
+        slippage_buffer_pct=0.0005,
+    )
+    engine._is_accumulation_intent = MagicMock(return_value=False)
+    engine.risk = MagicMock()
+    engine.risk.effective_min_net_profit.return_value = 0.0005
+
+    intent = TradeIntent(
+        from_asset="ETH",
+        to_asset="ETH",
+        reason="triangular loop",
+        size_pct=0.05,
+        edge=0.05,
+        gross_return_pct=0.06,
+        strategy_name="triangular_arbitrage",
+    )
+    route = TradeRoute(
+        legs=tuple(
+            RouteLeg(
+                pair=PairInfo(symbol="ETH/USD", base="ETH", quote="USD"),
+                side=Signal.SELL,
+                from_asset="ETH",
+                to_asset="USD",
+            )
+            for _ in range(4)
+        )
+    )
+    reason = TradingEngine._live_mirror_offensive_block(engine, intent, route, 0.05)
+    assert "4-leg offensive routes blocked" in reason

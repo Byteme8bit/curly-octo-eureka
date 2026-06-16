@@ -567,39 +567,27 @@ class TradingEngine:
 
         if token == "auditor-review":
 
-            report = self.auditor.run_audit(trigger="manual")
+            self.auditor.run_audit(trigger="manual")
 
-            path = report.markdown_path
-
-            tail = f"\n\nFull report: `{path}`" if path else ""
-
-            return report.summary + tail
+            return ""
 
         if token == "auditor-forecast":
 
-            report = self.auditor.run_audit(trigger="manual-forecast")
+            self.auditor.run_audit(trigger="manual-forecast")
 
-            path = report.markdown_path
-
-            tail = f"\n\nFull report: `{path}`" if path else ""
-
-            return report.summary + tail
+            return ""
 
         if token == "auditor-strategy":
 
-            report = self.auditor.run_audit(trigger=f"manual-strategy:{args or 'all'}")
+            self.auditor.run_audit(trigger=f"manual-strategy:{args or 'all'}")
 
-            path = report.markdown_path
-
-            tail = f"\n\nFull report: `{path}`" if path else ""
-
-            return report.summary + tail
+            return ""
 
         if token == "auditor-summary":
 
-            report = self.auditor.run_audit(trigger="manual-summary")
+            self.auditor.run_audit(trigger="manual-summary")
 
-            return report.summary
+            return ""
 
         if token == "auditor-confirm":
 
@@ -1504,6 +1492,43 @@ class TradingEngine:
 
         return trade
 
+    def _live_mirror_offensive_block(
+        self,
+        intent,
+        route,
+        net_return_pct: float,
+    ) -> str:
+        """Return a skip reason when an offensive live mirror fails profit gates."""
+        if intent.is_defensive or self._is_accumulation_intent(intent):
+            return ""
+        floor = self.risk.effective_min_net_profit()
+        if self.settings.profit_only_mode and net_return_pct <= 0.0:
+            return (
+                f"Profit-only mode: expected net {net_return_pct:+.4f} <= 0 after fees"
+            )
+        if not getattr(self.settings, "live_strict_profit", True):
+            return ""
+        if net_return_pct <= floor:
+            return (
+                f"LIVE_STRICT_PROFIT: expected net {net_return_pct:+.4f} "
+                f"<= min {floor:.4f}"
+            )
+        hops = getattr(route, "hops", 1)
+        if hops >= 4:
+            return (
+                f"LIVE_STRICT_PROFIT: {hops}-leg offensive routes blocked on live "
+                f"(set LIVE_MAX_ROUTE_LEGS<=3)"
+            )
+        if hops > 1:
+            cushion = self.settings.slippage_buffer_pct * max(0, hops - 1)
+            adjusted = net_return_pct - cushion
+            if adjusted <= floor:
+                return (
+                    f"LIVE_STRICT_PROFIT: multi-hop net after slippage cushion "
+                    f"{adjusted:+.4f} <= min {floor:.4f}"
+                )
+        return ""
+
     def _log_live_mirror_skip(
         self,
         paper_trade: dict,
@@ -1641,15 +1666,15 @@ class TradingEngine:
                 paper_trade, pf.reason, verify_result=verify_result
             )
             return None
-        if (
-            self.settings.profit_only_mode
-            and not intent.is_defensive
-            and not self._is_accumulation_intent(intent)
-            and pf.net_return_pct <= 0.0
-        ):
+        mirror_block = self._live_mirror_offensive_block(
+            intent,
+            route,
+            pf.net_return_pct,
+        )
+        if mirror_block:
             self._log_live_mirror_skip(
                 paper_trade,
-                f"Profit-only mode: expected net {pf.net_return_pct:+.4f} <= 0 after fees",
+                mirror_block,
                 verify_result=verify_result,
             )
             return None
