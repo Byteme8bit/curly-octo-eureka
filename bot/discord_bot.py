@@ -55,6 +55,8 @@ TRADEBOT_ACTIONS: dict[str, str] = {
     "help": "tradebot-help",
     "skips": "whale-skips",
     "summary": "trade-summary",
+    "force": "force",
+    "force-trade": "force",
 }
 
 WATCHDOG_ACTIONS: dict[str, str] = {
@@ -246,6 +248,7 @@ TradeBotHelpText = """**TradeBot commands** (owner only — start/restart/reset)
 \u2022 `TradeBot -strategy` \u2014 active strategy plugins
 \u2022 `TradeBot -summary` \u2014 last-hour activity summary on demand
 \u2022 `TradeBot -skips` \u2014 recent whale-follow skips (file log)
+\u2022 `TradeBot -force` \u2014 scan now and execute best profitable offensive trade (respects all gates)
 \u2022 `TradeBot -help` \u2014 TradeBot help only
 
 Send `help` for all bots + utility commands."""
@@ -290,6 +293,7 @@ HelpText = """**TradeBot commands** (owner only \u2014 start/restart/reset):
 \u2022 `TradeBot -strategy` \u2014 active strategy plugins
 \u2022 `TradeBot -summary` \u2014 last-hour activity summary on demand
 \u2022 `TradeBot -skips` \u2014 recent whale-follow skips (file log)
+\u2022 `TradeBot -force` \u2014 scan now and execute best profitable offensive trade (respects all gates)
 \u2022 `TradeBot -help` \u2014 TradeBot help only
 
 **WatchDog commands** (monitor + maintenance):

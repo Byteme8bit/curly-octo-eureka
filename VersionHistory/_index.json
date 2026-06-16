@@ -719,6 +719,16 @@
       "removed": 4,
       "request_id": "054",
       "timestamp": "2026-06-14 13:08:15 PDT"
+    },
+    {
+      "added": 4,
+      "number": 7,
+      "patch": "r007--2026-06-15_222713--force-command-token-and-help.patch",
+      "path": "bot/discord_bot.py",
+      "reason": "force command token and help",
+      "removed": 0,
+      "request_id": "067",
+      "timestamp": "2026-06-15 22:27:13 PDT"
     }
   ],
   "bot/discord_summary.py": [
@@ -1175,6 +1185,16 @@
       "removed": 31,
       "request_id": "066",
       "timestamp": "2026-06-15 19:30:17 PDT"
+    },
+    {
+      "added": 327,
+      "number": 44,
+      "patch": "r044--2026-06-15_222714--force-trade-handler.patch",
+      "path": "bot/engine.py",
+      "reason": "force trade handler",
+      "removed": 0,
+      "request_id": "067",
+      "timestamp": "2026-06-15 22:27:14 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -2153,6 +2173,16 @@
       "removed": 0,
       "request_id": "065",
       "timestamp": "2026-06-15 18:16:07 PDT"
+    },
+    {
+      "added": 4,
+      "number": 28,
+      "patch": "r028--2026-06-15_222714--force-trade-log-path.patch",
+      "path": "config.py",
+      "reason": "force trade log path",
+      "removed": 0,
+      "request_id": "067",
+      "timestamp": "2026-06-15 22:27:14 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -2851,6 +2881,16 @@
       "removed": 0,
       "request_id": "065",
       "timestamp": "2026-06-15 18:16:07 PDT"
+    },
+    {
+      "added": 15,
+      "number": 7,
+      "patch": "r007--2026-06-15_222714--document-force-command.patch",
+      "path": "docs/live-trading.md",
+      "reason": "document force command",
+      "removed": 0,
+      "request_id": "067",
+      "timestamp": "2026-06-15 22:27:14 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
@@ -3209,6 +3249,16 @@
       "removed": 0,
       "request_id": "029",
       "timestamp": "2026-06-01 07:13:42 PDT"
+    },
+    {
+      "added": 2,
+      "number": 2,
+      "patch": "r002--2026-06-15_222714--force-parser-test.patch",
+      "path": "tests/test_discord_commands.py",
+      "reason": "force parser test",
+      "removed": 0,
+      "request_id": "067",
+      "timestamp": "2026-06-15 22:27:14 PDT"
     }
   ],
   "tests/test_equity_dca.py": [

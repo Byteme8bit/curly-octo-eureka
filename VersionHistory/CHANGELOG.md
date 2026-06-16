@@ -2775,3 +2775,43 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +25 / -0
 - **Patch:** `r007--2026-06-15_193019--manual-review-single-post-tests.patch`
 
+## bot/discord_bot.py — r007
+
+- **When:** 2026-06-15 22:27:13 PDT
+- **Reason:** force command token and help
+- **Request:** 067
+- **Diff:** +4 / -0
+- **Patch:** `r007--2026-06-15_222713--force-command-token-and-help.patch`
+
+## bot/engine.py — r044
+
+- **When:** 2026-06-15 22:27:14 PDT
+- **Reason:** force trade handler
+- **Request:** 067
+- **Diff:** +327 / -0
+- **Patch:** `r044--2026-06-15_222714--force-trade-handler.patch`
+
+## config.py — r028
+
+- **When:** 2026-06-15 22:27:14 PDT
+- **Reason:** force trade log path
+- **Request:** 067
+- **Diff:** +4 / -0
+- **Patch:** `r028--2026-06-15_222714--force-trade-log-path.patch`
+
+## tests/test_discord_commands.py — r002
+
+- **When:** 2026-06-15 22:27:14 PDT
+- **Reason:** force parser test
+- **Request:** 067
+- **Diff:** +2 / -0
+- **Patch:** `r002--2026-06-15_222714--force-parser-test.patch`
+
+## docs/live-trading.md — r007
+
+- **When:** 2026-06-15 22:27:14 PDT
+- **Reason:** document force command
+- **Request:** 067
+- **Diff:** +15 / -0
+- **Patch:** `r007--2026-06-15_222714--document-force-command.patch`
+

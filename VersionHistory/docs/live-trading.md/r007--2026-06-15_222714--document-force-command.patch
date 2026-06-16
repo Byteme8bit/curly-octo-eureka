@@ -1,0 +1,24 @@
+--- a/docs/live-trading.md
++++ b/docs/live-trading.md
+@@ -106,6 +106,21 @@
+ 
+ Restart the bot. Paper simulation continues with no Kraken orders.
+ 
++## Manual force trade (Discord)
++
++`TradeBot -force` (alias `TB -force-trade`) scans the current market immediately —
++does not wait for the next tick. It picks the highest net-edge offensive route that
++passes the same gates as normal trading (preflight, `PROFIT_ONLY_MODE`, news/flow
++context, circuit breaker / re-evaluation, live drawdown halt). Executes on **paper**;
++mirrors to Kraken when live mirror mode is armed and the route passes live gates
++(`LIVE_STRICT_PROFIT`, allowlist, ETH floor, etc.). Does **not** bypass safety halts.
++
++If nothing is executable, the reply names the best edge found and why it was blocked.
++Attempts are logged to `logs/force_trade.log`. Replies always post (quiet mode exempt).
++
++When `DCA_ENABLED=1` and no offensive route clears, one scheduled equity DCA buy may
++run as a fallback.
++
+ ## Safety checklist
+ 
+ | Check | Setting |
