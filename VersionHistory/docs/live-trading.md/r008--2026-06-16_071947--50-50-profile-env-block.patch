@@ -1,0 +1,35 @@
+--- a/docs/live-trading.md
++++ b/docs/live-trading.md
+@@ -73,7 +73,31 @@
+ - **Startup warnings** — CRITICAL log line + one-time Discord **LIVE TRADING ARMED** pin when Discord is enabled.
+ - **Verifier** — real Kraken fills show `✓ Live fill confirmed on Kraken (...)` in Discord trade footers.
+ 
+-## Verify balances (no trades)
++## 50/50 crypto / equity profile
++
++For a balanced book with equity DCA accumulation and active crypto strategies:
++
++```env
++ENABLE_EQUITIES=1
++EQUITY_WATCHLIST=AAPLx,TSLAx,SPYx,NVDAx,MSFTx,GOOGLx
++TARGET_EQUITY_ALLOCATION_PCT=0.50
++MAX_EQUITY_BUCKET_PCT=0.55
++MAX_CRYPTO_BUCKET_PCT=0.55
++EQUITY_ACCUMULATION_PHASE=1
++EQUITY_DCA_PRIORITY=1
++DCA_ENABLED=1
++DCA_INTERVAL_HOURS=12
++CRYPTO_DAY_TRADE_MODE=1
++STRATEGIES=cross_momentum,triangular_arbitrage,stat_arb
++LIVE_ALLOWED_ASSETS=ETH,ADA,BTC,SOL,LINK,AAPLx,TSLAx,SPYx,NVDAx,MSFTx,GOOGLx
++```
++
++- Only xStocks returned by Kraken for your account are used (`filter_equity_watchlist` at startup).
++- When crypto bucket exceeds 55%, defensive trims sell alts to USD to fund equity DCA.
++- `TradeBot -portfolio` shows actual vs target split.
++
++See [dca-equities.md](dca-equities.md) for DCA scheduling details.
++
+ 
+ ```powershell
+ .\.venv\Scripts\python.exe scripts\anchor_live_session.py

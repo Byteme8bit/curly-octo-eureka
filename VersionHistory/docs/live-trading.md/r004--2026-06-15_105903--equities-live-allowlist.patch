@@ -1,0 +1,22 @@
+--- a/docs/live-trading.md
++++ b/docs/live-trading.md
+@@ -20,7 +20,8 @@
+ LIVE_ENABLED=1
+ LIVE_TRADING_CONFIRM=I_ACCEPT_REAL_MONEY
+ 
+-# Restrict live to your holdings (default: single-hop */USD only)
++# Restrict live to holdings you approve (comma-separated tickers, not pair names):
++# LIVE_ALLOWED_ASSETS=ETH,ADA,BTC,DOT,UNI,AAVE,SOL,LINK,AAPLx,TSLAx,SPYx
+ LIVE_ALLOWED_ASSETS=ETH,ADA
+ LIVE_MAX_TRADE_USD=50
+ LIVE_MAX_USD_PER_TRADE=50
+@@ -60,7 +61,8 @@
+   - Multi-hop blocked unless `LIVE_ALLOW_TRIANGULAR=1`
+ - **Triangular live** (`LIVE_ALLOW_TRIANGULAR=1`):
+   - Legs execute **sequentially** on Kraken (not atomic like paper)
+-  - Allowed assets: ETH, ADA, USD (+ BTC as bridge only)
++  - Allowed assets: any in `LIVE_ALLOWED_ASSETS` + USD (+ BTC bridge only)
++  - xStocks: add tickers to `LIVE_ALLOWED_ASSETS` and `EQUITY_WATCHLIST`; `asset_class=tokenized_asset` on orders
+   - Caps: `LIVE_MAX_ROUTE_LEGS`, `LIVE_MAX_TRADE_USD` per leg, `LIVE_MAX_ROUTE_USD` route total
+   - Mid-route failure: rollback completed legs; halt + Discord alert if unwind fails
+ - **Shared safety**:

@@ -279,6 +279,16 @@
       "removed": 0,
       "request_id": "065",
       "timestamp": "2026-06-15 18:16:07 PDT"
+    },
+    {
+      "added": 12,
+      "number": 29,
+      "patch": "r029--2026-06-16_071946--50-50-bucket-allocation-knobs.patch",
+      "path": ".env.example",
+      "reason": "50-50 bucket allocation knobs",
+      "removed": 3,
+      "request_id": "070",
+      "timestamp": "2026-06-16 07:19:46 PDT"
     }
   ],
   ".gitignore": [
@@ -1485,6 +1495,16 @@
       "removed": 1,
       "request_id": "063",
       "timestamp": "2026-06-15 18:03:41 PDT"
+    },
+    {
+      "added": 231,
+      "number": 5,
+      "patch": "r005--2026-06-16_071946--crypto-equity-bucket-rebalance.patch",
+      "path": "bot/portfolio_constraints.py",
+      "reason": "crypto-equity bucket rebalance",
+      "removed": 10,
+      "request_id": "070",
+      "timestamp": "2026-06-16 07:19:46 PDT"
     }
   ],
   "bot/preflight.py": [
@@ -1579,6 +1599,16 @@
       "removed": 1,
       "request_id": "065",
       "timestamp": "2026-06-15 18:16:06 PDT"
+    },
+    {
+      "added": 12,
+      "number": 9,
+      "patch": "r009--2026-06-16_071946--portfolio-allocation-split-line.patch",
+      "path": "bot/report.py",
+      "reason": "portfolio allocation split line",
+      "removed": 2,
+      "request_id": "070",
+      "timestamp": "2026-06-16 07:19:46 PDT"
     }
   ],
   "bot/risk.py": [
@@ -1739,6 +1769,16 @@
       "removed": 0,
       "request_id": "063",
       "timestamp": "2026-06-15 17:59:43 PDT"
+    },
+    {
+      "added": 58,
+      "number": 2,
+      "patch": "r002--2026-06-16_071947--dca-priority-accumulation-phase.patch",
+      "path": "bot/strategies/equity_dca.py",
+      "reason": "dca priority accumulation phase",
+      "removed": 7,
+      "request_id": "070",
+      "timestamp": "2026-06-16 07:19:47 PDT"
     }
   ],
   "bot/strategies/momentum_rotation.py": [
@@ -2859,6 +2899,18 @@
       "timestamp": "2026-05-25 15:22:48 PDT"
     }
   ],
+  "docs/dca-equities.md": [
+    {
+      "added": 12,
+      "number": 1,
+      "patch": "r001--2026-06-16_071947--50-50-portfolio-section.patch",
+      "path": "docs/dca-equities.md",
+      "reason": "50-50 portfolio section",
+      "removed": 0,
+      "request_id": "070",
+      "timestamp": "2026-06-16 07:19:47 PDT"
+    }
+  ],
   "docs/design/discord-style-guide.md": [
     {
       "added": 0,
@@ -2975,6 +3027,16 @@
       "removed": 0,
       "request_id": "067",
       "timestamp": "2026-06-15 22:27:14 PDT"
+    },
+    {
+      "added": 25,
+      "number": 8,
+      "patch": "r008--2026-06-16_071947--50-50-profile-env-block.patch",
+      "path": "docs/live-trading.md",
+      "reason": "50-50 profile env block",
+      "removed": 1,
+      "request_id": "070",
+      "timestamp": "2026-06-16 07:19:47 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
@@ -3367,6 +3429,16 @@
       "removed": 0,
       "request_id": "063",
       "timestamp": "2026-06-15 17:59:44 PDT"
+    },
+    {
+      "added": 5,
+      "number": 2,
+      "patch": "r002--2026-06-16_071947--dca-bucket-settings-fixture.patch",
+      "path": "tests/test_equity_dca.py",
+      "reason": "dca bucket settings fixture",
+      "removed": 0,
+      "request_id": "070",
+      "timestamp": "2026-06-16 07:19:47 PDT"
     }
   ],
   "tests/test_fee_engine.py": [
@@ -3525,6 +3597,18 @@
       "removed": 1,
       "request_id": "065",
       "timestamp": "2026-06-15 18:16:07 PDT"
+    }
+  ],
+  "tests/test_portfolio_constraints.py": [
+    {
+      "added": 1,
+      "number": 1,
+      "patch": "r001--2026-06-16_071948--disable-bucket-trim-in-fixture.patch",
+      "path": "tests/test_portfolio_constraints.py",
+      "reason": "disable bucket trim in fixture",
+      "removed": 0,
+      "request_id": "070",
+      "timestamp": "2026-06-16 07:19:48 PDT"
     }
   ],
   "tests/test_profit_only_mode.py": [

@@ -9,18 +9,6 @@ Offensive strategies use `PROFIT_ONLY_MODE` and `MIN_NET_PROFIT_PCT` because the
 - Bypasses min-net / edge hurdles for `equity_dca` intents (`is_accumulation`)
 - Still enforces `MAX_EQUITY_ALLOCATION_PCT`, drawdown halt, live allowlist, and per-trade USD caps
 
-## 50/50 portfolio mode
-
-When `TARGET_EQUITY_ALLOCATION_PCT=0.50` is set:
-
-| Phase | Behavior |
-|-------|----------|
-| **Accumulation** (`EQUITY_ACCUMULATION_PHASE=1`, equity &lt; ~45–50%) | `equity_dca` runs on a faster interval when `EQUITY_DCA_PRIORITY=1`; equity→crypto trades blocked unless equity bucket ≥ 60% |
-| **Balanced** | Both buckets target 50%; trims fire when either bucket exceeds `MAX_*_BUCKET_PCT` (default 55%) |
-| **Crypto offensive** | `cross_momentum`, `triangular_arbitrage`, `stat_arb` stay active; `CRYPTO_DAY_TRADE_MODE=1` lowers edge hurdle for crypto-only intents |
-
-Defensive crypto trims route to **USD** (not ETH) during accumulation so DCA can buy xStocks.
-
 ## Enable (paper)
 
 ```env

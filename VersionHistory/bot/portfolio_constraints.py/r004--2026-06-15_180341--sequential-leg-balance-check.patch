@@ -1,0 +1,19 @@
+--- a/bot/portfolio_constraints.py
++++ b/bot/portfolio_constraints.py
+@@ -93,12 +93,15 @@
+             leg_pct = size_pct if index == 0 else 1.0
+             from_asset = leg.from_asset
+             from_bal = balances.get(from_asset, 0.0)
+-            if from_bal <= 0:
++            # Only leg 1 must be funded upfront; later legs are filled sequentially on Kraken.
++            if index == 0 and from_bal <= 0:
+                 return ConstraintResult(
+                     False,
+                     size_pct,
+                     f"Route leg {index + 1} insufficient {from_asset} balance",
+                 )
++            if from_bal <= 0:
++                continue
+             trade_qty = from_bal * leg_pct
+             balances[from_asset] = from_bal - trade_qty
+             if leg.from_asset == "ETH":

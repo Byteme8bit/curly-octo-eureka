@@ -29,11 +29,6 @@ def _dca_settings(tmp_path: Path, **overrides) -> SimpleNamespace:
         dca_state_file=tmp_path / ".dca_state.json",
         min_usd_trade=10.0,
         max_equity_allocation_pct=0.15,
-        max_equity_bucket_pct=0.55,
-        target_equity_allocation_pct=0.50,
-        equity_dca_priority=False,
-        equity_accumulation_min_pct=0.45,
-        equity_accumulation_phase=False,
         live_enabled=True,
         live_allowed_assets=("ETH", "AAPLx", "TSLAx", "SPYx"),
         strategies=("cross_momentum", "triangular_arbitrage", "stat_arb"),
@@ -100,21 +95,6 @@ def test_dca_per_symbol_mode(tmp_path: Path) -> None:
     )
     intent = result.intents[0]
     assert intent.size_pct == pytest.approx(0.25, rel=1e-3)
-
-
-def test_dca_uses_live_usd_when_paper_empty(tmp_path: Path) -> None:
-    from bot.strategies.base import StrategyContext
-
-    strat = _strategy(tmp_path, dca_per_symbol_usd=15.0)
-    ctx = StrategyContext(live_usd_balance=266.0)
-    result = strat.evaluate(
-        candles={},
-        prices={"AAPLx": 200.0, "TSLAx": 300.0, "SPYx": 500.0},
-        holdings={"USD": 0.0},
-        context=ctx,
-    )
-    assert len(result.intents) == 1
-    assert result.intents[0].from_asset == "USD"
 
 
 def test_dca_blocks_when_not_in_live_allowlist(tmp_path: Path) -> None:

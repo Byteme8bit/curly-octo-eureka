@@ -2895,3 +2895,67 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +58 / -6
 - **Patch:** `r029--2026-06-16_071351--validate-equity-allowlist-startup.patch`
 
+## .env.example — r029
+
+- **When:** 2026-06-16 07:19:46 PDT
+- **Reason:** 50-50 bucket allocation knobs
+- **Request:** 070
+- **Diff:** +12 / -3
+- **Patch:** `r029--2026-06-16_071946--50-50-bucket-allocation-knobs.patch`
+
+## bot/portfolio_constraints.py — r005
+
+- **When:** 2026-06-16 07:19:46 PDT
+- **Reason:** crypto-equity bucket rebalance
+- **Request:** 070
+- **Diff:** +231 / -10
+- **Patch:** `r005--2026-06-16_071946--crypto-equity-bucket-rebalance.patch`
+
+## bot/report.py — r009
+
+- **When:** 2026-06-16 07:19:46 PDT
+- **Reason:** portfolio allocation split line
+- **Request:** 070
+- **Diff:** +12 / -2
+- **Patch:** `r009--2026-06-16_071946--portfolio-allocation-split-line.patch`
+
+## bot/strategies/equity_dca.py — r002
+
+- **When:** 2026-06-16 07:19:47 PDT
+- **Reason:** dca priority accumulation phase
+- **Request:** 070
+- **Diff:** +58 / -7
+- **Patch:** `r002--2026-06-16_071947--dca-priority-accumulation-phase.patch`
+
+## docs/dca-equities.md — r001
+
+- **When:** 2026-06-16 07:19:47 PDT
+- **Reason:** 50-50 portfolio section
+- **Request:** 070
+- **Diff:** +12 / -0
+- **Patch:** `r001--2026-06-16_071947--50-50-portfolio-section.patch`
+
+## docs/live-trading.md — r008
+
+- **When:** 2026-06-16 07:19:47 PDT
+- **Reason:** 50-50 profile env block
+- **Request:** 070
+- **Diff:** +25 / -1
+- **Patch:** `r008--2026-06-16_071947--50-50-profile-env-block.patch`
+
+## tests/test_equity_dca.py — r002
+
+- **When:** 2026-06-16 07:19:47 PDT
+- **Reason:** dca bucket settings fixture
+- **Request:** 070
+- **Diff:** +5 / -0
+- **Patch:** `r002--2026-06-16_071947--dca-bucket-settings-fixture.patch`
+
+## tests/test_portfolio_constraints.py — r001
+
+- **When:** 2026-06-16 07:19:48 PDT
+- **Reason:** disable bucket trim in fixture
+- **Request:** 070
+- **Diff:** +1 / -0
+- **Patch:** `r001--2026-06-16_071948--disable-bucket-trim-in-fixture.patch`
+

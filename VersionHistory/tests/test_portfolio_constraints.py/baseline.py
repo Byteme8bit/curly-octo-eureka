@@ -13,7 +13,6 @@ def constraints() -> PortfolioConstraints:
         min_eth_reserve=0.25,
         max_alt_allocation_pct=0.40,
         min_usd_trade=10.0,
-        max_crypto_bucket_pct=1.0,
     )
 
 
