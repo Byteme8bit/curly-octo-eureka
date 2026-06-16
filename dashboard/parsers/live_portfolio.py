@@ -7,6 +7,8 @@ from pathlib import Path
 
 from bot.local_time import format_pacific
 
+from bot.live_portfolio import load_live_usd_prices
+
 from dashboard.config import DashboardSettings
 
 _SKIP_DISPLAY = frozenset({"KFEE", "BABY", "BCH"})
@@ -23,23 +25,11 @@ def _read_json(path: Path) -> dict | None:
 
 
 def _load_usd_prices(settings: DashboardSettings) -> dict[str, float]:
-    """Best-effort USD prices from portfolio snapshot or session anchor."""
-    paper = _read_json(settings.paper_portfolio_file)
-    if paper:
-        prices: dict[str, float] = {"USD": 1.0}
-        for asset, row in (paper.get("holdings") or {}).items():
-            if isinstance(row, dict):
-                px = float(row.get("usd_price", 0.0))
-                if px > 0:
-                    prices[str(asset)] = px
-        if len(prices) > 1:
-            return prices
-
-    session = _read_json(settings.live_session_start_file)
-    if session:
-        raw = session.get("usd_prices") or {}
-        return {str(k): float(v) for k, v in raw.items() if isinstance(v, (int, float))}
-    return {"USD": 1.0}
+    """Best-effort USD prices — session anchor merged with paper snapshot."""
+    return load_live_usd_prices(
+        live_session_start_file=settings.live_session_start_file,
+        paper_portfolio_file=settings.paper_portfolio_file,
+    )
 
 
 def _portfolio_usd(balances: dict[str, float], usd_prices: dict[str, float]) -> float:

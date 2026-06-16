@@ -179,6 +179,56 @@ def test_live_guardrails_detects_eth_floor(tmp_path: Path):
     assert any("below floor" in r for r in live["live_guardrails"]["halt_reasons"])
 
 
+def test_live_portfolio_prices_eth_when_paper_has_none(tmp_path: Path):
+    """Paper sold ETH; live still holds ETH — must not value live ETH at $0."""
+    (tmp_path / "live_session_start.json").write_text(
+        json.dumps(
+            {
+                "baseline_portfolio_usd": 1724.0,
+                "peak_portfolio_usd": 1724.0,
+                "usd_prices": {"USD": 1.0, "ETH": 1800.0, "ADA": 0.17},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / ".live_state.json").write_text(
+        json.dumps(
+            {
+                "balances": {"ETH": 0.8, "USD": 266.0, "ADA": 24.5},
+                "risk": {
+                    "baseline_portfolio": 1724.0,
+                    "peak_portfolio": 1724.0,
+                    "live_trades_completed": 0,
+                },
+                "trades": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "paper_portfolio.json").write_text(
+        json.dumps(
+            {
+                "portfolio_usd": 1688.0,
+                "holdings": {
+                    "USD": {"qty": 772, "usd_price": 1.0, "usd_value": 772},
+                    "DOT": {"qty": 676, "usd_price": 1.0, "usd_value": 676},
+                    "ADA": {"qty": 24.5, "usd_price": 0.174, "usd_value": 4.27},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    live = load_live_portfolio(_settings(tmp_path, live=True))
+    assert live is not None
+    eth_row = next(h for h in live["holdings"] if h["asset"] == "ETH")
+    assert eth_row["usd_price"] == pytest.approx(1800.0)
+    assert eth_row["usd_value"] == pytest.approx(1440.0, rel=0.01)
+    assert live["portfolio_usd"] == pytest.approx(266 + 1440 + 24.5 * 0.174, rel=0.01)
+    assert live["drawdown_pct"] == pytest.approx(0.0, abs=0.02)
+    assert live["live_guardrails"]["halted"] is False
+
+
 def test_fastapi_mode_split_endpoints(tmp_path: Path, monkeypatch):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient

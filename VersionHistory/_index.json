@@ -469,6 +469,18 @@
       "timestamp": "2026-06-12 08:46:11 PDT"
     }
   ],
+  "bot/auditor/context.py": [
+    {
+      "added": 14,
+      "number": 1,
+      "patch": "r001--2026-06-16_085814--merge-session-paper-prices.patch",
+      "path": "bot/auditor/context.py",
+      "reason": "merge session paper prices",
+      "removed": 10,
+      "request_id": "072",
+      "timestamp": "2026-06-16 08:58:14 PDT"
+    }
+  ],
   "bot/auditor/proposer.py": [
     {
       "added": 38,
@@ -1235,6 +1247,16 @@
       "removed": 22,
       "request_id": "069",
       "timestamp": "2026-06-16 07:13:50 PDT"
+    },
+    {
+      "added": 18,
+      "number": 47,
+      "patch": "r048--2026-06-16_085813--live-asset-price-fallback.patch",
+      "path": "bot/engine.py",
+      "reason": "live asset price fallback",
+      "removed": 4,
+      "request_id": "072",
+      "timestamp": "2026-06-16 08:58:13 PDT"
     }
   ],
   "bot/equities.py": [
@@ -1367,6 +1389,18 @@
       "removed": 1,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:14 PDT"
+    }
+  ],
+  "bot/live_portfolio.py": [
+    {
+      "added": 12,
+      "number": 1,
+      "patch": "r001--2026-06-16_085813--merge-session-paper-usd-prices.patch",
+      "path": "bot/live_portfolio.py",
+      "reason": "merge session paper usd prices",
+      "removed": 10,
+      "request_id": "072",
+      "timestamp": "2026-06-16 08:58:13 PDT"
     }
   ],
   "bot/markets.py": [
@@ -2499,6 +2533,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-13 20:52:54 PDT"
+    },
+    {
+      "added": 7,
+      "number": 2,
+      "patch": "r002--2026-06-16_085813--use-shared-live-usd-prices.patch",
+      "path": "dashboard/parsers/live_portfolio.py",
+      "reason": "use shared live usd prices",
+      "removed": 17,
+      "request_id": "072",
+      "timestamp": "2026-06-16 08:58:13 PDT"
     }
   ],
   "dashboard/parsers/series.py": [
@@ -3393,6 +3437,16 @@
       "removed": 0,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:16 PDT"
+    },
+    {
+      "added": 50,
+      "number": 4,
+      "patch": "r004--2026-06-16_085814--eth-divergence-regression-test.patch",
+      "path": "tests/test_dashboard_live.py",
+      "reason": "eth divergence regression test",
+      "removed": 0,
+      "request_id": "072",
+      "timestamp": "2026-06-16 08:58:14 PDT"
     }
   ],
   "tests/test_discord_commands.py": [
