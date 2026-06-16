@@ -1,0 +1,34 @@
+--- a/tests/test_auditor.py
++++ b/tests/test_auditor.py
+@@ -997,6 +997,31 @@
+     assert "# Auditor report" in body
+ 
+ 
++def test_manual_review_posts_discord_once(tmp_path: Path) -> None:
++    posts: list[tuple[str, str]] = []
++
++    class _MockDiscord:
++        def post_with_attachment(self, text, attachment, filename, **kwargs):
++            posts.append(("attachment", text))
++
++        def post_important(self, text, **kwargs):
++            posts.append(("important", text))
++
++    service = _make_service(tmp_path, discord=_MockDiscord())
++    service.run_audit(trigger="manual")
++    assert len(posts) == 1
++    assert posts[0][0] == "attachment"
++
++
++def test_auditor_review_command_returns_empty_reply(tmp_path: Path) -> None:
++    from bot.engine import TradingEngine
++
++    engine = TradingEngine.__new__(TradingEngine)
++    engine.auditor = _make_service(tmp_path)
++    reply = TradingEngine._handle_auditor_command(engine, "auditor-review")
++    assert reply == ""
++
++
+ def test_auditor_service_revert_returns_helpful_message_when_missing(tmp_path: Path) -> None:
+     service = _make_service(tmp_path)
+     assert "no active override" in service.revert("MIN_TRADE_EDGE").lower()

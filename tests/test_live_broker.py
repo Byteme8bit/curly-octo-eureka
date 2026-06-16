@@ -235,3 +235,49 @@ def test_multi_hop_blocked_when_triangular_disabled(tmp_path: Path) -> None:
         usd_prices={"ETH": 3000.0, "ADA": 0.5},
         reason="blocked",
     ) is None
+
+
+def test_path_continuation_leg_skips_per_trade_usd_cap(tmp_path: Path) -> None:
+    """Leg 2+ must not re-apply LIVE_MAX_USD_PER_TRADE — that strands loop inventory."""
+    ex = _StubExchange()
+    ex.balances = {"ETH": 1.0, "USD": 0.0, "ADA": 0.0}
+    broker = LiveBroker(
+        exchange=ex,
+        fee_rate=0.0026,
+        state_file=tmp_path / "live.json",
+        min_usd_trade=10.0,
+        max_usd_per_trade=50.0,
+        max_usd_per_route=500.0,
+        allow_triangular=True,
+        max_route_legs=3,
+    )
+    route = TradeRoute(
+        legs=(
+            RouteLeg(
+                pair=PairInfo(symbol="ETH/USD", base="ETH", quote="USD"),
+                side=Signal.SELL,
+                from_asset="ETH",
+                to_asset="USD",
+            ),
+            RouteLeg(
+                pair=PairInfo(symbol="ADA/USD", base="ADA", quote="USD"),
+                side=Signal.BUY,
+                from_asset="USD",
+                to_asset="ADA",
+            ),
+        )
+    )
+    trade = broker.execute_path(
+        route,
+        prices={"ETH/USD": 3000.0, "ADA/USD": 0.5},
+        usd_prices={"ETH": 3000.0, "ADA": 0.5},
+        reason="cap test",
+        size_pct=0.5,
+    )
+    assert trade is not None
+    assert len(ex.orders) == 2
+    usd_from_leg1 = float(ex.orders[0]["filled"]) * float(ex.orders[0]["average"])
+    ada_from_leg2 = float(ex.orders[1]["filled"])
+    ada_usd = ada_from_leg2 * 0.5
+    assert usd_from_leg1 >= 50.0
+    assert ada_usd >= usd_from_leg1 * 0.95

@@ -2735,3 +2735,43 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +23 / -1
 - **Patch:** `r001--2026-06-15_181607--anchor-portfolio-label-tests.patch`
 
+## bot/live_broker.py — r004
+
+- **When:** 2026-06-15 19:30:17 PDT
+- **Reason:** skip usd cap on path legs 2+
+- **Request:** 066
+- **Diff:** +10 / -6
+- **Patch:** `r004--2026-06-15_193017--skip-usd-cap-on-path-legs-2.patch`
+
+## bot/engine.py — r043
+
+- **When:** 2026-06-15 19:30:17 PDT
+- **Reason:** mirror profit gate, auditor dedupe
+- **Request:** 066
+- **Diff:** +56 / -31
+- **Patch:** `r043--2026-06-15_193017--mirror-profit-gate-auditor-dedupe.patch`
+
+## tests/test_live_broker.py — r002
+
+- **When:** 2026-06-15 19:30:18 PDT
+- **Reason:** continuation leg cap test
+- **Request:** 066
+- **Diff:** +44 / -27
+- **Patch:** `r002--2026-06-15_193018--continuation-leg-cap-test.patch`
+
+## tests/test_profit_only_mode.py — r002
+
+- **When:** 2026-06-15 19:30:19 PDT
+- **Reason:** live mirror profit gate tests
+- **Request:** 066
+- **Diff:** +77 / -0
+- **Patch:** `r002--2026-06-15_193019--live-mirror-profit-gate-tests.patch`
+
+## tests/test_auditor.py — r007
+
+- **When:** 2026-06-15 19:30:19 PDT
+- **Reason:** manual review single post tests
+- **Request:** 066
+- **Diff:** +25 / -0
+- **Patch:** `r007--2026-06-15_193019--manual-review-single-post-tests.patch`
+

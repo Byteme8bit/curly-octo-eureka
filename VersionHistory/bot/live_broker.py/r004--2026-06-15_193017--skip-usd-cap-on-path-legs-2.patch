@@ -1,0 +1,46 @@
+--- a/bot/live_broker.py
++++ b/bot/live_broker.py
+@@ -230,6 +230,7 @@
+                     usd_prices,
+                     reason=f"{reason} (leg {index + 1}/{route.hops})",
+                     size_pct=leg_size,
++                    apply_usd_cap=index == 0,
+                 )
+             except ccxt.BaseError as exc:
+                 msg = (
+@@ -340,6 +341,7 @@
+         size_pct: float = 1.0,
+         *,
+         skip_route_check: bool = False,
++        apply_usd_cap: bool = True,
+     ) -> dict | None:
+         if self.halted or side == Signal.HOLD:
+             return None
+@@ -377,9 +379,10 @@
+             quote_spend = quote_bal * size_pct
+             quote_usd = self._asset_usd(quote, usd_prices)
+             trade_usd = quote_spend * quote_usd
+-            size_pct = self._cap_size_pct(trade_usd, size_pct)
+-            quote_spend = quote_bal * size_pct
+-            trade_usd = quote_spend * quote_usd
++            if apply_usd_cap:
++                size_pct = self._cap_size_pct(trade_usd, size_pct)
++                quote_spend = quote_bal * size_pct
++                trade_usd = quote_spend * quote_usd
+             if trade_usd < self.min_usd_trade:
+                 return None
+             base_qty = (quote_spend * (1.0 - self.fee_rate)) / price
+@@ -388,9 +391,10 @@
+             base_qty = base_bal * size_pct
+             base_usd = self._asset_usd(base, usd_prices)
+             trade_usd = base_qty * base_usd
+-            size_pct = self._cap_size_pct(trade_usd, size_pct)
+-            base_qty = base_bal * size_pct
+-            trade_usd = base_qty * base_usd
++            if apply_usd_cap:
++                size_pct = self._cap_size_pct(trade_usd, size_pct)
++                base_qty = base_bal * size_pct
++                trade_usd = base_qty * base_usd
+             if base_qty <= 0 or trade_usd < self.min_usd_trade:
+                 return None
+ 

@@ -1165,6 +1165,16 @@
       "removed": 3,
       "request_id": "065",
       "timestamp": "2026-06-15 18:16:06 PDT"
+    },
+    {
+      "added": 56,
+      "number": 43,
+      "patch": "r043--2026-06-15_193017--mirror-profit-gate-auditor-dedupe.patch",
+      "path": "bot/engine.py",
+      "reason": "mirror profit gate, auditor dedupe",
+      "removed": 31,
+      "request_id": "066",
+      "timestamp": "2026-06-15 19:30:17 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1243,6 +1253,16 @@
       "removed": 3,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:14 PDT"
+    },
+    {
+      "added": 10,
+      "number": 4,
+      "patch": "r004--2026-06-15_193017--skip-usd-cap-on-path-legs-2.patch",
+      "path": "bot/live_broker.py",
+      "reason": "skip usd cap on path legs 2+",
+      "removed": 6,
+      "request_id": "066",
+      "timestamp": "2026-06-15 19:30:17 PDT"
     }
   ],
   "bot/live_guards.py": [
@@ -3011,6 +3031,16 @@
       "removed": 6,
       "request_id": "058",
       "timestamp": "2026-06-15 10:39:12 PDT"
+    },
+    {
+      "added": 25,
+      "number": 7,
+      "patch": "r007--2026-06-15_193019--manual-review-single-post-tests.patch",
+      "path": "tests/test_auditor.py",
+      "reason": "manual review single post tests",
+      "removed": 0,
+      "request_id": "066",
+      "timestamp": "2026-06-15 19:30:19 PDT"
     }
   ],
   "tests/test_auditor_chat.py": [
@@ -3249,6 +3279,16 @@
       "removed": 2,
       "request_id": "059",
       "timestamp": "2026-06-15 10:59:03 PDT"
+    },
+    {
+      "added": 44,
+      "number": 2,
+      "patch": "r002--2026-06-15_193018--continuation-leg-cap-test.patch",
+      "path": "tests/test_live_broker.py",
+      "reason": "continuation leg cap test",
+      "removed": 27,
+      "request_id": "066",
+      "timestamp": "2026-06-15 19:30:18 PDT"
     }
   ],
   "tests/test_live_eth_floor.py": [
@@ -3339,6 +3379,16 @@
       "removed": 0,
       "request_id": "061",
       "timestamp": "2026-06-15 11:33:25 PDT"
+    },
+    {
+      "added": 77,
+      "number": 2,
+      "patch": "r002--2026-06-15_193019--live-mirror-profit-gate-tests.patch",
+      "path": "tests/test_profit_only_mode.py",
+      "reason": "live mirror profit gate tests",
+      "removed": 0,
+      "request_id": "066",
+      "timestamp": "2026-06-15 19:30:19 PDT"
     }
   ],
   "tests/test_quiet_discord.py": [
