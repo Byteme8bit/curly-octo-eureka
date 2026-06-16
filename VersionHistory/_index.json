@@ -595,6 +595,16 @@
       "removed": 29,
       "request_id": "054",
       "timestamp": "2026-06-14 13:08:15 PDT"
+    },
+    {
+      "added": 27,
+      "number": 8,
+      "patch": "r008--2026-06-15_174940--skip-duplicate-scheduled-audits.patch",
+      "path": "bot/auditor_service.py",
+      "reason": "skip duplicate scheduled audits",
+      "removed": 5,
+      "request_id": "062",
+      "timestamp": "2026-06-15 17:49:40 PDT"
     }
   ],
   "bot/data.py": [
@@ -1115,6 +1125,26 @@
       "removed": 0,
       "request_id": "061",
       "timestamp": "2026-06-15 11:33:24 PDT"
+    },
+    {
+      "added": 11,
+      "number": 40,
+      "patch": "r040--2026-06-15_175943--live-usd-context-for-dca.patch",
+      "path": "bot/engine.py",
+      "reason": "live-usd context for DCA",
+      "removed": 0,
+      "request_id": "063",
+      "timestamp": "2026-06-15 17:59:43 PDT"
+    },
+    {
+      "added": 63,
+      "number": 41,
+      "patch": "r041--2026-06-15_180841--wire-live-portfolio-command.patch",
+      "path": "bot/engine.py",
+      "reason": "wire live portfolio command",
+      "removed": 35,
+      "request_id": "064",
+      "timestamp": "2026-06-15 18:08:41 PDT"
     }
   ],
   "bot/fatal_error_log.py": [
@@ -1333,6 +1363,16 @@
       "removed": 10,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:14 PDT"
+    },
+    {
+      "added": 4,
+      "number": 4,
+      "patch": "r004--2026-06-15_180341--sequential-leg-balance-check.patch",
+      "path": "bot/portfolio_constraints.py",
+      "reason": "sequential leg balance check",
+      "removed": 1,
+      "request_id": "063",
+      "timestamp": "2026-06-15 18:03:41 PDT"
     }
   ],
   "bot/preflight.py": [
@@ -1407,6 +1447,16 @@
       "removed": 0,
       "request_id": "060",
       "timestamp": "2026-06-15 11:28:48 PDT"
+    },
+    {
+      "added": 119,
+      "number": 7,
+      "patch": "r007--2026-06-15_180841--portfolio-command-live-labels.patch",
+      "path": "bot/report.py",
+      "reason": "portfolio command live labels",
+      "removed": 13,
+      "request_id": "064",
+      "timestamp": "2026-06-15 18:08:41 PDT"
     }
   ],
   "bot/risk.py": [
@@ -1523,6 +1573,16 @@
       "removed": 0,
       "request_id": "060",
       "timestamp": "2026-06-15 11:28:47 PDT"
+    },
+    {
+      "added": 1,
+      "number": 4,
+      "patch": "r004--2026-06-15_175943--liveusdbalance-context-field.patch",
+      "path": "bot/strategies/base.py",
+      "reason": "live_usd_balance context field",
+      "removed": 0,
+      "request_id": "063",
+      "timestamp": "2026-06-15 17:59:43 PDT"
     }
   ],
   "bot/strategies/cross_momentum.py": [
@@ -1535,6 +1595,18 @@
       "removed": 4,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:15 PDT"
+    }
+  ],
+  "bot/strategies/equity_dca.py": [
+    {
+      "added": 2,
+      "number": 1,
+      "patch": "r001--2026-06-15_175943--use-live-usd-for-dca.patch",
+      "path": "bot/strategies/equity_dca.py",
+      "reason": "use live USD for DCA",
+      "removed": 0,
+      "request_id": "063",
+      "timestamp": "2026-06-15 17:59:43 PDT"
     }
   ],
   "bot/strategies/momentum_rotation.py": [
@@ -3059,6 +3131,18 @@
       "timestamp": "2026-06-01 07:13:42 PDT"
     }
   ],
+  "tests/test_equity_dca.py": [
+    {
+      "added": 15,
+      "number": 1,
+      "patch": "r001--2026-06-15_175944--live-usd-dca-test.patch",
+      "path": "tests/test_equity_dca.py",
+      "reason": "live USD DCA test",
+      "removed": 0,
+      "request_id": "063",
+      "timestamp": "2026-06-15 17:59:44 PDT"
+    }
+  ],
   "tests/test_fee_engine.py": [
     {
       "added": 22,
@@ -3127,6 +3211,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-13 20:38:09 PDT"
+    },
+    {
+      "added": 29,
+      "number": 2,
+      "patch": "r002--2026-06-15_180341--sequential-multi-hop-test.patch",
+      "path": "tests/test_live_eth_floor.py",
+      "reason": "sequential multi-hop test",
+      "removed": 0,
+      "request_id": "063",
+      "timestamp": "2026-06-15 18:03:41 PDT"
     }
   ],
   "tests/test_live_guards.py": [
@@ -3139,6 +3233,16 @@
       "removed": 0,
       "request_id": null,
       "timestamp": "2026-06-14 03:53:23 PDT"
+    },
+    {
+      "added": 16,
+      "number": 2,
+      "patch": "r002--2026-06-15_175944--4-leg-route-guard-test.patch",
+      "path": "tests/test_live_guards.py",
+      "reason": "4-leg route guard test",
+      "removed": 0,
+      "request_id": "063",
+      "timestamp": "2026-06-15 17:59:44 PDT"
     }
   ],
   "tests/test_live_mirror.py": [
@@ -3235,6 +3339,18 @@
       "timestamp": "2026-05-27 03:51:59 PDT"
     }
   ],
+  "tests/test_watchdog_live_gains.py": [
+    {
+      "added": 22,
+      "number": 1,
+      "patch": "r001--2026-06-15_174940--quiet-mode-test-updates.patch",
+      "path": "tests/test_watchdog_live_gains.py",
+      "reason": "quiet-mode test updates",
+      "removed": 6,
+      "request_id": "062",
+      "timestamp": "2026-06-15 17:49:40 PDT"
+    }
+  ],
   "tests/test_whale_follow.py": [
     {
       "added": 10,
@@ -3321,6 +3437,16 @@
       "removed": 46,
       "request_id": "055",
       "timestamp": "2026-06-15 04:23:24 PDT"
+    },
+    {
+      "added": 3,
+      "number": 4,
+      "patch": "r004--2026-06-15_174940--quiet-mode-milestone-gate.patch",
+      "path": "watchdog/engine.py",
+      "reason": "quiet-mode milestone gate",
+      "removed": 0,
+      "request_id": "062",
+      "timestamp": "2026-06-15 17:49:40 PDT"
     }
   ],
   "watchdog/state.py": [

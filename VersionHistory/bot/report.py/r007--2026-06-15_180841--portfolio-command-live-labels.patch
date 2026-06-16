@@ -1,0 +1,150 @@
+--- a/bot/report.py
++++ b/bot/report.py
+@@ -1,5 +1,6 @@
+ """Plain-text report formatting shared by terminal-adjacent surfaces (Discord)."""
+ 
++from bot.live_portfolio import _SKIP_DISPLAY
+ from bot.local_time import format_pacific
+ from bot.status import StatusSnapshot
+ from bot.trade_log import (
+@@ -10,22 +11,127 @@
+ )
+ 
+ 
+-def format_holdings(holdings: dict[str, float], usd_prices: dict[str, float]) -> list[str]:
++def _holding_rows(
++    holdings: dict[str, float],
++    usd_prices: dict[str, float],
++    *,
++    skip_assets: frozenset[str] = frozenset(),
++) -> list[tuple[float, str, float, float]]:
++    rows: list[tuple[float, str, float, float]] = []
++    for asset, qty in holdings.items():
++        if qty <= 0 or asset in skip_assets:
++            continue
++        if asset == "USD":
++            rows.append((qty, asset, qty, 1.0))
++        else:
++            price = usd_prices.get(asset, 0.0)
++            rows.append((qty * price, asset, qty, price))
++    rows.sort(reverse=True)
++    return rows
++
++
++def format_holdings(
++    holdings: dict[str, float],
++    usd_prices: dict[str, float],
++    *,
++    max_rows: int | None = None,
++    skip_assets: frozenset[str] = frozenset(),
++) -> list[str]:
++    rows = _holding_rows(holdings, usd_prices, skip_assets=skip_assets)
++    if max_rows is not None:
++        rows = rows[:max_rows]
+     lines: list[str] = []
+-    usd = holdings.get("USD", 0.0)
+-    if usd > 0:
+-        lines.append(f"  USD     ${usd:,.2f}  (cash)")
+-    has_crypto = False
+-    for asset, qty in sorted(holdings.items()):
+-        if asset == "USD" or qty <= 0:
+-            continue
+-        has_crypto = True
+-        price = usd_prices.get(asset, 0.0)
+-        value = qty * price
+-        lines.append(f"  {asset:6}  {qty:>12,.4f}  @ ${price:,.2f}  = ${value:,.2f}")
+-    if not has_crypto and usd <= 0:
++    for value, asset, qty, price in rows:
++        if asset == "USD":
++            lines.append(f"  USD     ${qty:,.2f}  (cash)")
++        else:
++            lines.append(f"  {asset:6}  {qty:>12,.4f}  @ ${price:,.2f}  = ${value:,.2f}")
++    if not rows:
+         lines.append("  (empty)")
++    elif max_rows is not None:
++        total = len(_holding_rows(holdings, usd_prices, skip_assets=skip_assets))
++        extra = total - max_rows
++        if extra > 0:
++            lines.append(f"  (+{extra} more)")
+     return lines
++
++
++def format_portfolio_command(
++    *,
++    portfolio: float,
++    baseline_pnl: float,
++    drawdown: float,
++    holdings: dict[str, float],
++    usd_prices: dict[str, float],
++    trading_active: bool,
++    risk_note: str = "",
++    live_enabled: bool = False,
++    mirror_mode: bool = False,
++    live_portfolio: float | None = None,
++    live_session_pnl: float | None = None,
++    live_drawdown: float | None = None,
++    live_holdings: dict[str, float] | None = None,
++    max_holdings_rows: int = 5,
++) -> str:
++    """Discord ``TradeBot -portfolio`` body — live Kraken first when armed."""
++    if not live_enabled:
++        return format_portfolio_summary(
++            portfolio=portfolio,
++            baseline_pnl=baseline_pnl,
++            drawdown=drawdown,
++            holdings=holdings,
++            usd_prices=usd_prices,
++            trading_active=trading_active,
++            risk_note=risk_note,
++        )
++
++    state = "RUNNING" if trading_active else "STOPPED"
++    live_skip = _SKIP_DISPLAY
++
++    if mirror_mode and live_portfolio is not None:
++        lines = [
++            "Live Kraken spot",
++            (
++                f"  Portfolio  ${live_portfolio:,.2f}  "
++                f"(Session PnL {live_session_pnl:+.2f} | drawdown {live_drawdown:.2%})"
++            ),
++            "  Holdings:",
++        ]
++        lines.extend(
++            format_holdings(
++                live_holdings or {},
++                usd_prices,
++                max_rows=max_holdings_rows,
++                skip_assets=live_skip,
++            )
++        )
++        lines.extend(["", "[Paper sim] — not Kraken balance"])
++        lines.append(
++            f"  Portfolio  ${portfolio:,.2f}  (PnL {baseline_pnl:+.2f} | drawdown {drawdown:.2%})"
++        )
++        lines.append(f"  Bot state  {state}")
++        if risk_note:
++            lines.append(f"  {risk_note}")
++        lines.append("  Holdings:")
++        lines.extend(format_holdings(holdings, usd_prices, max_rows=max_holdings_rows))
++        return "\n".join(lines)
++
++    pnl_label = "Session PnL" if live_enabled else "PnL"
++    lines = [
++        "Live Kraken spot",
++        (
++            f"  Portfolio  ${portfolio:,.2f}  "
++            f"({pnl_label} {baseline_pnl:+.2f} | drawdown {drawdown:.2%})"
++        ),
++        f"  Bot state  {state}",
++    ]
++    if risk_note:
++        lines.append(f"  {risk_note}")
++    lines.append("  Holdings:")
++    lines.extend(
++        format_holdings(holdings, usd_prices, max_rows=max_holdings_rows, skip_assets=live_skip)
++    )
++    return "\n".join(lines)
+ 
+ 
+ def format_considering(status: StatusSnapshot) -> list[str]:

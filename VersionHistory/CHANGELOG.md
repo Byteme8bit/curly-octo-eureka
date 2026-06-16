@@ -2582,3 +2582,108 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +5 / -0
 - **Patch:** `r039--2026-06-15_172103--resume-clears-live-cb-too.patch`
 
+## bot/auditor_service.py — r008
+
+- **When:** 2026-06-15 17:49:40 PDT
+- **Reason:** skip duplicate scheduled audits
+- **Request:** 062
+- **Diff:** +27 / -5
+- **Patch:** `r008--2026-06-15_174940--skip-duplicate-scheduled-audits.patch`
+
+## watchdog/engine.py — r004
+
+- **When:** 2026-06-15 17:49:40 PDT
+- **Reason:** quiet-mode milestone gate
+- **Request:** 062
+- **Diff:** +3 / -0
+- **Patch:** `r004--2026-06-15_174940--quiet-mode-milestone-gate.patch`
+
+## tests/test_watchdog_live_gains.py — r001
+
+- **When:** 2026-06-15 17:49:40 PDT
+- **Reason:** quiet-mode test updates
+- **Request:** 062
+- **Diff:** +22 / -6
+- **Patch:** `r001--2026-06-15_174940--quiet-mode-test-updates.patch`
+
+## bot/engine.py — r040
+
+- **When:** 2026-06-15 17:59:43 PDT
+- **Reason:** live-usd context for DCA
+- **Request:** 063
+- **Diff:** +11 / -0
+- **Patch:** `r040--2026-06-15_175943--live-usd-context-for-dca.patch`
+
+## bot/strategies/base.py — r004
+
+- **When:** 2026-06-15 17:59:43 PDT
+- **Reason:** live_usd_balance context field
+- **Request:** 063
+- **Diff:** +1 / -0
+- **Patch:** `r004--2026-06-15_175943--liveusdbalance-context-field.patch`
+
+## bot/strategies/equity_dca.py — r001
+
+- **When:** 2026-06-15 17:59:43 PDT
+- **Reason:** use live USD for DCA
+- **Request:** 063
+- **Diff:** +2 / -0
+- **Patch:** `r001--2026-06-15_175943--use-live-usd-for-dca.patch`
+
+
+> _2026-06-15 17:59:44 PDT_ — no-op snapshot requested for `bot/auditor_service.py` (reason: 'skip duplicate scheduled audits') - no change since r008
+
+
+> _2026-06-15 17:59:44 PDT_ — no-op snapshot requested for `watchdog/engine.py` (reason: 'quiet-mode milestone gate') - no change since r004
+
+## tests/test_live_guards.py — r002
+
+- **When:** 2026-06-15 17:59:44 PDT
+- **Reason:** 4-leg route guard test
+- **Request:** 063
+- **Diff:** +16 / -0
+- **Patch:** `r002--2026-06-15_175944--4-leg-route-guard-test.patch`
+
+## tests/test_equity_dca.py — r001
+
+- **When:** 2026-06-15 17:59:44 PDT
+- **Reason:** live USD DCA test
+- **Request:** 063
+- **Diff:** +15 / -0
+- **Patch:** `r001--2026-06-15_175944--live-usd-dca-test.patch`
+
+
+> _2026-06-15 17:59:44 PDT_ — no-op snapshot requested for `tests/test_watchdog_live_gains.py` (reason: 'quiet-mode test updates') - no change since r001
+
+## bot/portfolio_constraints.py — r004
+
+- **When:** 2026-06-15 18:03:41 PDT
+- **Reason:** sequential leg balance check
+- **Request:** 063
+- **Diff:** +4 / -1
+- **Patch:** `r004--2026-06-15_180341--sequential-leg-balance-check.patch`
+
+## tests/test_live_eth_floor.py — r002
+
+- **When:** 2026-06-15 18:03:41 PDT
+- **Reason:** sequential multi-hop test
+- **Request:** 063
+- **Diff:** +29 / -0
+- **Patch:** `r002--2026-06-15_180341--sequential-multi-hop-test.patch`
+
+## bot/report.py — r007
+
+- **When:** 2026-06-15 18:08:41 PDT
+- **Reason:** portfolio command live labels
+- **Request:** 064
+- **Diff:** +119 / -13
+- **Patch:** `r007--2026-06-15_180841--portfolio-command-live-labels.patch`
+
+## bot/engine.py — r041
+
+- **When:** 2026-06-15 18:08:41 PDT
+- **Reason:** wire live portfolio command
+- **Request:** 064
+- **Diff:** +63 / -35
+- **Patch:** `r041--2026-06-15_180841--wire-live-portfolio-command.patch`
+

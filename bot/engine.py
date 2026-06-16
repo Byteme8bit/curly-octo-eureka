@@ -38,7 +38,7 @@ from bot.report import (
     format_trade_executed_alert,
     format_planned_actions,
     format_pnl_milestone_alert,
-    format_portfolio_summary,
+    format_portfolio_command,
     format_strategy_status,
     pnl_milestone_band,
 )
@@ -1132,6 +1132,66 @@ class TradingEngine:
         if snap is None:
             return None
         return snap.portfolio_usd, snap.session_pnl, snap.baseline_portfolio_usd
+
+    def _live_portfolio_for_command(self) -> dict[str, float | dict[str, float]] | None:
+        """Live Kraken spot holdings + metrics for Discord portfolio command."""
+        if not self.settings.live_enabled:
+            return None
+        usd_prices = self._usd_prices()
+        if self.live_broker is not None:
+            holdings = dict(self.live_broker.state.balances)
+            portfolio = self.live_broker.portfolio_value(usd_prices)
+            baseline = float(self.live_broker.risk.baseline_portfolio or 0.0)
+            peak = float(self.live_broker.risk.peak_portfolio or 0.0)
+            session_pnl = portfolio - baseline if baseline > 0 else 0.0
+            drawdown = max(0.0, (peak - portfolio) / peak) if peak > 0 else 0.0
+            return {
+                "portfolio": portfolio,
+                "session_pnl": session_pnl,
+                "drawdown": drawdown,
+                "holdings": holdings,
+            }
+        snap = load_live_portfolio_snapshot(
+            live_state_file=self.settings.live_state_file,
+            live_session_start_file=self.settings.live_state_file.parent / "live_session_start.json",
+            paper_portfolio_file=self.settings.paper_portfolio_file,
+        )
+        if snap is None:
+            return None
+        state = self.settings.live_state_file
+        holdings: dict[str, float] = {}
+        if state.exists():
+            try:
+                raw = json.loads(state.read_text(encoding="utf-8"))
+                balances = raw.get("balances") or {}
+                if isinstance(balances, dict):
+                    holdings = {str(k): float(v) for k, v in balances.items()}
+            except (OSError, json.JSONDecodeError, TypeError, ValueError):
+                pass
+        return {
+            "portfolio": snap.portfolio_usd,
+            "session_pnl": snap.session_pnl,
+            "drawdown": snap.drawdown_pct,
+            "holdings": holdings,
+        }
+
+    def _format_portfolio_response(self, snapshot: TickSnapshot) -> str:
+        live = self._live_portfolio_for_command()
+        return format_portfolio_command(
+            portfolio=snapshot.portfolio,
+            baseline_pnl=snapshot.baseline_pnl,
+            drawdown=snapshot.drawdown,
+            holdings=snapshot.holdings,
+            usd_prices=snapshot.usd_prices,
+            trading_active=self.runtime.is_trading_active(),
+            risk_note=self._risk_note(),
+            live_enabled=self.settings.live_enabled,
+            mirror_mode=self._mirror_mode,
+            live_portfolio=float(live["portfolio"]) if live else None,
+            live_session_pnl=float(live["session_pnl"]) if live else None,
+            live_drawdown=float(live["drawdown"]) if live else None,
+            live_holdings=dict(live["holdings"]) if live else None,
+        )
 
     def _write_portfolio_file(
         self,
@@ -2292,23 +2352,7 @@ class TradingEngine:
 
                 "TradeBot + WatchDog error counters cleared.\n```\n"
 
-                + format_portfolio_summary(
-
-                    portfolio=snapshot.portfolio,
-
-                    baseline_pnl=snapshot.baseline_pnl,
-
-                    drawdown=snapshot.drawdown,
-
-                    holdings=snapshot.holdings,
-
-                    usd_prices=snapshot.usd_prices,
-
-                    trading_active=self.runtime.is_trading_active(),
-
-                    risk_note=self._risk_note(),
-
-                )
+                + self._format_portfolio_response(snapshot)
 
                 + "\n```"
 
@@ -2326,23 +2370,7 @@ class TradingEngine:
 
         if command == "portfolio":
 
-            return "```\n" + format_portfolio_summary(
-
-                portfolio=snapshot.portfolio,
-
-                baseline_pnl=snapshot.baseline_pnl,
-
-                drawdown=snapshot.drawdown,
-
-                holdings=snapshot.holdings,
-
-                usd_prices=snapshot.usd_prices,
-
-                trading_active=self.runtime.is_trading_active(),
-
-                risk_note=self._risk_note(),
-
-            ) + f"\n\nUpdated {snapshot.updated_at}\n```"
+            return "```\n" + self._format_portfolio_response(snapshot) + f"\n\nUpdated {snapshot.updated_at}\n```"
 
 
 
