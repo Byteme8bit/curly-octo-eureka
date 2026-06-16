@@ -122,6 +122,35 @@ def test_route_eth_floor_allows_trim_into_eth(live_constraints: PortfolioConstra
     assert result.allowed, result.reason
 
 
+def test_route_eth_floor_allows_sequential_multi_hop(live_constraints: PortfolioConstraints) -> None:
+    """Leg 2+ may use assets produced by earlier legs — only leg 1 needs upfront balance."""
+    route = TradeRoute(
+        legs=(
+            RouteLeg(
+                pair=PairInfo(symbol="UNI/ETH", base="UNI", quote="ETH"),
+                side=Signal.BUY,
+                from_asset="ETH",
+                to_asset="UNI",
+            ),
+            RouteLeg(
+                pair=PairInfo(symbol="UNI/ATOM", base="ATOM", quote="UNI"),
+                side=Signal.BUY,
+                from_asset="UNI",
+                to_asset="ATOM",
+            ),
+            RouteLeg(
+                pair=PairInfo(symbol="ATOM/ETH", base="ATOM", quote="ETH"),
+                side=Signal.SELL,
+                from_asset="ATOM",
+                to_asset="ETH",
+            ),
+        )
+    )
+    holdings = {"ETH": 0.79, "UNI": 0.0, "ATOM": 0.0}
+    result = live_constraints.check_route_eth_floor(route, holdings, size_pct=0.10)
+    assert result.allowed, result.reason
+
+
 def test_check_live_eth_floor_halts_broker() -> None:
     engine = TradingEngine.__new__(TradingEngine)
     engine._live_mode = True
