@@ -2566,3 +2566,19 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +4 / -0
 - **Patch:** `r001--2026-06-15_113325--mock-trade-context-helper.patch`
 
+## bot/trade_context.py — r001
+
+- **When:** 2026-06-15 17:21:03 PDT
+- **Reason:** fix NewsClient api_key kwarg
+- **Request:** 061
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-06-15_172103--fix-newsclient-apikey-kwarg.patch`
+
+## bot/engine.py — r039
+
+- **When:** 2026-06-15 17:21:03 PDT
+- **Reason:** resume clears live CB too
+- **Request:** 061
+- **Diff:** +5 / -0
+- **Patch:** `r039--2026-06-15_172103--resume-clears-live-cb-too.patch`
+

@@ -2205,6 +2205,11 @@ class TradingEngine:
 
             self.broker.save()
 
+            if self.live_circuit_breaker is not None:
+                self.live_circuit_breaker.clear_reevaluation()
+                if self.live_broker is not None:
+                    self.live_broker.save()
+
             return (
 
                 "Re-evaluation mode **cleared** — send `start` if trading was stopped. "

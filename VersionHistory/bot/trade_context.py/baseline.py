@@ -182,7 +182,7 @@ class TradeContextChecker:
         try:
             self._news_client = NewsClient(
                 providers=self._news_provider,
-                api_key=self._cryptopanic_api_key or "",
+                cryptopanic_api_key=self._cryptopanic_api_key or None,
                 rss_feeds=parse_rss_feed_env(self._rss_feeds),
             )
         except Exception:  # noqa: BLE001
