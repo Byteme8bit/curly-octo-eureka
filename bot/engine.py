@@ -1900,6 +1900,15 @@ class TradingEngine:
         )
 
         if trade and self._mirror_mode:
+            # Live verify reads edge/gross from paper_trade — attach before mirror.
+            trade["edge"] = intent.edge
+            trade["gross_return_pct"] = intent.gross_return_pct
+            trade["is_defensive"] = intent.is_defensive
+            trade["is_accumulation"] = self._is_accumulation_intent(intent)
+            trade["is_expansion"] = intent.is_expansion
+            trade["is_held_swap"] = intent.is_held_swap
+            if intent.strategy_name:
+                trade["strategy_name"] = intent.strategy_name
             live_trade = self._mirror_intent_to_live(
                 intent,
                 route,
@@ -1923,6 +1932,10 @@ class TradingEngine:
     ) -> str:
         """Return a skip reason when an offensive live mirror fails profit gates."""
         if intent.is_defensive or self._is_accumulation_intent(intent):
+            if self.settings.profit_only_mode and net_return_pct <= 0.0:
+                return (
+                    f"Profit-only mode: defensive net {net_return_pct:+.4f} <= 0 after fees"
+                )
             return ""
         floor = self.risk.effective_min_net_profit()
         if self.settings.profit_only_mode and net_return_pct <= 0.0:
