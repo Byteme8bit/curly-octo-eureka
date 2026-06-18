@@ -1,0 +1,87 @@
+--- a/bot/futures/manager.py
++++ b/bot/futures/manager.py
+@@ -17,10 +17,6 @@
+     from config import Settings
+ 
+ logger = logging.getLogger(__name__)
+-
+-_MOMENTUM_THRESHOLD = 0.003
+-_DEFAULT_MARGIN_PCT = 0.10
+-
+ 
+ class FuturesManager:
+     """Runs one futures evaluation per engine tick when ENABLE_FUTURES=1."""
+@@ -58,27 +54,38 @@
+                 settings.futures_live_state_file,
+                 max_leverage=settings.futures_max_leverage,
+                 max_position_usd=settings.futures_max_position_usd,
+-                drawdown_halt_pct=settings.live_drawdown_halt_pct,
++                drawdown_halt_pct=settings.futures_drawdown_halt_pct,
+                 reset=settings.reset_futures_state,
+             )
+             self.broker.sync_balance()
+-            logger.warning(
+-                "FUTURES LIVE ENABLED — real perp orders on %d symbols",
+-                len(self.symbols),
+-            )
++            if self.broker.state.balance_usd <= 0:
++                logger.error(
++                    "FUTURES LIVE armed but wallet balance is $0 — "
++                    "Kraken Futures uses separate API keys from spot. "
++                    "Create keys at futures.kraken.com or disable LIVE_FUTURES_ENABLED."
++                )
++            else:
++                logger.warning(
++                    "FUTURES LIVE ENABLED — real perp orders on %d symbols",
++                    len(self.symbols),
++                )
+         else:
+             self.broker = FuturesPaperBroker(
+                 settings.futures_paper_state_file,
+                 initial_balance_usd=settings.futures_paper_balance_usd,
+                 max_leverage=settings.futures_max_leverage,
+                 max_position_usd=settings.futures_max_position_usd,
+-                drawdown_halt_pct=settings.live_drawdown_halt_pct,
++                drawdown_halt_pct=settings.futures_drawdown_halt_pct,
+                 reset=settings.reset_futures_state,
+             )
+-            logger.info(
+-                "Futures paper sim on %d symbols (balance $%.0f)",
++            mode = "RISKY paper" if settings.risky_margin_ok else "paper"
++            logger.warning(
++                "Futures %s sim on %d symbols (balance $%.0f, lev %.0fx, halt %.0f%%)",
++                mode,
+                 len(self.symbols),
+                 settings.futures_paper_balance_usd,
++                settings.futures_max_leverage,
++                settings.futures_drawdown_halt_pct * 100,
+             )
+ 
+     @property
+@@ -116,21 +123,22 @@
+             move = (price - prev) / prev
+             market = self.exchange.market(symbol)
+             lev_cap = symbol_leverage_cap(market, self.settings.futures_max_leverage)
+-            margin = self.broker.state.balance_usd * _DEFAULT_MARGIN_PCT
++            threshold = self.settings.futures_momentum_threshold
++            margin = self.broker.state.balance_usd * self.settings.futures_margin_pct
+ 
+             if symbol in self.broker.state.positions:
+                 pos = self.broker.state.positions[symbol]
+-                if pos.side == "long" and move < -_MOMENTUM_THRESHOLD:
++                if pos.side == "long" and move < -threshold:
+                     t = self.broker.close_position(symbol, price, reason="momentum fade")
+                     if t:
+                         trades.append(t)
+                         break
+-                elif pos.side == "short" and move > _MOMENTUM_THRESHOLD:
++                elif pos.side == "short" and move > threshold:
+                     t = self.broker.close_position(symbol, price, reason="momentum fade")
+                     if t:
+                         trades.append(t)
+                         break
+-            elif abs(move) >= _MOMENTUM_THRESHOLD and margin >= 5.0:
++            elif abs(move) >= threshold and margin >= 5.0:
+                 side = "long" if move > 0 else "short"
+                 t = self.broker.open_position(
+                     symbol,

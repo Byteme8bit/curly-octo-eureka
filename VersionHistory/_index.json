@@ -289,6 +289,16 @@
       "removed": 3,
       "request_id": "070",
       "timestamp": "2026-06-16 07:19:46 PDT"
+    },
+    {
+      "added": 4,
+      "number": 30,
+      "patch": "r030--2026-06-17_215915--document-risky-futures-env.patch",
+      "path": ".env.example",
+      "reason": "document risky futures env",
+      "removed": 0,
+      "request_id": "078",
+      "timestamp": "2026-06-17 21:59:15 PDT"
     }
   ],
   ".gitignore": [
@@ -1333,6 +1343,18 @@
       "removed": 5,
       "request_id": "031",
       "timestamp": "2026-06-01 15:35:19 PDT"
+    }
+  ],
+  "bot/futures/manager.py": [
+    {
+      "added": 24,
+      "number": 1,
+      "patch": "r001--2026-06-17_215915--risky-futures-settings-wiring.patch",
+      "path": "bot/futures/manager.py",
+      "reason": "risky futures settings wiring",
+      "removed": 16,
+      "request_id": "078",
+      "timestamp": "2026-06-17 21:59:15 PDT"
     }
   ],
   "bot/goal_evolution.py": [
@@ -2381,6 +2403,16 @@
       "removed": 1,
       "request_id": "077",
       "timestamp": "2026-06-17 17:42:07 PDT"
+    },
+    {
+      "added": 25,
+      "number": 31,
+      "patch": "r031--2026-06-17_215914--risky-futures-config-knobs.patch",
+      "path": "config.py",
+      "reason": "risky futures config knobs",
+      "removed": 0,
+      "request_id": "078",
+      "timestamp": "2026-06-17 21:59:14 PDT"
     }
   ],
   "dashboard/app.py": [

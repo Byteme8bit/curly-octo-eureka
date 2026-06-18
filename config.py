@@ -264,9 +264,13 @@ class Settings:
     dca_state_file: Path
     enable_futures: bool
     live_futures_enabled: bool
+    risky_margin_ok: bool
     futures_watchlist: tuple[str, ...]
     futures_max_leverage: float
     futures_max_position_usd: float
+    futures_momentum_threshold: float
+    futures_margin_pct: float
+    futures_drawdown_halt_pct: float
     futures_paper_balance_usd: float
     futures_paper_state_file: Path
     futures_live_state_file: Path
@@ -818,11 +822,32 @@ def load_settings() -> Settings:
         dca_state_file=ROOT / os.getenv("DCA_STATE_FILE", ".dca_state.json"),
         enable_futures=os.getenv("ENABLE_FUTURES", "0") == "1",
         live_futures_enabled=os.getenv("LIVE_FUTURES_ENABLED", "0") == "1",
+        risky_margin_ok=os.getenv("RISKY_MARGIN_OK", "0") == "1",
         futures_watchlist=_parse_futures_watchlist(
             os.getenv("FUTURES_WATCHLIST", DEFAULT_FUTURES_WATCHLIST)
         ),
         futures_max_leverage=float(os.getenv("FUTURES_MAX_LEVERAGE", "5")),
         futures_max_position_usd=float(os.getenv("FUTURES_MAX_POSITION_USD", "100")),
+        futures_momentum_threshold=float(
+            os.getenv(
+                "FUTURES_MOMENTUM_THRESHOLD",
+                "0.0015" if os.getenv("RISKY_MARGIN_OK", "0") == "1" else "0.003",
+            )
+        ),
+        futures_margin_pct=float(
+            os.getenv(
+                "FUTURES_MARGIN_PCT",
+                "0.20" if os.getenv("RISKY_MARGIN_OK", "0") == "1" else "0.10",
+            )
+        ),
+        futures_drawdown_halt_pct=float(
+            os.getenv(
+                "FUTURES_DRAWDOWN_HALT_PCT",
+                os.getenv("LIVE_DRAWDOWN_HALT_PCT", "0.18")
+                if os.getenv("RISKY_MARGIN_OK", "0") == "1"
+                else os.getenv("LIVE_DRAWDOWN_HALT_PCT", "0.10"),
+            )
+        ),
         futures_paper_balance_usd=float(os.getenv("FUTURES_PAPER_BALANCE_USD", "1000")),
         futures_paper_state_file=ROOT / os.getenv(
             "FUTURES_PAPER_STATE_FILE", ".futures_paper_state.json"

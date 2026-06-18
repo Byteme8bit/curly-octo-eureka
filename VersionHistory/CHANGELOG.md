@@ -3066,3 +3066,27 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +0 / -0
 - **Patch:** `r001--2026-06-17_174208--probe-all-four-assets.patch`
 
+## config.py — r031
+
+- **When:** 2026-06-17 21:59:14 PDT
+- **Reason:** risky futures config knobs
+- **Request:** 078
+- **Diff:** +25 / -0
+- **Patch:** `r031--2026-06-17_215914--risky-futures-config-knobs.patch`
+
+## bot/futures/manager.py — r001
+
+- **When:** 2026-06-17 21:59:15 PDT
+- **Reason:** risky futures settings wiring
+- **Request:** 078
+- **Diff:** +24 / -16
+- **Patch:** `r001--2026-06-17_215915--risky-futures-settings-wiring.patch`
+
+## .env.example — r030
+
+- **When:** 2026-06-17 21:59:15 PDT
+- **Reason:** document risky futures env
+- **Request:** 078
+- **Diff:** +4 / -0
+- **Patch:** `r030--2026-06-17_215915--document-risky-futures-env.patch`
+
