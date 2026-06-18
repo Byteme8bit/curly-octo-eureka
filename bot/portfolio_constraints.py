@@ -57,6 +57,8 @@ class PortfolioConstraints:
         equity_dca_priority: bool = False,
         equity_accumulation_min_pct: float = 0.45,
         equity_severe_overweight_pct: float = 0.60,
+        max_equity_positions: int = 0,
+        dust_usd: float = 5.0,
     ):
         self.min_eth_reserve = min_eth_reserve
         self.max_alt_allocation_pct = max_alt_allocation_pct
@@ -73,6 +75,8 @@ class PortfolioConstraints:
         self.equity_dca_priority = equity_dca_priority
         self.equity_accumulation_min_pct = equity_accumulation_min_pct
         self.equity_severe_overweight_pct = equity_severe_overweight_pct
+        self.max_equity_positions = max_equity_positions
+        self.dust_usd = dust_usd
 
     def portfolio_value(self, holdings: dict[str, float], prices: dict[str, float]) -> float:
         total = holdings.get("USD", 0.0)
@@ -301,6 +305,26 @@ class PortfolioConstraints:
                 intent.to_asset, self.equity_assets
             ) else self.max_alt_allocation_pct
             cap_label = "Equity" if _is_equity(intent.to_asset, self.equity_assets) else "Alt"
+            if (
+                self.max_equity_positions > 0
+                and _is_equity(intent.to_asset, self.equity_assets)
+                and holdings.get(intent.to_asset, 0.0) * prices.get(intent.to_asset, 0.0)
+                < self.dust_usd
+            ):
+                held = sum(
+                    1
+                    for a in self.equity_assets
+                    if holdings.get(a, 0.0) * prices.get(a, 0.0) >= self.dust_usd
+                )
+                if held >= self.max_equity_positions:
+                    return ConstraintResult(
+                        False,
+                        size_pct,
+                        (
+                            f"Equity positions — already holding {held} xStocks "
+                            f"(max {self.max_equity_positions})"
+                        ),
+                    )
             projected = self.projected_allocation(
                 intent.to_asset,
                 holdings,

@@ -21,6 +21,7 @@ def _dca_settings(tmp_path: Path, **overrides) -> SimpleNamespace:
         dca_enabled=True,
         enable_equities=True,
         equity_watchlist=("AAPLx", "TSLAx", "SPYx"),
+        equity_preference_tickers=(),
         equity_assets=frozenset({"AAPLx", "TSLAx", "SPYx"}),
         equity_usd_symbols=("AAPLx/USD", "TSLAx/USD", "SPYx/USD"),
         dca_interval_hours=24.0,
@@ -44,6 +45,20 @@ def _dca_settings(tmp_path: Path, **overrides) -> SimpleNamespace:
 
 def _strategy(tmp_path: Path, **kwargs) -> EquityDcaStrategy:
     return EquityDcaStrategy(_dca_settings(tmp_path, **kwargs))
+
+
+def test_dca_preference_weighted_rotation(tmp_path: Path) -> None:
+    strat = _strategy(
+        tmp_path,
+        equity_preference_tickers=("NVDAx",),
+        equity_watchlist=("AAPLx", "NVDAx"),
+        dca_per_symbol_usd=0.0,
+    )
+    watchlist = ("AAPLx", "NVDAx")
+    weighted = strat._weighted_watchlist(watchlist)
+    assert weighted.count("NVDAx") == 2
+    assert weighted.count("AAPLx") == 1
+    assert strat._budget_usd(watchlist, "NVDAx") > strat._budget_usd(watchlist, "AAPLx")
 
 
 def test_dca_state_interval_gating(tmp_path: Path) -> None:

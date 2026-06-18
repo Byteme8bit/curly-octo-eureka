@@ -2975,6 +2975,70 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +7 / -1
 - **Patch:** `r004--2026-06-16_072358--mock-crypto-day-trade-settings.patch`
 
+## bot/equities.py — r002
+
+- **When:** 2026-06-16 07:55:39 PDT
+- **Reason:** all-mode watchlist expansion
+- **Request:** 071
+- **Diff:** +70 / -0
+- **Patch:** `r002--2026-06-16_075539--all-mode-watchlist-expansion.patch`
+
+## config.py — r030
+
+- **When:** 2026-06-16 07:55:40 PDT
+- **Reason:** xstock universe env knobs
+- **Request:** 071
+- **Diff:** +113 / -5
+- **Patch:** `r030--2026-06-16_075540--xstock-universe-env-knobs.patch`
+
+## bot/data.py — r005
+
+- **When:** 2026-06-16 07:55:40 PDT
+- **Reason:** equity ohlcv scan rotation
+- **Request:** 071
+- **Diff:** +35 / -2
+- **Patch:** `r005--2026-06-16_075540--equity-ohlcv-scan-rotation.patch`
+
+## bot/strategies/cross_momentum.py — r002
+
+- **When:** 2026-06-16 07:55:40 PDT
+- **Reason:** preference score boost
+- **Request:** 071
+- **Diff:** +7 / -0
+- **Patch:** `r002--2026-06-16_075540--preference-score-boost.patch`
+
+## bot/strategies/equity_dca.py — r003
+
+- **When:** 2026-06-16 07:55:41 PDT
+- **Reason:** preference-weighted dca
+- **Request:** 071
+- **Diff:** +28 / -9
+- **Patch:** `r003--2026-06-16_075541--preference-weighted-dca.patch`
+
+## bot/portfolio_constraints.py — r006
+
+- **When:** 2026-06-16 07:55:41 PDT
+- **Reason:** max equity positions cap
+- **Request:** 071
+- **Diff:** +24 / -0
+- **Patch:** `r006--2026-06-16_075541--max-equity-positions-cap.patch`
+
+## bot/engine.py — r047
+
+- **When:** 2026-06-16 07:55:42 PDT
+- **Reason:** pass max equity positions
+- **Request:** 071
+- **Diff:** +62 / -17
+- **Patch:** `r047--2026-06-16_075542--pass-max-equity-positions.patch`
+
+## .env.example — r030
+
+- **When:** 2026-06-16 07:55:42 PDT
+- **Reason:** document xstock all mode
+- **Request:** 071
+- **Diff:** +8 / -0
+- **Patch:** `r030--2026-06-16_075542--document-xstock-all-mode.patch`
+
 ## bot/live_portfolio.py — r001
 
 - **When:** 2026-06-16 08:58:13 PDT
@@ -2991,7 +3055,7 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +7 / -17
 - **Patch:** `r002--2026-06-16_085813--use-shared-live-usd-prices.patch`
 
-## bot/engine.py — r047
+## bot/engine.py — r048
 
 - **When:** 2026-06-16 08:58:13 PDT
 - **Reason:** live asset price fallback

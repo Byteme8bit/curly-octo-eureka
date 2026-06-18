@@ -1,0 +1,209 @@
+--- a/config.py
++++ b/config.py
+@@ -43,6 +43,10 @@
+ DEFAULT_MOMENTUM_TIMEFRAMES = "15m,1h"
+ DEFAULT_EQUITY_WATCHLIST = "AAPLx,TSLAx,SPYx"
+ DEFAULT_MAX_EQUITY_ALLOCATION_PCT = "0.15"
++DEFAULT_MAX_EQUITY_WATCHLIST = "0"
++DEFAULT_EQUITY_MOMENTUM_SCAN_MAX = "50"
++DEFAULT_EQUITY_PREFERENCE_SCORE_BOOST = "0.02"
++DEFAULT_MAX_EQUITY_POSITIONS = "15"
+ DEFAULT_TARGET_EQUITY_ALLOCATION_PCT = "0.50"
+ DEFAULT_MAX_EQUITY_BUCKET_PCT = "0.55"
+ DEFAULT_MAX_CRYPTO_BUCKET_PCT = "0.55"
+@@ -241,6 +245,12 @@
+     prop_enabled: bool
+     enable_equities: bool
+     equity_watchlist: tuple[str, ...]
++    equity_preference_tickers: tuple[str, ...]
++    max_equity_watchlist: int
++    equity_momentum_scan_max: int
++    equity_preference_score_boost: float
++    max_equity_positions: int
++    live_equity_auto_allow: bool
+     equity_assets: frozenset[str]
+     equity_usd_symbols: tuple[str, ...]
+     symbol_assets: dict[str, str]
+@@ -292,6 +302,12 @@
+     return parse_equity_watchlist(raw or DEFAULT_EQUITY_WATCHLIST)
+ 
+ 
++def _parse_equity_preference_tickers(raw: str) -> tuple[str, ...]:
++    from bot.equities import parse_equity_preference_tickers
++
++    return parse_equity_preference_tickers(raw)
++
++
+ def _build_trading_symbol_maps(
+     crypto_usd_symbols: tuple[str, ...],
+     equity_usd_symbols: tuple[str, ...],
+@@ -423,20 +439,44 @@
+ 
+ def load_settings() -> Settings:
+     enable_equities = os.getenv("ENABLE_EQUITIES", "0") == "1"
+-    requested_equity_watchlist = _parse_equity_watchlist(
+-        os.getenv("EQUITY_WATCHLIST", DEFAULT_EQUITY_WATCHLIST)
++    equity_watchlist_raw = os.getenv("EQUITY_WATCHLIST", DEFAULT_EQUITY_WATCHLIST)
++    equity_watchlist_mode = os.getenv("EQUITY_WATCHLIST_MODE", "").strip()
++    equity_preference_tickers = _parse_equity_preference_tickers(
++        os.getenv("EQUITY_PREFERENCE_TICKERS", "")
+     )
++    max_equity_watchlist = int(
++        os.getenv("MAX_EQUITY_WATCHLIST", DEFAULT_MAX_EQUITY_WATCHLIST)
++    )
++    requested_equity_watchlist = _parse_equity_watchlist(equity_watchlist_raw)
++    original_equity_watchlist = requested_equity_watchlist
+     equity_watchlist = requested_equity_watchlist
+     equity_usd_symbols: tuple[str, ...] = ()
+     skipped_equities: tuple[str, ...] = ()
+     if enable_equities:
+-        from bot.equities import fetch_tokenized_pairs, filter_equity_watchlist
++        from bot.equities import (
++            fetch_tokenized_pairs,
++            filter_equity_watchlist,
++            is_all_equity_watchlist,
++            resolve_equity_watchlist_request,
++        )
+ 
+         try:
+             catalog = fetch_tokenized_pairs()
++            requested_equity_watchlist = resolve_equity_watchlist_request(
++                equity_watchlist_raw,
++                mode=equity_watchlist_mode,
++                pairs=catalog,
++                max_count=max_equity_watchlist,
++                preferences=equity_preference_tickers,
++            )
+             equity_watchlist, skipped_equities, equity_usd_symbols = filter_equity_watchlist(
+                 requested_equity_watchlist, catalog
+             )
++            if is_all_equity_watchlist(equity_watchlist_raw) or equity_watchlist_mode.lower() == "all":
++                logger.info(
++                    "EQUITY_WATCHLIST all mode — %d online USD xStocks loaded",
++                    len(equity_watchlist),
++                )
+         except Exception as exc:
+             logger.warning(
+                 "Could not fetch Kraken xStock pairs (%s) — using resolve_watchlist_pairs fallback",
+@@ -468,8 +508,18 @@
+     # env var still overrides. Edges remain fee-protected by preflight, so
+     # "aggressive" means more/larger trades, not unprofitable ones.
+     day_trader = os.getenv("DAY_TRADER_MODE", "0") == "1"
++    crypto_day_trade = os.getenv("CRYPTO_DAY_TRADE_MODE", "0") == "1"
+     profit_only_mode = os.getenv("PROFIT_ONLY_MODE", "0") == "1"
+     yolo_profitable = os.getenv("YOLO_PROFITABLE", "0") == "1"
++    target_equity_pct = float(
++        os.getenv("TARGET_EQUITY_ALLOCATION_PCT", DEFAULT_TARGET_EQUITY_ALLOCATION_PCT)
++    )
++    target_crypto_raw = os.getenv("TARGET_CRYPTO_ALLOCATION_PCT", "").strip()
++    target_crypto_pct = (
++        float(target_crypto_raw)
++        if target_crypto_raw
++        else max(0.0, 1.0 - target_equity_pct)
++    )
+ 
+     def _dt(aggressive: str, normal: str) -> str:
+         return aggressive if day_trader else normal
+@@ -478,6 +528,14 @@
+         if yolo_profitable and profit_only_mode:
+             return aggressive
+         return normal
++
++    poll_interval_raw = os.getenv("POLL_INTERVAL")
++    if poll_interval_raw:
++        poll_interval = int(poll_interval_raw)
++    elif crypto_day_trade:
++        poll_interval = 10
++    else:
++        poll_interval = 15
+ 
+     fields: dict = dict(
+         watch_assets=watch_assets,
+@@ -490,7 +548,7 @@
+         initial_balances=_parse_initial_balances(
+             os.getenv("INITIAL_BALANCES", '{"ETH": 1.0, "ADA": 83.0, "USD": 0.0}')
+         ),
+-        poll_interval=int(os.getenv("POLL_INTERVAL", "15")),
++        poll_interval=poll_interval,
+         fee_rate=float(os.getenv("FEE_RATE", "0.0026")),
+         candle_timeframe=os.getenv("CANDLE_TIMEFRAME", "5m"),
+         candle_limit=int(os.getenv("CANDLE_LIMIT", "60")),
+@@ -758,12 +816,47 @@
+         prop_enabled=os.getenv("PROP_ENABLED", "0") == "1",
+         enable_equities=enable_equities,
+         equity_watchlist=equity_watchlist,
++        equity_preference_tickers=equity_preference_tickers,
++        max_equity_watchlist=max_equity_watchlist,
++        equity_momentum_scan_max=int(
++            os.getenv("EQUITY_MOMENTUM_SCAN_MAX", DEFAULT_EQUITY_MOMENTUM_SCAN_MAX)
++        ),
++        equity_preference_score_boost=float(
++            os.getenv(
++                "EQUITY_PREFERENCE_SCORE_BOOST",
++                DEFAULT_EQUITY_PREFERENCE_SCORE_BOOST,
++            )
++        ),
++        max_equity_positions=int(
++            os.getenv("MAX_EQUITY_POSITIONS", DEFAULT_MAX_EQUITY_POSITIONS)
++        ),
++        live_equity_auto_allow=os.getenv("LIVE_EQUITY_AUTO_ALLOW", "0") == "1",
+         equity_assets=equity_assets,
+         equity_usd_symbols=equity_usd_symbols,
+         symbol_assets=symbol_assets,
+         asset_usd_symbols=asset_usd_symbols,
+         max_equity_allocation_pct=float(
+             os.getenv("MAX_EQUITY_ALLOCATION_PCT", DEFAULT_MAX_EQUITY_ALLOCATION_PCT)
++        ),
++        target_equity_allocation_pct=target_equity_pct,
++        target_crypto_allocation_pct=target_crypto_pct,
++        max_equity_bucket_pct=float(
++            os.getenv("MAX_EQUITY_BUCKET_PCT", DEFAULT_MAX_EQUITY_BUCKET_PCT)
++        ),
++        max_crypto_bucket_pct=float(
++            os.getenv("MAX_CRYPTO_BUCKET_PCT", DEFAULT_MAX_CRYPTO_BUCKET_PCT)
++        ),
++        equity_accumulation_phase=os.getenv("EQUITY_ACCUMULATION_PHASE", "0") == "1",
++        equity_dca_priority=os.getenv("EQUITY_DCA_PRIORITY", "0") == "1",
++        equity_accumulation_min_pct=float(
++            os.getenv("EQUITY_ACCUMULATION_MIN_PCT", DEFAULT_EQUITY_ACCUMULATION_MIN_PCT)
++        ),
++        equity_severe_overweight_pct=float(
++            os.getenv("EQUITY_SEVERE_OVERWEIGHT_PCT", "0.60")
++        ),
++        crypto_day_trade_mode=crypto_day_trade,
++        crypto_min_trade_edge=float(
++            os.getenv("CRYPTO_MIN_TRADE_EDGE", DEFAULT_CRYPTO_MIN_TRADE_EDGE)
+         ),
+         dca_enabled=os.getenv("DCA_ENABLED", "0") == "1",
+         dca_interval_hours=float(
+@@ -790,7 +883,7 @@
+     )
+     if enable_equities:
+         valid_equity = frozenset(fields["equity_watchlist"])
+-        requested_equity = frozenset(requested_equity_watchlist)
++        requested_equity = frozenset(original_equity_watchlist)
+         filtered_live: list[str] = []
+         for asset in fields["live_allowed_assets"]:
+             if asset in requested_equity and asset not in valid_equity:
+@@ -801,6 +894,21 @@
+                 continue
+             filtered_live.append(asset)
+         fields["live_allowed_assets"] = tuple(filtered_live)
++        if fields["live_equity_auto_allow"]:
++            allowed = list(fields["live_allowed_assets"])
++            allowed_set = set(allowed)
++            added: list[str] = []
++            for ticker in fields["equity_watchlist"]:
++                if ticker not in allowed_set:
++                    allowed.append(ticker)
++                    allowed_set.add(ticker)
++                    added.append(ticker)
++            fields["live_allowed_assets"] = tuple(allowed)
++            if added:
++                logger.info(
++                    "LIVE_EQUITY_AUTO_ALLOW — added %d xStock tickers to live allowlist",
++                    len(added),
++                )
+     if fields["enable_equities"] and fields["live_enabled"]:
+         allowed = frozenset(fields["live_allowed_assets"])
+         for ticker in fields["equity_watchlist"]:

@@ -143,6 +143,48 @@ def test_filter_equity_watchlist_splits_valid_and_skipped() -> None:
     assert symbols == ("AAPLx/USD", "TSLAx/USD")
 
 
+def test_list_online_usd_equities_dedupes_and_sorts() -> None:
+    from bot.equities import list_online_usd_equities
+
+    catalog = {
+        "NVDAxUSD": _mock_pair("NVDAx"),
+        "AMDxUSD": _mock_pair("AMDx"),
+        "AAPLxUSD": _mock_pair("AAPLx"),
+        "OFFLINExUSD": {**_mock_pair("OFFLINEx"), "status": "cancel_only"},
+    }
+    assets = list_online_usd_equities(catalog)
+    assert assets == ("AAPLx", "AMDx", "NVDAx")
+
+
+def test_resolve_equity_watchlist_all_mode_preferences_first() -> None:
+    from bot.equities import resolve_equity_watchlist_request
+
+    catalog = {
+        "AAPLxUSD": _mock_pair("AAPLx"),
+        "TSLAxUSD": _mock_pair("TSLAx"),
+        "NVDAxUSD": _mock_pair("NVDAx"),
+        "AMDxUSD": _mock_pair("AMDx"),
+    }
+    resolved = resolve_equity_watchlist_request(
+        "*",
+        mode="all",
+        pairs=catalog,
+        max_count=3,
+        preferences=("NVDAx", "AMDx"),
+    )
+    assert resolved == ("NVDAx", "AMDx", "AAPLx")
+
+
+def test_cap_equity_watchlist_keeps_preferences() -> None:
+    from bot.equities import cap_equity_watchlist
+
+    watchlist = ("AAPLx", "TSLAx", "SPYx", "NVDAx")
+    capped = cap_equity_watchlist(
+        watchlist, max_count=2, preferences=("NVDAx", "SPYx")
+    )
+    assert capped == ("NVDAx", "SPYx")
+
+
 def test_settings_include_equity_symbols_when_enabled(monkeypatch) -> None:
     from config import load_settings
 

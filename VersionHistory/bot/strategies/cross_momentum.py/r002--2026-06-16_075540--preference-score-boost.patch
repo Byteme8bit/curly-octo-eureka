@@ -1,0 +1,16 @@
+--- a/bot/strategies/cross_momentum.py
++++ b/bot/strategies/cross_momentum.py
+@@ -112,6 +112,13 @@
+             for symbol in self.usd_symbols
+             if symbol in self.symbol_assets
+         }
++        if self.settings.equity_preference_tickers and self.settings.equity_preference_score_boost:
++            pref = frozenset(self.settings.equity_preference_tickers)
++            boost = self.settings.equity_preference_score_boost
++            for symbol in self.usd_symbols:
++                asset = self.symbol_assets.get(symbol)
++                if asset and asset in pref and asset in self.settings.equity_assets:
++                    enhanced_scores[symbol] = enhanced_scores.get(symbol, 0.0) + boost
+         if any(v != 0 for v in enhanced_scores.values()):
+             base.scores = enhanced_scores
+ 

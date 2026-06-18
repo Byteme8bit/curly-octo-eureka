@@ -43,6 +43,10 @@ DEFAULT_STAT_ARB_PAIRS = "ETH/BTC,SOL/ETH,LINK/ETH,AVAX/ETH"
 DEFAULT_MOMENTUM_TIMEFRAMES = "15m,1h"
 DEFAULT_EQUITY_WATCHLIST = "AAPLx,TSLAx,SPYx"
 DEFAULT_MAX_EQUITY_ALLOCATION_PCT = "0.15"
+DEFAULT_MAX_EQUITY_WATCHLIST = "0"
+DEFAULT_EQUITY_MOMENTUM_SCAN_MAX = "50"
+DEFAULT_EQUITY_PREFERENCE_SCORE_BOOST = "0.02"
+DEFAULT_MAX_EQUITY_POSITIONS = "15"
 DEFAULT_TARGET_EQUITY_ALLOCATION_PCT = "0.50"
 DEFAULT_MAX_EQUITY_BUCKET_PCT = "0.55"
 DEFAULT_MAX_CRYPTO_BUCKET_PCT = "0.55"
@@ -241,6 +245,12 @@ class Settings:
     prop_enabled: bool
     enable_equities: bool
     equity_watchlist: tuple[str, ...]
+    equity_preference_tickers: tuple[str, ...]
+    max_equity_watchlist: int
+    equity_momentum_scan_max: int
+    equity_preference_score_boost: float
+    max_equity_positions: int
+    live_equity_auto_allow: bool
     equity_assets: frozenset[str]
     equity_usd_symbols: tuple[str, ...]
     symbol_assets: dict[str, str]
@@ -290,6 +300,12 @@ def _parse_equity_watchlist(raw: str) -> tuple[str, ...]:
     from bot.equities import parse_equity_watchlist
 
     return parse_equity_watchlist(raw or DEFAULT_EQUITY_WATCHLIST)
+
+
+def _parse_equity_preference_tickers(raw: str) -> tuple[str, ...]:
+    from bot.equities import parse_equity_preference_tickers
+
+    return parse_equity_preference_tickers(raw)
 
 
 def _build_trading_symbol_maps(
@@ -423,20 +439,44 @@ def _env_int(name: str, default: str, *, quiet: bool = False, quiet_default: str
 
 def load_settings() -> Settings:
     enable_equities = os.getenv("ENABLE_EQUITIES", "0") == "1"
-    requested_equity_watchlist = _parse_equity_watchlist(
-        os.getenv("EQUITY_WATCHLIST", DEFAULT_EQUITY_WATCHLIST)
+    equity_watchlist_raw = os.getenv("EQUITY_WATCHLIST", DEFAULT_EQUITY_WATCHLIST)
+    equity_watchlist_mode = os.getenv("EQUITY_WATCHLIST_MODE", "").strip()
+    equity_preference_tickers = _parse_equity_preference_tickers(
+        os.getenv("EQUITY_PREFERENCE_TICKERS", "")
     )
+    max_equity_watchlist = int(
+        os.getenv("MAX_EQUITY_WATCHLIST", DEFAULT_MAX_EQUITY_WATCHLIST)
+    )
+    requested_equity_watchlist = _parse_equity_watchlist(equity_watchlist_raw)
+    original_equity_watchlist = requested_equity_watchlist
     equity_watchlist = requested_equity_watchlist
     equity_usd_symbols: tuple[str, ...] = ()
     skipped_equities: tuple[str, ...] = ()
     if enable_equities:
-        from bot.equities import fetch_tokenized_pairs, filter_equity_watchlist
+        from bot.equities import (
+            fetch_tokenized_pairs,
+            filter_equity_watchlist,
+            is_all_equity_watchlist,
+            resolve_equity_watchlist_request,
+        )
 
         try:
             catalog = fetch_tokenized_pairs()
+            requested_equity_watchlist = resolve_equity_watchlist_request(
+                equity_watchlist_raw,
+                mode=equity_watchlist_mode,
+                pairs=catalog,
+                max_count=max_equity_watchlist,
+                preferences=equity_preference_tickers,
+            )
             equity_watchlist, skipped_equities, equity_usd_symbols = filter_equity_watchlist(
                 requested_equity_watchlist, catalog
             )
+            if is_all_equity_watchlist(equity_watchlist_raw) or equity_watchlist_mode.lower() == "all":
+                logger.info(
+                    "EQUITY_WATCHLIST all mode — %d online USD xStocks loaded",
+                    len(equity_watchlist),
+                )
         except Exception as exc:
             logger.warning(
                 "Could not fetch Kraken xStock pairs (%s) — using resolve_watchlist_pairs fallback",
@@ -776,6 +816,21 @@ def load_settings() -> Settings:
         prop_enabled=os.getenv("PROP_ENABLED", "0") == "1",
         enable_equities=enable_equities,
         equity_watchlist=equity_watchlist,
+        equity_preference_tickers=equity_preference_tickers,
+        max_equity_watchlist=max_equity_watchlist,
+        equity_momentum_scan_max=int(
+            os.getenv("EQUITY_MOMENTUM_SCAN_MAX", DEFAULT_EQUITY_MOMENTUM_SCAN_MAX)
+        ),
+        equity_preference_score_boost=float(
+            os.getenv(
+                "EQUITY_PREFERENCE_SCORE_BOOST",
+                DEFAULT_EQUITY_PREFERENCE_SCORE_BOOST,
+            )
+        ),
+        max_equity_positions=int(
+            os.getenv("MAX_EQUITY_POSITIONS", DEFAULT_MAX_EQUITY_POSITIONS)
+        ),
+        live_equity_auto_allow=os.getenv("LIVE_EQUITY_AUTO_ALLOW", "0") == "1",
         equity_assets=equity_assets,
         equity_usd_symbols=equity_usd_symbols,
         symbol_assets=symbol_assets,
@@ -828,7 +883,7 @@ def load_settings() -> Settings:
     )
     if enable_equities:
         valid_equity = frozenset(fields["equity_watchlist"])
-        requested_equity = frozenset(requested_equity_watchlist)
+        requested_equity = frozenset(original_equity_watchlist)
         filtered_live: list[str] = []
         for asset in fields["live_allowed_assets"]:
             if asset in requested_equity and asset not in valid_equity:
@@ -839,6 +894,21 @@ def load_settings() -> Settings:
                 continue
             filtered_live.append(asset)
         fields["live_allowed_assets"] = tuple(filtered_live)
+        if fields["live_equity_auto_allow"]:
+            allowed = list(fields["live_allowed_assets"])
+            allowed_set = set(allowed)
+            added: list[str] = []
+            for ticker in fields["equity_watchlist"]:
+                if ticker not in allowed_set:
+                    allowed.append(ticker)
+                    allowed_set.add(ticker)
+                    added.append(ticker)
+            fields["live_allowed_assets"] = tuple(allowed)
+            if added:
+                logger.info(
+                    "LIVE_EQUITY_AUTO_ALLOW — added %d xStock tickers to live allowlist",
+                    len(added),
+                )
     if fields["enable_equities"] and fields["live_enabled"]:
         allowed = frozenset(fields["live_allowed_assets"])
         for ticker in fields["equity_watchlist"]:

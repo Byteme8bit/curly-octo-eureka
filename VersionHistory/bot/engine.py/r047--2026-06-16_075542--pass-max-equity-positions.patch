@@ -1,0 +1,168 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -274,25 +274,29 @@
+                 diagnostic_dir=settings.diagnostic_dir,
+             )
+ 
+-        self.constraints = PortfolioConstraints(
+-
++        constraint_kwargs = dict(
+             min_eth_reserve=(
+                 settings.live_min_eth_reserve
+                 if _live_execution
+                 else settings.min_eth_reserve
+             ),
+-
+             max_alt_allocation_pct=settings.max_alt_allocation_pct,
+-
+             min_usd_trade=settings.min_usd_trade,
+-
+             strict_eth_floor=_live_execution,
+-
+             equity_assets=settings.equity_assets,
+-
+             max_equity_allocation_pct=settings.max_equity_allocation_pct,
+-
+-        )
++            target_equity_allocation_pct=settings.target_equity_allocation_pct,
++            target_crypto_allocation_pct=settings.target_crypto_allocation_pct,
++            max_equity_bucket_pct=settings.max_equity_bucket_pct,
++            max_crypto_bucket_pct=settings.max_crypto_bucket_pct,
++            equity_accumulation_phase=settings.equity_accumulation_phase,
++            equity_dca_priority=settings.equity_dca_priority,
++            equity_accumulation_min_pct=settings.equity_accumulation_min_pct,
++            equity_severe_overweight_pct=settings.equity_severe_overweight_pct,
++            max_equity_positions=settings.max_equity_positions,
++            dust_usd=settings.dust_usd,
++        )
++        self.constraints = PortfolioConstraints(**constraint_kwargs)
+ 
+         self._live_constraints = (
+             PortfolioConstraints(
+@@ -302,6 +306,16 @@
+                 strict_eth_floor=True,
+                 equity_assets=settings.equity_assets,
+                 max_equity_allocation_pct=settings.max_equity_allocation_pct,
++                target_equity_allocation_pct=settings.target_equity_allocation_pct,
++                target_crypto_allocation_pct=settings.target_crypto_allocation_pct,
++                max_equity_bucket_pct=settings.max_equity_bucket_pct,
++                max_crypto_bucket_pct=settings.max_crypto_bucket_pct,
++                equity_accumulation_phase=settings.equity_accumulation_phase,
++                equity_dca_priority=settings.equity_dca_priority,
++                equity_accumulation_min_pct=settings.equity_accumulation_min_pct,
++                equity_severe_overweight_pct=settings.equity_severe_overweight_pct,
++                max_equity_positions=settings.max_equity_positions,
++                dust_usd=settings.dust_usd,
+             )
+             if self._mirror_mode
+             else None
+@@ -874,6 +888,34 @@
+             or getattr(intent, "strategy_name", "") == "equity_dca"
+         )
+ 
++    def _required_edge_for_intent(self, intent, route) -> float:
++        edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
++        if not self.settings.crypto_day_trade_mode:
++            return edge
++        if intent.is_defensive or self._is_accumulation_intent(intent):
++            return edge
++        from bot.equities import is_equity_asset
++
++        eq = self.settings.equity_assets
++        if is_equity_asset(intent.from_asset, eq) or is_equity_asset(intent.to_asset, eq):
++            return edge
++        return min(edge, self.settings.crypto_min_trade_edge)
++
++    def _prioritize_intents(
++        self,
++        intents: list,
++        holdings: dict[str, float],
++        prices: dict[str, float],
++    ) -> list:
++        if not self.settings.equity_dca_priority:
++            return intents
++        if not self.constraints.in_equity_accumulation(holdings, prices):
++            return intents
++        defensive = [i for i in intents if i.is_defensive]
++        dca = [i for i in intents if not i.is_defensive and self._is_accumulation_intent(i)]
++        rest = [i for i in intents if not i.is_defensive and not self._is_accumulation_intent(i)]
++        return defensive + dca + rest
++
+     def _trade_context_block(self, intent) -> str | None:
+         gate = self.trade_context.check_intent(intent)
+         if gate.allowed:
+@@ -936,7 +978,7 @@
+             if not live_ok:
+                 return None, live_reason
+         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
+-        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
++        required_edge = self._required_edge_for_intent(intent, route)
+         constraint = self.constraints.validate_intent(
+             intent,
+             holdings,
+@@ -1072,7 +1114,7 @@
+             )
+             if not live_ok:
+                 return 0.0, False, live_reason, hops
+-        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
++        required_edge = self._required_edge_for_intent(intent, route)
+         constraint = self.constraints.validate_intent(
+             intent,
+             holdings,
+@@ -1173,6 +1215,7 @@
+         )
+         if trim_intents:
+             intents = trim_intents + intents
++        intents = self._prioritize_intents(intents, holdings, usd_prices)
+         intents, _, gov_notes = self.governor.apply(
+             intents,
+             adaptive=self.risk.adaptive_status().active,
+@@ -1516,6 +1559,9 @@
+ 
+     def _format_portfolio_response(self, snapshot: TickSnapshot) -> str:
+         live = self._live_portfolio_for_command()
++        allocation_line = self.constraints.format_allocation_line(
++            snapshot.holdings, snapshot.usd_prices
++        )
+         body = format_portfolio_command(
+             portfolio=snapshot.portfolio,
+             baseline_pnl=snapshot.baseline_pnl,
+@@ -1531,6 +1577,7 @@
+             live_drawdown=float(live["drawdown"]) if live else None,
+             live_holdings=dict(live["holdings"]) if live else None,
+             paper_anchor_to_live=self.settings.paper_anchor_to_live,
++            allocation_line=allocation_line,
+         )
+         return f"{body}\n\n{self._tick_activity_line()}"
+ 
+@@ -1995,7 +2042,7 @@
+             )
+             return None
+         live_constraints = self._live_constraints or self.constraints
+-        required_edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
++        required_edge = self._required_edge_for_intent(intent, route)
+         constraint = live_constraints.validate_intent(
+             intent,
+             holdings,
+@@ -3035,6 +3082,8 @@
+ 
+             intents = trim_intents + intents
+ 
++        intents = self._prioritize_intents(intents, holdings, usd_prices)
++
+         intents, self._governor_status, gov_notes = self.governor.apply(
+ 
+             intents,
+@@ -3133,11 +3182,7 @@
+ 
+                 trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
+ 
+-                required_edge = self.risk.path_edge(
+-
+-                    route.hops, is_held_swap=intent.is_held_swap
+-
+-                )
++                required_edge = self._required_edge_for_intent(intent, route)
+ 
+                 constraint = self.constraints.validate_intent(
+ 
