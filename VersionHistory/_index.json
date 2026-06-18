@@ -1257,6 +1257,36 @@
       "removed": 4,
       "request_id": "072",
       "timestamp": "2026-06-16 08:58:13 PDT"
+    },
+    {
+      "added": 114,
+      "number": 49,
+      "patch": "r049--2026-06-16_230547--attach-edge-before-live-mirror.patch",
+      "path": "bot/engine.py",
+      "reason": "attach edge before live mirror",
+      "removed": 64,
+      "request_id": "075",
+      "timestamp": "2026-06-16 23:05:47 PDT"
+    },
+    {
+      "added": 4,
+      "number": 50,
+      "patch": "r050--2026-06-16_231250--block-negative-defensive-live-mirror.patch",
+      "path": "bot/engine.py",
+      "reason": "block negative defensive live mirror",
+      "removed": 0,
+      "request_id": "075",
+      "timestamp": "2026-06-16 23:12:50 PDT"
+    },
+    {
+      "added": 77,
+      "number": 51,
+      "patch": "r051--2026-06-17_174207--paper-mirror-live-gate.patch",
+      "path": "bot/engine.py",
+      "reason": "paper mirror-live gate",
+      "removed": 1,
+      "request_id": "077",
+      "timestamp": "2026-06-17 17:42:07 PDT"
     }
   ],
   "bot/equities.py": [
@@ -2341,6 +2371,16 @@
       "removed": 6,
       "request_id": "069",
       "timestamp": "2026-06-16 07:13:51 PDT"
+    },
+    {
+      "added": 45,
+      "number": 30,
+      "patch": "r030--2026-06-17_174207--paper-mirror-live-only-setting.patch",
+      "path": "config.py",
+      "reason": "paper-mirror-live-only setting",
+      "removed": 1,
+      "request_id": "077",
+      "timestamp": "2026-06-17 17:42:07 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -3165,6 +3205,18 @@
       "timestamp": "2026-06-02 21:13:09 PDT"
     }
   ],
+  "scripts/probe_eth_ada_routes.py": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-06-17_174208--probe-all-four-assets.patch",
+      "path": "scripts/probe_eth_ada_routes.py",
+      "reason": "probe all four assets",
+      "removed": 0,
+      "request_id": "077",
+      "timestamp": "2026-06-17 17:42:08 PDT"
+    }
+  ],
   "scripts/version_history.py": [
     {
       "added": 0,
@@ -3705,6 +3757,16 @@
       "removed": 0,
       "request_id": "066",
       "timestamp": "2026-06-15 19:30:19 PDT"
+    },
+    {
+      "added": 94,
+      "number": 3,
+      "patch": "r003--2026-06-17_174207--mirror-live-gate-tests.patch",
+      "path": "tests/test_profit_only_mode.py",
+      "reason": "mirror-live gate tests",
+      "removed": 0,
+      "request_id": "077",
+      "timestamp": "2026-06-17 17:42:07 PDT"
     }
   ],
   "tests/test_quiet_discord.py": [

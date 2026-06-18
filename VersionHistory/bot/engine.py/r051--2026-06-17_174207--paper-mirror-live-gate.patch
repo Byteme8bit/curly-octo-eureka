@@ -1,0 +1,108 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -1018,6 +1018,15 @@
+                 f"Profit-only mode: expected net {pf.net_return_pct:+.4f} <= 0 after fees"
+             )
+         intent.edge = pf.net_return_pct
++        mirror_block = self._paper_mirror_live_would_block(
++            intent,
++            route,
++            pf.net_return_pct,
++            holdings=holdings,
++            usd_prices=usd_prices,
++        )
++        if mirror_block:
++            return None, mirror_block
+         approval = self.risk.approve_action(
+             "buy" if intent.to_asset != "USD" else "sell",
+             intent.edge,
+@@ -1153,6 +1162,15 @@
+                 hops,
+             )
+         intent.edge = pf.net_return_pct
++        mirror_block = self._paper_mirror_live_would_block(
++            intent,
++            route,
++            pf.net_return_pct,
++            holdings=holdings,
++            usd_prices=usd_prices,
++        )
++        if mirror_block:
++            return intent.edge, False, mirror_block, hops
+         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
+         approval = self.risk.approve_action(
+             "buy" if intent.to_asset != "USD" else "sell",
+@@ -1965,6 +1983,54 @@
+                 )
+         return ""
+ 
++    def _paper_mirror_live_would_block(
++        self,
++        intent,
++        route,
++        net_return_pct: float,
++        *,
++        holdings: dict[str, float] | None = None,
++        usd_prices: dict[str, float] | None = None,
++    ) -> str:
++        """Return a block reason when paper would not mirror to live."""
++        if not self._mirror_mode or not self.settings.paper_mirror_live_only:
++            return ""
++        if intent.is_defensive and intent.from_asset == "ETH" and intent.to_asset == "USD":
++            return "Paper mirror-live: defensive ETH→USD trims blocked on live"
++        live_ok, live_reason = check_live_route(
++            route,
++            self.settings.live_allowed_assets,
++            allow_triangular=self.settings.live_allow_triangular,
++            max_route_legs=self.settings.live_max_route_legs,
++        )
++        if not live_ok:
++            return f"Paper mirror-live: {live_reason}"
++        mirror_block = self._live_mirror_offensive_block(intent, route, net_return_pct)
++        if mirror_block:
++            return f"Paper mirror-live: {mirror_block}"
++        if (
++            holdings is not None
++            and usd_prices is not None
++            and self.live_broker is not None
++        ):
++            live_holdings = self._live_holdings()
++            live_constraints = self._live_constraints or self.constraints
++            required_edge = self._required_edge_for_intent(intent, route)
++            constraint = live_constraints.validate_intent(
++                intent,
++                live_holdings,
++                usd_prices,
++                required_edge=required_edge,
++            )
++            if not constraint.allowed:
++                return f"Paper mirror-live: {constraint.reason}"
++            route_check = live_constraints.check_route_eth_floor(
++                route, live_holdings, constraint.size_pct
++            )
++            if not route_check.allowed:
++                return f"Paper mirror-live: {route_check.reason}"
++        return ""
++
+     def _log_live_mirror_skip(
+         self,
+         paper_trade: dict,
+@@ -3280,7 +3346,17 @@
+                 edge_qualified = True
+                 intent.edge = pf.net_return_pct
+ 
+-
++                mirror_block = self._paper_mirror_live_would_block(
++                    intent,
++                    route,
++                    pf.net_return_pct,
++                    holdings=holdings,
++                    usd_prices=usd_prices,
++                )
++                if mirror_block:
++                    blocked.append(mirror_block)
++                    activity_blocked.append(mirror_block)
++                    continue
+ 
+                 approval = self.risk.approve_action(
+ 

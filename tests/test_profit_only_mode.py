@@ -75,6 +75,7 @@ def test_try_execute_intent_blocks_non_positive_net_when_profit_only() -> None:
     engine._execute_intent = MagicMock()
     engine._trade_context_block = MagicMock(return_value=None)
     engine._is_accumulation_intent = MagicMock(return_value=False)
+    engine._paper_mirror_live_would_block = MagicMock(return_value="")
 
     intent = TradeIntent(
         from_asset="ETH",
@@ -132,6 +133,7 @@ def test_try_execute_intent_allows_defensive_when_profit_only() -> None:
     engine.auditor = MagicMock()
     engine._trade_context_block = MagicMock(return_value=None)
     engine._is_accumulation_intent = MagicMock(return_value=False)
+    engine._paper_mirror_live_would_block = MagicMock(return_value="")
 
     intent = TradeIntent(
         from_asset="ETH",
@@ -228,3 +230,95 @@ def test_mirror_blocks_four_leg_offensive_under_live_strict() -> None:
     )
     reason = TradingEngine._live_mirror_offensive_block(engine, intent, route, 0.05)
     assert "4-leg offensive routes blocked" in reason
+
+
+def test_paper_mirror_live_blocks_non_live_route() -> None:
+    from bot.engine import TradingEngine
+    from bot.markets import PairInfo, RouteLeg, TradeRoute
+    from bot.strategies.base import Signal, TradeIntent
+
+    engine = TradingEngine.__new__(TradingEngine)
+    engine._mirror_mode = True
+    engine.settings = MagicMock(
+        paper_mirror_live_only=True,
+        live_allowed_assets=("ETH", "ADA", "BTC", "USD"),
+        live_allow_triangular=False,
+        live_max_route_legs=1,
+        profit_only_mode=True,
+        live_strict_profit=True,
+        slippage_buffer_pct=0.0005,
+    )
+    engine._is_accumulation_intent = MagicMock(return_value=False)
+    engine.live_broker = None
+    engine.risk = MagicMock()
+    engine.risk.effective_min_net_profit.return_value = 0.0005
+
+    intent = TradeIntent(
+        from_asset="ETH",
+        to_asset="ADA",
+        reason="cross",
+        size_pct=0.05,
+        edge=0.01,
+        gross_return_pct=0.01,
+    )
+    route = TradeRoute(
+        legs=(
+            RouteLeg(
+                pair=PairInfo(symbol="ETH/ADA", base="ETH", quote="ADA"),
+                side=Signal.SELL,
+                from_asset="ETH",
+                to_asset="ADA",
+            ),
+        )
+    )
+    reason = TradingEngine._paper_mirror_live_would_block(
+        engine, intent, route, 0.01
+    )
+    assert "Paper mirror-live" in reason
+    assert "*/USD" in reason or "ETH/ADA" in reason
+
+
+def test_paper_mirror_live_blocks_defensive_eth_usd_trim() -> None:
+    from bot.engine import TradingEngine
+    from bot.markets import PairInfo, RouteLeg, TradeRoute
+    from bot.strategies.base import Signal, TradeIntent
+
+    engine = TradingEngine.__new__(TradingEngine)
+    engine._mirror_mode = True
+    engine.settings = MagicMock(
+        paper_mirror_live_only=True,
+        live_allowed_assets=("ETH", "ADA", "BTC", "USD"),
+        live_allow_triangular=True,
+        live_max_route_legs=1,
+        profit_only_mode=True,
+        live_strict_profit=True,
+        slippage_buffer_pct=0.0005,
+    )
+    engine._is_accumulation_intent = MagicMock(return_value=False)
+    engine.live_broker = None
+    engine.risk = MagicMock()
+    engine.risk.effective_min_net_profit.return_value = 0.0005
+
+    intent = TradeIntent(
+        from_asset="ETH",
+        to_asset="USD",
+        reason="trim",
+        size_pct=0.05,
+        edge=0.01,
+        gross_return_pct=0.01,
+        is_defensive=True,
+    )
+    route = TradeRoute(
+        legs=(
+            RouteLeg(
+                pair=PairInfo(symbol="ETH/USD", base="ETH", quote="USD"),
+                side=Signal.SELL,
+                from_asset="ETH",
+                to_asset="USD",
+            ),
+        )
+    )
+    reason = TradingEngine._paper_mirror_live_would_block(
+        engine, intent, route, 0.01
+    )
+    assert "defensive ETH→USD" in reason

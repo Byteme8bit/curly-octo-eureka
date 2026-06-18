@@ -3015,3 +3015,54 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +50 / -0
 - **Patch:** `r004--2026-06-16_085814--eth-divergence-regression-test.patch`
 
+## bot/engine.py — r049
+
+- **When:** 2026-06-16 23:05:47 PDT
+- **Reason:** attach edge before live mirror
+- **Request:** 075
+- **Diff:** +114 / -64
+- **Patch:** `r049--2026-06-16_230547--attach-edge-before-live-mirror.patch`
+
+## bot/engine.py — r050
+
+- **When:** 2026-06-16 23:12:50 PDT
+- **Reason:** block negative defensive live mirror
+- **Request:** 075
+- **Diff:** +4 / -0
+- **Patch:** `r050--2026-06-16_231250--block-negative-defensive-live-mirror.patch`
+
+
+> _2026-06-17 05:10:28 PDT_ — no-op snapshot requested for `bot/engine.py` (reason: 'attach-edge-before-live-mirror') - no change since r050
+
+## config.py — r030
+
+- **When:** 2026-06-17 17:42:07 PDT
+- **Reason:** paper-mirror-live-only setting
+- **Request:** 077
+- **Diff:** +45 / -1
+- **Patch:** `r030--2026-06-17_174207--paper-mirror-live-only-setting.patch`
+
+## bot/engine.py — r051
+
+- **When:** 2026-06-17 17:42:07 PDT
+- **Reason:** paper mirror-live gate
+- **Request:** 077
+- **Diff:** +77 / -1
+- **Patch:** `r051--2026-06-17_174207--paper-mirror-live-gate.patch`
+
+## tests/test_profit_only_mode.py — r003
+
+- **When:** 2026-06-17 17:42:07 PDT
+- **Reason:** mirror-live gate tests
+- **Request:** 077
+- **Diff:** +94 / -0
+- **Patch:** `r003--2026-06-17_174207--mirror-live-gate-tests.patch`
+
+## scripts/probe_eth_ada_routes.py — r001
+
+- **When:** 2026-06-17 17:42:08 PDT
+- **Reason:** probe all four assets
+- **Request:** 077
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-06-17_174208--probe-all-four-assets.patch`
+

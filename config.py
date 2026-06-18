@@ -233,6 +233,7 @@ class Settings:
     reset_live_state: bool
     live_mirror_paper: bool
     paper_anchor_to_live: bool
+    paper_mirror_live_only: bool
     live_mirror_min_confidence: str
     live_mirror_uncertain: bool
     live_mirror_skip_log_file: Path
@@ -761,6 +762,11 @@ def load_settings() -> Settings:
         live_mirror_paper=os.getenv("LIVE_MIRROR_PAPER", "0") == "1",
         paper_anchor_to_live=os.getenv(
             "PAPER_ANCHOR_TO_LIVE",
+            "1" if os.getenv("LIVE_MIRROR_PAPER", "0") == "1" else "0",
+        )
+        == "1",
+        paper_mirror_live_only=os.getenv(
+            "PAPER_MIRROR_LIVE_ONLY",
             "1" if os.getenv("LIVE_MIRROR_PAPER", "0") == "1" else "0",
         )
         == "1",
