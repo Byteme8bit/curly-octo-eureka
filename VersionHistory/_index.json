@@ -2929,6 +2929,16 @@
       "removed": 0,
       "request_id": "043",
       "timestamp": "2026-06-10 09:07:34 PDT"
+    },
+    {
+      "added": 6,
+      "number": 2,
+      "patch": "r002--2026-06-22_090619--index-live-ops-docs.patch",
+      "path": "docs/README.md",
+      "reason": "index live ops docs",
+      "removed": 0,
+      "request_id": "074",
+      "timestamp": "2026-06-22 09:06:19 PDT"
     }
   ],
   "docs/architecture/modules.md": [
@@ -2941,6 +2951,28 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:48 PDT"
+    },
+    {
+      "added": 53,
+      "number": 2,
+      "patch": "r002--2026-06-22_090622--live-verifier-dashboard-modules.patch",
+      "path": "docs/architecture/modules.md",
+      "reason": "live verifier dashboard modules",
+      "removed": 8,
+      "request_id": "074",
+      "timestamp": "2026-06-22 09:06:22 PDT"
+    }
+  ],
+  "docs/architecture/overview.md": [
+    {
+      "added": 26,
+      "number": 1,
+      "patch": "r001--2026-06-22_090622--live-modes-persistence.patch",
+      "path": "docs/architecture/overview.md",
+      "reason": "live modes persistence",
+      "removed": 6,
+      "request_id": "074",
+      "timestamp": "2026-06-22 09:06:22 PDT"
     }
   ],
   "docs/dca-equities.md": [
@@ -3081,6 +3113,16 @@
       "removed": 1,
       "request_id": "070",
       "timestamp": "2026-06-16 07:19:47 PDT"
+    },
+    {
+      "added": 35,
+      "number": 9,
+      "patch": "r009--2026-06-22_090622--valuation-troubleshooting.patch",
+      "path": "docs/live-trading.md",
+      "reason": "valuation troubleshooting",
+      "removed": 2,
+      "request_id": "074",
+      "timestamp": "2026-06-22 09:06:22 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
