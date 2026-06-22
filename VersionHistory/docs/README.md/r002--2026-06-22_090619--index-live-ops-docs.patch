@@ -1,0 +1,15 @@
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -24,6 +24,12 @@
+ 
+ | Topic | Where |
+ |-------|-------|
++| Live Kraken trading (arm, mirror, halts) | [`live-trading.md`](live-trading.md) |
++| Phased rollout to live | [`path-to-live-trading.md`](path-to-live-trading.md) |
++| Equity DCA + 50/50 portfolio buckets | [`dca-equities.md`](dca-equities.md) |
++| Kraken xStocks / futures notes | [`kraken-equities-futures.md`](kraken-equities-futures.md) |
++| Independent trade verifier | [`independent-verification.md`](independent-verification.md) |
++| Project handoff (halt reset guide) | [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md) |
+ | Windows auto-start (Task Scheduler) | [`auto-start-windows.md`](auto-start-windows.md) |
+ | Feature request history | [`../feature_logs/`](../feature_logs/) |
+ | Test suite | [`../tests/README.md`](../tests/README.md) |

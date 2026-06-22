@@ -1,0 +1,58 @@
+--- a/docs/live-trading.md
++++ b/docs/live-trading.md
+@@ -98,13 +98,14 @@
+ 
+ See [dca-equities.md](dca-equities.md) for DCA scheduling details.
+ 
++## Session anchor scripts
++
++Inspect live Kraken balances without placing orders:
+ 
+ ```powershell
+ .\.venv\Scripts\python.exe scripts\anchor_live_session.py
+ ```
+ 
+-Prints ETH, ADA, USD balances and portfolio USD without placing orders.
+-
+ Re-anchor inflated paper balances to live spot without a full bot restart:
+ 
+ ```powershell
+@@ -112,6 +113,38 @@
+ ```
+ 
+ Requires `LIVE_MIRROR_PAPER=1`, `LIVE_ENABLED=1`, and `PAPER_ANCHOR_TO_LIVE=1`.
++
++## Troubleshooting
++
++### False live drawdown halt (dashboard shows huge % loss)
++
++**Symptom:** Dashboard or Discord reports 50–80%+ live drawdown and `LIVE HALT`, but your Kraken account still holds ETH/USD near the session peak.
++
++**Cause:** Paper and live books diverged (e.g. paper sold all ETH into alts while live still holds ETH). If valuation used only paper USD prices, live-only assets priced at $0 → false drawdown.
++
++**Fix (code, merged PR #65):** `bot/live_portfolio.load_live_usd_prices()` merges `live_session_start.json` anchor prices with `paper_portfolio.json`. Engine, dashboard, watchdog, and auditor all use this shared loader.
++
++**Recovery steps:**
++
++1. Confirm real Kraken balance: `TradeBot -portfolio` (live line first) or `scripts/anchor_live_session.py`.
++2. Compare to dashboard `/live` view — values should match within ticker lag.
++3. If halt flag is still set from the false reading, review then send `TradeBot -resume-live` (clears route halt / re-evaluation; does **not** auto-clear a legitimate drawdown or ETH-floor halt on the live broker).
++4. Optional: `scripts/anchor_paper_to_live.py` to re-sync paper without restart.
++
++See [feature_logs/072_live-valuation-false-halt.md](../feature_logs/072_live-valuation-false-halt.md) for the postmortem.
++
++### Live mirror skips
++
++Check `logs/live_mirror_skips.log` for reasons (DENY verdict, not in allowlist, ETH floor, drawdown halt, triangular disabled). Skips are intentionally quiet in Discord.
++
++### `-resume-live` vs `-resume`
++
++| Command | Clears |
++|---------|--------|
++| `TradeBot -resume` | Paper circuit-breaker re-evaluation |
++| `TradeBot -resume-live` | Live route halt + live re-evaluation (mirror mode) |
++
++Neither command bypasses a live broker `halted` flag from a real drawdown or ETH floor — manual review required.
+ 
+ ## Dry-run single sell (optional)
+ 

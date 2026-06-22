@@ -1,6 +1,6 @@
 # Architecture overview
 
-TradeBot is a single-process Kraken trading bot: paper simulation by default, optional **live spot execution** when armed (`LIVE_ENABLED=1`). It uses live Kraken market data, a multi-strategy orchestrator with fee-aware gating, and in-process watchdog + auditor threads for monitoring.
+TradeBot is a single-process paper trading bot that uses live Kraken market data, a multi-strategy orchestrator with fee-aware gating, and an in-process watchdog for monitoring.
 
 ## Goals
 
@@ -29,10 +29,8 @@ TradeBot is a single-process Kraken trading bot: paper simulation by default, op
                        │      ├── StrategyGovernor (stickiness/explore) │
                        │      ├── PreFlightValidator (fees + slippage)  │
                        │      ├── RiskManager (gates + cooldowns)       │
-                       │      ├── CircuitBreaker (paper drawdown)       │
-                       │      ├── PaperBroker (simulated execution)     │
-                       │      ├── LiveBroker (optional real orders)     │
-                       │      └── live_mirror + verifier live_tag       │
+                       │      ├── CircuitBreaker (drawdown protection)  │
+                       │      └── PaperBroker (executes simulated path) │
                        │                                                │
                        │  ┌───────────────────────────────────────┐     │
                        │  │ Discord (webhook + bot token) thread  │ ◀───┼── chat log file
@@ -52,18 +50,7 @@ TradeBot is a single-process Kraken trading bot: paper simulation by default, op
                                           │
                                           ▼
                           logs/ · receipts/ · .paper_state.json
-                          · .live_state.json (when live armed)
 ```
-
-**Execution modes**
-
-| Mode | Paper | Live Kraken | Typical env |
-|------|-------|-------------|-------------|
-| Paper only | Yes | No | `LIVE_ENABLED=0` |
-| Live direct | No | Yes | `LIVE_ENABLED=1`, `LIVE_MIRROR_PAPER=0` |
-| Mirror (recommended) | Yes (shadow) | Yes (on CONFIRM) | `LIVE_MIRROR_PAPER=1` |
-
-See [`../live-trading.md`](../live-trading.md) for arm/disarm and mirror confidence settings.
 
 ## Process model
 
@@ -91,9 +78,8 @@ All four stop together via `TradingEngine.shutdown()` (signal handler or `finall
 │                preflight, circuit_breaker, fee_engine│
 ├──────────────────────────────────────────────────────┤
 │  Infrastructure: data.py (Kraken), paper_broker,     │   IO + persistence
-│                  live_broker, live_portfolio,        │
-│                  verifier/, markets.py, trade_log,   │
-│                  pin_tracker, watchdog/                │
+│                  markets.py, trade_log, pin_tracker, │
+│                  watchdog/                           │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -102,10 +88,6 @@ All four stop together via `TradingEngine.shutdown()` (signal handler or `finall
 | File | Owner | Content |
 |------|-------|---------|
 | `.paper_state.json` | `PaperBroker` | Balances, cost basis, trades, `RiskState` |
-| `paper_portfolio.json` | `paper_portfolio.py` | Human-readable paper snapshot + USD prices |
-| `.live_state.json` | `LiveBroker` | Live balances, trades, `RiskState`, halt flags |
-| `live_session_start.json` | Engine / anchor scripts | Session baseline, peak, anchor USD prices |
-| `.dca_state.json` | `equity_dca` strategy | Per-symbol DCA timers |
 | `.watchdog_state.json` | `WatchdogState` | File offsets, error timestamps, dedup keys |
 | `.auditor_state.json` | `AuditorState` | Pending tier-2 proposals + last-run timestamps |
 | `runtime_overrides.json` | `AuditorService` / `config._apply_runtime_overrides` | User-confirmed tier-2 knob overrides (read at startup) |
@@ -114,9 +96,7 @@ All four stop together via `TradingEngine.shutdown()` (signal handler or `finall
 | `logs/runtime.log` | Python logging | Warnings/errors across all modules |
 | `logs/YYYY-MM-DD_HH-00_to_*_PDT.log` | `trade_log.py` | Per-tick portfolio snapshots |
 | `logs/discord_chat.log` | `DiscordChatLog` | Inbound/outbound chat audit (gitignored) |
-| `logs/live_mirror_skips.log` | `live_mirror` | Mirror skip reasons (quiet — no Discord) |
-| `logs/force_trade.log` | `force_trade_log` | `TradeBot -force` attempts |
-| `receipts/*.txt` | `paper_broker` / `live_broker` | One file per executed trade |
+| `receipts/*.txt` | `paper_broker` | One file per executed trade |
 | `feature_logs/NNN_*.md` | Agent | Per-request engineering record |
 
 ## Configuration
