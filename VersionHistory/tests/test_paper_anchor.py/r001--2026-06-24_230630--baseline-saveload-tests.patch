@@ -1,0 +1,28 @@
+--- a/tests/test_paper_anchor.py
++++ b/tests/test_paper_anchor.py
+@@ -78,6 +78,25 @@
+     assert paper.state.trades == []
+ 
+ 
++def test_save_and_load_paper_baseline(tmp_path: Path) -> None:
++    from bot.paper_anchor import load_paper_baseline, save_paper_baseline
++
++    path = tmp_path / "paper_baseline.json"
++    balances = {"ETH": 0.71, "USD": 415.9}
++    prices = {"ETH": 1645.0, "USD": 1.0}
++    payload = save_paper_baseline(
++        path,
++        balances=balances,
++        usd_prices=prices,
++        portfolio_usd=1583.85,
++    )
++    assert payload["portfolio_usd"] == pytest.approx(1583.85)
++    loaded = load_paper_baseline(path)
++    assert loaded is not None
++    assert loaded["balances"]["ETH"] == pytest.approx(0.71)
++    assert load_paper_baseline(tmp_path / "missing.json") is None
++
++
+ def test_paper_anchor_defaults_on_in_mirror_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+     monkeypatch.setenv("LIVE_MIRROR_PAPER", "1")
+     monkeypatch.delenv("PAPER_ANCHOR_TO_LIVE", raising=False)

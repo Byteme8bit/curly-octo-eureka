@@ -1,0 +1,27 @@
+--- a/.env.example
++++ b/.env.example
+@@ -17,6 +17,10 @@
+ 
+ INITIAL_BALANCES={"ETH": 1.0, "ADA": 83.0, "USD": 0.0}
+ RESET_PAPER_STATE=0
++# Kraken snapshot written by scripts/anchor_paper_to_live.py (--paper-only)
++PAPER_RESET_BASELINE_PATH=paper_baseline.json
++# One-shot: anchor paper to saved baseline on startup (usually use the script instead)
++RESET_PAPER_TO_BASELINE=0
+ # Human-readable portfolio snapshot (updated each tick; used for startup display)
+ PAPER_PORTFOLIO_FILE=paper_portfolio.json
+ 
+@@ -310,6 +314,13 @@
+ # UNCERTAIN multi-hop still requires LIVE_ALLOW_TRIANGULAR=1
+ # LIVE_MIRROR_UNCERTAIN=0
+ # LIVE_MIRROR_SKIP_LOG_FILE=logs/live_mirror_skips.log
++# When 1, paper only executes trades live would mirror (default 0 — strategies run, live gate on mirror)
++# PAPER_MIRROR_LIVE_ONLY=0
++# When 1, try post-only limit orders on live when taker net fails but maker net passes (single-hop)
++# LIVE_POST_ONLY=1
++# MAKER_FEE_RATE=0.0016
++# LIVE_POST_ONLY_TIMEOUT_SEC=45
++# DISCORD_FUTURES_PAPER_ALERTS=0
+ # RESET_LIVE_STATE=0
+ 
+ # Kraken Trade Prop (evaluation / funded accounts) — NOT IMPLEMENTED.

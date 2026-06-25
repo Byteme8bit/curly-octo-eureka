@@ -1,0 +1,54 @@
+--- a/bot/paper_anchor.py
++++ b/bot/paper_anchor.py
+@@ -2,9 +2,11 @@
+ 
+ from __future__ import annotations
+ 
++import json
+ import logging
+ from datetime import datetime, timezone
+-from typing import TYPE_CHECKING
++from pathlib import Path
++from typing import TYPE_CHECKING, Any
+ 
+ if TYPE_CHECKING:
+     from bot.live_broker import LiveBroker
+@@ -65,3 +67,38 @@
+         preserve_trades,
+     )
+     return portfolio
++
++
++def save_paper_baseline(
++    path: Path,
++    *,
++    balances: dict[str, float],
++    usd_prices: dict[str, float],
++    portfolio_usd: float,
++    source: str = "kraken",
++) -> dict[str, Any]:
++    """Persist Kraken snapshot for future paper-only resets."""
++    now = datetime.now(timezone.utc)
++    payload: dict[str, Any] = {
++        "anchored_at_utc": now.isoformat(),
++        "anchored_at_pacific": now.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"),
++        "source": source,
++        "portfolio_usd": round(portfolio_usd, 2),
++        "balances": {str(k): float(v) for k, v in balances.items() if float(v) > 0},
++        "usd_prices": {str(k): float(v) for k, v in usd_prices.items()},
++    }
++    path.parent.mkdir(parents=True, exist_ok=True)
++    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
++    logger.info("Saved paper baseline to %s ($%.2f)", path, portfolio_usd)
++    return payload
++
++
++def load_paper_baseline(path: Path) -> dict[str, Any] | None:
++    """Load a saved Kraken baseline snapshot, or None if missing."""
++    if not path.is_file():
++        return None
++    try:
++        return json.loads(path.read_text(encoding="utf-8"))
++    except (OSError, json.JSONDecodeError) as exc:
++        logger.warning("Could not load paper baseline %s: %s", path, exc)
++        return None

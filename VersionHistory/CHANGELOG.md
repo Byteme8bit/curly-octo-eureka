@@ -3090,3 +3090,99 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +4 / -0
 - **Patch:** `r030--2026-06-17_215915--document-risky-futures-env.patch`
 
+## config.py — r032
+
+- **When:** 2026-06-18 06:11:41 PDT
+- **Reason:** futures-api-key-env-vars
+- **Request:** 079
+- **Diff:** +10 / -0
+- **Patch:** `r032--2026-06-18_061141--futures-api-key-env-vars.patch`
+
+## bot/futures/manager.py — r002
+
+- **When:** 2026-06-18 06:11:42 PDT
+- **Reason:** use-futures-api-credentials
+- **Request:** 079
+- **Diff:** +8 / -2
+- **Patch:** `r002--2026-06-18_061142--use-futures-api-credentials.patch`
+
+## bot/futures/live_broker.py — r001
+
+- **When:** 2026-06-18 06:11:42 PDT
+- **Reason:** futures-auth-error-hint
+- **Request:** 079
+- **Diff:** +12 / -1
+- **Patch:** `r001--2026-06-18_061142--futures-auth-error-hint.patch`
+
+## .env.example — r031
+
+- **When:** 2026-06-18 06:11:42 PDT
+- **Reason:** document-futures-api-keys
+- **Request:** 079
+- **Diff:** +9 / -2
+- **Patch:** `r031--2026-06-18_061142--document-futures-api-keys.patch`
+
+## tests/test_futures.py — r001
+
+- **When:** 2026-06-18 06:11:43 PDT
+- **Reason:** futures-key-auth-tests
+- **Request:** 079
+- **Diff:** +61 / -0
+- **Patch:** `r001--2026-06-18_061143--futures-key-auth-tests.patch`
+
+## bot/discord_summary.py — r005
+
+- **When:** 2026-06-19 13:50:39 PDT
+- **Reason:** futures trade discord formatters
+- **Request:** 080
+- **Diff:** +50 / -0
+- **Patch:** `r005--2026-06-19_135039--futures-trade-discord-formatters.patch`
+
+## bot/engine.py — r052
+
+- **When:** 2026-06-19 13:50:39 PDT
+- **Reason:** startup status futures discord alerts
+- **Request:** 080
+- **Diff:** +89 / -5
+- **Patch:** `r052--2026-06-19_135039--startup-status-futures-discord-alerts.patch`
+
+## bot/paper_anchor.py — r001
+
+- **When:** 2026-06-24 23:06:29 PDT
+- **Reason:** paper baseline save/load
+- **Request:** 082
+- **Diff:** +38 / -1
+- **Patch:** `r001--2026-06-24_230629--paper-baseline-saveload.patch`
+
+## scripts/anchor_paper_to_live.py — r001
+
+- **When:** 2026-06-24 23:06:29 PDT
+- **Reason:** paper-only anchor flag
+- **Request:** 082
+- **Diff:** +60 / -18
+- **Patch:** `r001--2026-06-24_230629--paper-only-anchor-flag.patch`
+
+## config.py — r033
+
+- **When:** 2026-06-24 23:06:29 PDT
+- **Reason:** baseline path env vars
+- **Request:** 082
+- **Diff:** +15 / -5
+- **Patch:** `r033--2026-06-24_230629--baseline-path-env-vars.patch`
+
+## .env.example — r032
+
+- **When:** 2026-06-24 23:06:30 PDT
+- **Reason:** document baseline reset vars
+- **Request:** 082
+- **Diff:** +11 / -0
+- **Patch:** `r032--2026-06-24_230630--document-baseline-reset-vars.patch`
+
+## tests/test_paper_anchor.py — r001
+
+- **When:** 2026-06-24 23:06:30 PDT
+- **Reason:** baseline save/load tests
+- **Request:** 082
+- **Diff:** +19 / -0
+- **Patch:** `r001--2026-06-24_230630--baseline-saveload-tests.patch`
+

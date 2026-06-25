@@ -299,6 +299,26 @@
       "removed": 0,
       "request_id": "078",
       "timestamp": "2026-06-17 21:59:15 PDT"
+    },
+    {
+      "added": 9,
+      "number": 31,
+      "patch": "r031--2026-06-18_061142--document-futures-api-keys.patch",
+      "path": ".env.example",
+      "reason": "document-futures-api-keys",
+      "removed": 2,
+      "request_id": "079",
+      "timestamp": "2026-06-18 06:11:42 PDT"
+    },
+    {
+      "added": 11,
+      "number": 32,
+      "patch": "r032--2026-06-24_230630--document-baseline-reset-vars.patch",
+      "path": ".env.example",
+      "reason": "document baseline reset vars",
+      "removed": 0,
+      "request_id": "082",
+      "timestamp": "2026-06-24 23:06:30 PDT"
     }
   ],
   ".gitignore": [
@@ -803,6 +823,16 @@
       "removed": 0,
       "request_id": "069",
       "timestamp": "2026-06-16 07:13:51 PDT"
+    },
+    {
+      "added": 50,
+      "number": 5,
+      "patch": "r005--2026-06-19_135039--futures-trade-discord-formatters.patch",
+      "path": "bot/discord_summary.py",
+      "reason": "futures trade discord formatters",
+      "removed": 0,
+      "request_id": "080",
+      "timestamp": "2026-06-19 13:50:39 PDT"
     }
   ],
   "bot/display.py": [
@@ -1297,6 +1327,16 @@
       "removed": 1,
       "request_id": "077",
       "timestamp": "2026-06-17 17:42:07 PDT"
+    },
+    {
+      "added": 89,
+      "number": 52,
+      "patch": "r052--2026-06-19_135039--startup-status-futures-discord-alerts.patch",
+      "path": "bot/engine.py",
+      "reason": "startup status futures discord alerts",
+      "removed": 5,
+      "request_id": "080",
+      "timestamp": "2026-06-19 13:50:39 PDT"
     }
   ],
   "bot/equities.py": [
@@ -1345,6 +1385,18 @@
       "timestamp": "2026-06-01 15:35:19 PDT"
     }
   ],
+  "bot/futures/live_broker.py": [
+    {
+      "added": 12,
+      "number": 1,
+      "patch": "r001--2026-06-18_061142--futures-auth-error-hint.patch",
+      "path": "bot/futures/live_broker.py",
+      "reason": "futures-auth-error-hint",
+      "removed": 1,
+      "request_id": "079",
+      "timestamp": "2026-06-18 06:11:42 PDT"
+    }
+  ],
   "bot/futures/manager.py": [
     {
       "added": 24,
@@ -1355,6 +1407,16 @@
       "removed": 16,
       "request_id": "078",
       "timestamp": "2026-06-17 21:59:15 PDT"
+    },
+    {
+      "added": 8,
+      "number": 2,
+      "patch": "r002--2026-06-18_061142--use-futures-api-credentials.patch",
+      "path": "bot/futures/manager.py",
+      "reason": "use-futures-api-credentials",
+      "removed": 2,
+      "request_id": "079",
+      "timestamp": "2026-06-18 06:11:42 PDT"
     }
   ],
   "bot/goal_evolution.py": [
@@ -1507,6 +1569,18 @@
       "removed": 2,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:15 PDT"
+    }
+  ],
+  "bot/paper_anchor.py": [
+    {
+      "added": 38,
+      "number": 1,
+      "patch": "r001--2026-06-24_230629--paper-baseline-saveload.patch",
+      "path": "bot/paper_anchor.py",
+      "reason": "paper baseline save/load",
+      "removed": 1,
+      "request_id": "082",
+      "timestamp": "2026-06-24 23:06:29 PDT"
     }
   ],
   "bot/paper_broker.py": [
@@ -2413,6 +2487,26 @@
       "removed": 0,
       "request_id": "078",
       "timestamp": "2026-06-17 21:59:14 PDT"
+    },
+    {
+      "added": 10,
+      "number": 32,
+      "patch": "r032--2026-06-18_061141--futures-api-key-env-vars.patch",
+      "path": "config.py",
+      "reason": "futures-api-key-env-vars",
+      "removed": 0,
+      "request_id": "079",
+      "timestamp": "2026-06-18 06:11:41 PDT"
+    },
+    {
+      "added": 15,
+      "number": 33,
+      "patch": "r033--2026-06-24_230629--baseline-path-env-vars.patch",
+      "path": "config.py",
+      "reason": "baseline path env vars",
+      "removed": 5,
+      "request_id": "082",
+      "timestamp": "2026-06-24 23:06:29 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -3237,6 +3331,18 @@
       "timestamp": "2026-06-02 21:13:09 PDT"
     }
   ],
+  "scripts/anchor_paper_to_live.py": [
+    {
+      "added": 60,
+      "number": 1,
+      "patch": "r001--2026-06-24_230629--paper-only-anchor-flag.patch",
+      "path": "scripts/anchor_paper_to_live.py",
+      "reason": "paper-only anchor flag",
+      "removed": 18,
+      "request_id": "082",
+      "timestamp": "2026-06-24 23:06:29 PDT"
+    }
+  ],
   "scripts/probe_eth_ada_routes.py": [
     {
       "added": 0,
@@ -3611,6 +3717,18 @@
       "timestamp": "2026-06-01 15:35:19 PDT"
     }
   ],
+  "tests/test_futures.py": [
+    {
+      "added": 61,
+      "number": 1,
+      "patch": "r001--2026-06-18_061143--futures-key-auth-tests.patch",
+      "path": "tests/test_futures.py",
+      "reason": "futures-key-auth-tests",
+      "removed": 0,
+      "request_id": "079",
+      "timestamp": "2026-06-18 06:11:43 PDT"
+    }
+  ],
   "tests/test_goal_evolution.py": [
     {
       "added": 54,
@@ -3743,6 +3861,18 @@
       "removed": 0,
       "request_id": "069",
       "timestamp": "2026-06-16 07:12:36 PDT"
+    }
+  ],
+  "tests/test_paper_anchor.py": [
+    {
+      "added": 19,
+      "number": 1,
+      "patch": "r001--2026-06-24_230630--baseline-saveload-tests.patch",
+      "path": "tests/test_paper_anchor.py",
+      "reason": "baseline save/load tests",
+      "removed": 0,
+      "request_id": "082",
+      "timestamp": "2026-06-24 23:06:30 PDT"
     }
   ],
   "tests/test_portfolio_command.py": [

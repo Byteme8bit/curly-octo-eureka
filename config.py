@@ -120,6 +120,8 @@ class Settings:
     alert_sms_to: str
     api_key: str
     api_secret: str
+    futures_api_key: str
+    futures_api_secret: str
     state_file: Path
     paper_portfolio_file: Path
     log_dir: Path
@@ -234,9 +236,15 @@ class Settings:
     live_mirror_paper: bool
     paper_anchor_to_live: bool
     paper_mirror_live_only: bool
+    paper_reset_baseline_path: Path
+    reset_paper_to_baseline: bool
     live_mirror_min_confidence: str
     live_mirror_uncertain: bool
     live_mirror_skip_log_file: Path
+    live_post_only: bool
+    maker_fee_rate: float
+    live_post_only_timeout_sec: float
+    discord_futures_paper_alerts: bool
     profit_only_mode: bool
     yolo_profitable: bool
     prop_enabled: bool
@@ -591,6 +599,14 @@ def load_settings() -> Settings:
         alert_sms_to=os.getenv("ALERT_SMS_TO", ""),
         api_key=os.getenv("KRAKEN_API_KEY", ""),
         api_secret=os.getenv("KRAKEN_API_SECRET", ""),
+        futures_api_key=(
+            os.getenv("KRAKEN_FUTURES_API_KEY", "").strip()
+            or os.getenv("KRAKEN_API_KEY", "")
+        ),
+        futures_api_secret=(
+            os.getenv("KRAKEN_FUTURES_API_SECRET", "").strip()
+            or os.getenv("KRAKEN_API_SECRET", "")
+        ),
         state_file=ROOT / ".paper_state.json",
         paper_portfolio_file=ROOT / os.getenv("PAPER_PORTFOLIO_FILE", "paper_portfolio.json"),
         log_dir=ROOT / "logs",
@@ -769,11 +785,11 @@ def load_settings() -> Settings:
             "1" if os.getenv("LIVE_MIRROR_PAPER", "0") == "1" else "0",
         )
         == "1",
-        paper_mirror_live_only=os.getenv(
-            "PAPER_MIRROR_LIVE_ONLY",
-            "1" if os.getenv("LIVE_MIRROR_PAPER", "0") == "1" else "0",
-        )
-        == "1",
+        paper_mirror_live_only=os.getenv("PAPER_MIRROR_LIVE_ONLY", "0") == "1",
+        paper_reset_baseline_path=ROOT / os.getenv(
+            "PAPER_RESET_BASELINE_PATH", "paper_baseline.json"
+        ),
+        reset_paper_to_baseline=os.getenv("RESET_PAPER_TO_BASELINE", "0") == "1",
         live_mirror_min_confidence=_parse_live_mirror_min_confidence(
             os.getenv("LIVE_MIRROR_MIN_CONFIDENCE", "confirm")
         ),
@@ -781,6 +797,10 @@ def load_settings() -> Settings:
         live_mirror_skip_log_file=ROOT / os.getenv(
             "LIVE_MIRROR_SKIP_LOG_FILE", "logs/live_mirror_skips.log"
         ),
+        live_post_only=os.getenv("LIVE_POST_ONLY", "1") == "1",
+        maker_fee_rate=float(os.getenv("MAKER_FEE_RATE", "0.0016")),
+        live_post_only_timeout_sec=float(os.getenv("LIVE_POST_ONLY_TIMEOUT_SEC", "45")),
+        discord_futures_paper_alerts=os.getenv("DISCORD_FUTURES_PAPER_ALERTS", "0") == "1",
         profit_only_mode=profit_only_mode,
         yolo_profitable=yolo_profitable,
         prop_enabled=os.getenv("PROP_ENABLED", "0") == "1",
