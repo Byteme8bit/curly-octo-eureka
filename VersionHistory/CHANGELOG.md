@@ -3015,3 +3015,35 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +50 / -0
 - **Patch:** `r004--2026-06-16_085814--eth-divergence-regression-test.patch`
 
+## docs/README.md — r002
+
+- **When:** 2026-06-25 09:05:09 PDT
+- **Reason:** operational doc index links
+- **Request:** 074
+- **Diff:** +6 / -0
+- **Patch:** `r002--2026-06-25_090509--operational-doc-index-links.patch`
+
+## docs/architecture/modules.md — r002
+
+- **When:** 2026-06-25 09:05:13 PDT
+- **Reason:** live equity verifier modules
+- **Request:** 074
+- **Diff:** +66 / -7
+- **Patch:** `r002--2026-06-25_090513--live-equity-verifier-modules.patch`
+
+## docs/architecture/overview.md — r001
+
+- **When:** 2026-06-25 09:05:13 PDT
+- **Reason:** live mirror persistence
+- **Request:** 074
+- **Diff:** +15 / -5
+- **Patch:** `r001--2026-06-25_090513--live-mirror-persistence.patch`
+
+## docs/live-trading.md — r009
+
+- **When:** 2026-06-25 09:05:13 PDT
+- **Reason:** resume-live troubleshooting
+- **Request:** 074
+- **Diff:** +68 / -2
+- **Patch:** `r009--2026-06-25_090513--resume-live-troubleshooting.patch`
+

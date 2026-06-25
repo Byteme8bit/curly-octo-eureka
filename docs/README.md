@@ -24,6 +24,12 @@ Living architecture and engineering guide for the Kraken paper trading bot.
 
 | Topic | Where |
 |-------|-------|
+| Live Kraken trading (arm/disarm, mirror, safety) | [`live-trading.md`](live-trading.md) |
+| Equity DCA + 50/50 portfolio buckets | [`dca-equities.md`](dca-equities.md) |
+| Kraken xStocks + futures (paper sim) | [`kraken-equities-futures.md`](kraken-equities-futures.md) |
+| Independent trade verifier | [`independent-verification.md`](independent-verification.md) |
+| Phased rollout to live | [`path-to-live-trading.md`](path-to-live-trading.md) |
+| Project handoff / fresh-start checklist | [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md) |
 | Windows auto-start (Task Scheduler) | [`auto-start-windows.md`](auto-start-windows.md) |
 | Feature request history | [`../feature_logs/`](../feature_logs/) |
 | Test suite | [`../tests/README.md`](../tests/README.md) |

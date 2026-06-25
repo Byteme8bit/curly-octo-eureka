@@ -98,12 +98,13 @@ LIVE_ALLOWED_ASSETS=ETH,ADA,BTC,SOL,LINK,AAPLx,TSLAx,SPYx,NVDAx,MSFTx,GOOGLx
 
 See [dca-equities.md](dca-equities.md) for DCA scheduling details.
 
+## Session anchor scripts
+
+Print live Kraken balances and portfolio USD without placing orders:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\anchor_live_session.py
 ```
-
-Prints ETH, ADA, USD balances and portfolio USD without placing orders.
 
 Re-anchor inflated paper balances to live spot without a full bot restart:
 
@@ -144,6 +145,71 @@ Attempts are logged to `logs/force_trade.log`. Replies always post (quiet mode e
 
 When `DCA_ENABLED=1` and no offensive route clears, one scheduled equity DCA buy may
 run as a fallback.
+
+## Resume after halt (`TradeBot -resume-live`)
+
+Live trading can halt for two distinct reasons. The `-resume-live` command (alias
+`resume-trading`) handles only one of them:
+
+| Halt type | Example reason | `-resume-live` clears? |
+|-----------|----------------|------------------------|
+| **Route halt** | Mid-route insufficient funds on leg 2/3 | Yes — clears halt flag after manual review |
+| **Drawdown halt** | `LIVE_DRAWDOWN_HALT_PCT` exceeded from session peak | No — confirm Kraken balance first; may need to reset session anchor |
+| **ETH floor** | Balance below `LIVE_MIN_ETH_RESERVE` | No |
+
+Workflow after a route halt:
+
+1. Confirm actual Kraken balances (`TradeBot -portfolio` or `scripts/anchor_live_session.py`).
+2. Send `TradeBot -resume-live` in Discord.
+3. Send `TradeBot -start` if trading was paused.
+
+After a **false drawdown halt** caused by valuation bugs (see below), pull the latest
+code (includes `load_live_usd_prices()` merge fix), verify dashboard `/live` matches
+Kraken, then `-resume-live` only if the halt was a route halt — real drawdown halts
+require reviewing session PnL before resuming.
+
+## Troubleshooting
+
+### False drawdown halt (paper/live price divergence)
+
+**Symptom:** Dashboard or Discord shows a large live drawdown (e.g. 80%+) and
+`LIVE HALT`, but Kraken still holds expected ETH + USD.
+
+**Cause:** Paper and live books diverge in mirror mode. Paper may have sold an asset
+(e.g. all ETH into alts) while live still holds it. If valuation used only paper
+prices, live-only holdings priced at $0 → inflated drawdown.
+
+**Fix (code, merged PR #65):** `bot/live_portfolio.load_live_usd_prices()` merges:
+
+1. `live_session_start.json` → `usd_prices` captured at session anchor
+2. `paper_portfolio.json` → latest paper snapshot prices
+
+The engine also fetches Kraken tickers for the **union** of paper + live holdings.
+Dashboard `/live` uses the same shared loader.
+
+**Operator steps:**
+
+1. Compare `TradeBot -portfolio` live line vs Kraken UI — if they match, the halt
+   may be a false positive from stale state.
+2. Run `scripts/anchor_live_session.py` to print current live valuation.
+3. If paper book is wildly inflated, run `scripts/anchor_paper_to_live.py` or
+   `TradeBot -reset` (re-anchors paper to live when `PAPER_ANCHOR_TO_LIVE=1`).
+4. Do **not** auto-clear halt flags in `.live_state.json` by hand unless you
+   understand the halt reason — use `-resume-live` for route halts only.
+
+See [feature_logs/072_live-valuation-false-halt.md](../feature_logs/072_live-valuation-false-halt.md).
+
+### Paper vs live PnL mismatch
+
+In mirror mode, paper simulates routes that live skips (DENY tags, insufficient
+funds, allowlist). **Do not use paper PnL for live capital decisions.** Dashboard
+splits `/paper` and `/live` views; auditor reports label each book separately.
+
+### Mirror skips
+
+Check `logs/live_mirror_skips.log` for why a paper fill did not mirror. Common
+reasons: DENY live_tag, `LIVE_STRICT_PROFIT`, asset not in `LIVE_ALLOWED_ASSETS`,
+ETH floor, or drawdown halt.
 
 ## Safety checklist
 

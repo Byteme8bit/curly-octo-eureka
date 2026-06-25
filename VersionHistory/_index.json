@@ -2929,6 +2929,16 @@
       "removed": 0,
       "request_id": "043",
       "timestamp": "2026-06-10 09:07:34 PDT"
+    },
+    {
+      "added": 6,
+      "number": 2,
+      "patch": "r002--2026-06-25_090509--operational-doc-index-links.patch",
+      "path": "docs/README.md",
+      "reason": "operational doc index links",
+      "removed": 0,
+      "request_id": "074",
+      "timestamp": "2026-06-25 09:05:09 PDT"
     }
   ],
   "docs/architecture/modules.md": [
@@ -2941,6 +2951,28 @@
       "removed": 0,
       "request_id": "013",
       "timestamp": "2026-05-25 15:22:48 PDT"
+    },
+    {
+      "added": 66,
+      "number": 2,
+      "patch": "r002--2026-06-25_090513--live-equity-verifier-modules.patch",
+      "path": "docs/architecture/modules.md",
+      "reason": "live equity verifier modules",
+      "removed": 7,
+      "request_id": "074",
+      "timestamp": "2026-06-25 09:05:13 PDT"
+    }
+  ],
+  "docs/architecture/overview.md": [
+    {
+      "added": 15,
+      "number": 1,
+      "patch": "r001--2026-06-25_090513--live-mirror-persistence.patch",
+      "path": "docs/architecture/overview.md",
+      "reason": "live mirror persistence",
+      "removed": 5,
+      "request_id": "074",
+      "timestamp": "2026-06-25 09:05:13 PDT"
     }
   ],
   "docs/dca-equities.md": [
@@ -3081,6 +3113,16 @@
       "removed": 1,
       "request_id": "070",
       "timestamp": "2026-06-16 07:19:47 PDT"
+    },
+    {
+      "added": 68,
+      "number": 9,
+      "patch": "r009--2026-06-25_090513--resume-live-troubleshooting.patch",
+      "path": "docs/live-trading.md",
+      "reason": "resume-live troubleshooting",
+      "removed": 2,
+      "request_id": "074",
+      "timestamp": "2026-06-25 09:05:13 PDT"
     }
   ],
   "feature_logs/020_auditor-autoapply.md": [
