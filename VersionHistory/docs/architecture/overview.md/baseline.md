@@ -1,6 +1,6 @@
 # Architecture overview
 
-TradeBot is a single-process Kraken trading bot that runs paper simulation by default, with optional **live mirror mode** that executes real spot orders on Kraken when safety gates pass. It uses live market data, a multi-strategy orchestrator with fee-aware gating, equity DCA (xStocks), and in-process watchdog + auditor threads for monitoring.
+TradeBot is a single-process paper trading bot that uses live Kraken market data, a multi-strategy orchestrator with fee-aware gating, and an in-process watchdog for monitoring.
 
 ## Goals
 
@@ -23,17 +23,14 @@ TradeBot is a single-process Kraken trading bot that runs paper simulation by de
                        │      ├── StrategyOrchestrator                  │
                        │      │      ├── cross_momentum                 │
                        │      │      ├── stat_arb                       │
-                       │      │      ├── triangular_arbitrage           │
-                       │      │      ├── equity_dca (when DCA_ENABLED)  │
-                       │      │      └── whale_follow (optional)        │
+                       │      │      └── triangular_arbitrage           │
                        │      │                                         │
-                       │      ├── PortfolioConstraints (ETH/alt/buckets)│
+                       │      ├── PortfolioConstraints (ETH/alt rules)  │
                        │      ├── StrategyGovernor (stickiness/explore) │
                        │      ├── PreFlightValidator (fees + slippage)  │
                        │      ├── RiskManager (gates + cooldowns)       │
                        │      ├── CircuitBreaker (drawdown protection)  │
-                       │      ├── PaperBroker (simulated path)          │
-                       │      └── LiveBroker (Kraken spot, when armed)  │
+                       │      └── PaperBroker (executes simulated path) │
                        │                                                │
                        │  ┌───────────────────────────────────────┐     │
                        │  │ Discord (webhook + bot token) thread  │ ◀───┼── chat log file
@@ -52,8 +49,7 @@ TradeBot is a single-process Kraken trading bot that runs paper simulation by de
                        └────────────────────────────────────────────────┘
                                           │
                                           ▼
-              logs/ · receipts/ · .paper_state.json · .live_state.json
-              live_session_start.json · dashboard at :8765
+                          logs/ · receipts/ · .paper_state.json
 ```
 
 ## Process model
@@ -92,10 +88,6 @@ All four stop together via `TradingEngine.shutdown()` (signal handler or `finall
 | File | Owner | Content |
 |------|-------|---------|
 | `.paper_state.json` | `PaperBroker` | Balances, cost basis, trades, `RiskState` |
-| `paper_portfolio.json` | `paper_portfolio.py` | Dashboard snapshot of paper holdings + USD prices |
-| `.live_state.json` | `LiveBroker` | Live balances, trades, halt flag, `RiskState` |
-| `live_session_start.json` | `TradingEngine` | Session anchor: baseline, peak, `usd_prices` at session start |
-| `.dca_state.json` | `EquityDcaStrategy` | Per-symbol DCA schedule timestamps |
 | `.watchdog_state.json` | `WatchdogState` | File offsets, error timestamps, dedup keys |
 | `.auditor_state.json` | `AuditorState` | Pending tier-2 proposals + last-run timestamps |
 | `runtime_overrides.json` | `AuditorService` / `config._apply_runtime_overrides` | User-confirmed tier-2 knob overrides (read at startup) |
@@ -108,7 +100,5 @@ All four stop together via `TradingEngine.shutdown()` (signal handler or `finall
 | `feature_logs/NNN_*.md` | Agent | Per-request engineering record |
 
 ## Configuration
-
-See [live-trading.md](../live-trading.md) for arming live mode and [dca-equities.md](../dca-equities.md) for equity bucket allocation.
 
 All runtime knobs live in `.env` (gitignored) loaded by `config.load_settings()` into a single frozen `Settings` dataclass. See [`../conventions/patterns.md#configuration`](../conventions/patterns.md#configuration).
