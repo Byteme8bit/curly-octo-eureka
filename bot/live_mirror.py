@@ -60,14 +60,19 @@ def is_critical_deny(verify_tag: str) -> bool:
     return False
 
 
-def format_live_mirror_skip_line(trade: dict, reason: str, *, verify_tag: str = "") -> str:
+def format_live_mirror_skip_line(
+    trade: dict, reason: str, *, verify_tag: str = "", net_pct: float | None = None
+) -> str:
     from bot.local_time import format_pacific
 
     ts = format_pacific()
     route = f"{trade.get('from_asset', '?')}->{trade.get('to_asset', '?')}"
     symbol = trade.get("symbol", "")
+    net = ""
+    if net_pct is not None:
+        net = f" net={net_pct:+.4%}"
     tag = f" [{verify_tag}]" if verify_tag else ""
-    return f"{ts} {route} {symbol}{tag} — {reason}"
+    return f"{ts} {route} {symbol}{net}{tag} — {reason}"
 
 
 def append_live_mirror_skip(
@@ -76,10 +81,13 @@ def append_live_mirror_skip(
     path: Path,
     *,
     verify_tag: str = "",
+    net_pct: float | None = None,
 ) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        line = format_live_mirror_skip_line(trade, reason, verify_tag=verify_tag)
+        line = format_live_mirror_skip_line(
+            trade, reason, verify_tag=verify_tag, net_pct=net_pct
+        )
         with open(path, "a", encoding="utf-8") as f:
             f.write(line + "\n")
     except OSError as exc:

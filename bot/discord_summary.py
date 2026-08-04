@@ -94,6 +94,24 @@ class MajorMoveTracker:
         _ = anchor
 
 
+def format_live_mirror_skip_alert(
+    trade: dict,
+    reason: str,
+    *,
+    verify_tag: str = "",
+    net_pct: float | None = None,
+) -> str:
+    route = f"{trade.get('from_asset', '?')}→{trade.get('to_asset', '?')}"
+    net_line = ""
+    if net_pct is not None:
+        net_line = f" est. net **{net_pct:+.4%}** after fees —"
+    tag = f" ({verify_tag})" if verify_tag else ""
+    return (
+        f"**Live mirror skipped** — `{route}`{tag}\n"
+        f"{net_line} {reason}"
+    )
+
+
 def format_hourly_summary(
     *,
     trade_count: int,
@@ -108,20 +126,34 @@ def format_hourly_summary(
     primary_goal_progress_pct: float | None = None,
     live_portfolio: float | None = None,
     live_session_pnl: float | None = None,
+    best_live_route: str = "",
+    best_live_route_net_pct: float | None = None,
+    live_skip_reason: str = "",
 ) -> str:
     lines = [
         "**TradeBot hourly summary**",
-        f"Trades: {trade_count}  |  Net PnL (hour): ${net_pnl:+,.2f}",
-        f"Blocked attempts: {blocked_count}",
     ]
+    if live_portfolio is not None and live_session_pnl is not None:
+        lines.append(
+            f"**Live Kraken spot:** ${live_portfolio:,.2f}  |  "
+            f"Session PnL: ${live_session_pnl:+,.2f}"
+        )
+        if best_live_route and best_live_route_net_pct is not None:
+            lines.append(
+                f"Best single-hop route: `{best_live_route}` "
+                f"gross edge {best_live_route_net_pct:+.4%} (taker fees still apply)"
+            )
+        if live_skip_reason:
+            short = live_skip_reason[:140] + ("…" if len(live_skip_reason) > 140 else "")
+            lines.append(f"No live fill yet: {short}")
+    lines.extend([
+        f"Paper trades (hour): {trade_count}  |  Net PnL: ${net_pnl:+,.2f}",
+        f"Blocked attempts: {blocked_count}",
+    ])
     if top_block_reason:
         short = top_block_reason[:120] + ("…" if len(top_block_reason) > 120 else "")
         lines.append(f"Top block reason: {short}")
     if live_portfolio is not None and live_session_pnl is not None:
-        lines.append(
-            f"Live Kraken spot: ${live_portfolio:,.2f}  |  "
-            f"Session PnL: ${live_session_pnl:+,.2f}"
-        )
         lines.append(
             f"[Paper sim] Portfolio ${portfolio:,.2f}  (PnL {baseline_pnl:+.2f} from start)"
         )
@@ -164,3 +196,53 @@ def format_tick_activity_line(
         short = top_block_reason[:100] + ("…" if len(top_block_reason) > 100 else "")
         parts.append(f"top block: {short}")
     return "Scan activity — " + " | ".join(parts)
+
+
+def format_futures_trade_alert(trade: dict, *, paper: bool = True) -> str:
+    """Discord alert for a futures paper or live open/close."""
+    action = str(trade.get("action") or "").lower()
+    symbol = str(trade.get("symbol") or "?")
+    side = str(trade.get("side") or "?").upper()
+    reason = str(trade.get("reason") or "")
+    mode = "paper" if paper or trade.get("paper", paper) else "LIVE"
+    if action == "open":
+        price = float(trade.get("price") or 0.0)
+        margin = float(trade.get("margin_usd") or 0.0)
+        lev = float(trade.get("leverage") or 0.0)
+        return (
+            f"**Futures {mode} OPEN** — {side} {symbol} @ ${price:,.4f} "
+            f"| margin ${margin:,.0f} @ {lev:.0f}x | {reason}"
+        )
+    pnl = float(trade.get("pnl_usd") or 0.0)
+    return (
+        f"**Futures {mode} CLOSE** — {symbol} {side} "
+        f"| PnL ${pnl:+,.2f} | {reason}"
+    )
+
+
+def format_futures_positions_summary(
+    positions: dict,
+    *,
+    balance_usd: float,
+    paper: bool = True,
+) -> str:
+    """Compact multi-line summary of open futures positions."""
+    if not positions:
+        mode = "paper" if paper else "live"
+        return f"Futures ({mode}): flat — wallet ${balance_usd:,.2f}"
+    lines = [f"Futures ({'paper' if paper else 'live'}) wallet ${balance_usd:,.2f}:"]
+    for sym, pos in sorted(positions.items()):
+        side = str(getattr(pos, "side", None) or (pos.get("side") if isinstance(pos, dict) else "?"))
+        entry = float(
+            getattr(pos, "entry_price", None)
+            or (pos.get("entry_price") if isinstance(pos, dict) else 0.0)
+            or 0.0
+        )
+        margin = float(
+            getattr(pos, "margin_usd", None)
+            or (pos.get("margin_usd") if isinstance(pos, dict) else 0.0)
+            or 0.0
+        )
+        short_sym = sym.split(":")[0] if ":" in sym else sym
+        lines.append(f"• {side.upper()} {short_sym} @ ${entry:,.4f} (margin ${margin:,.0f})")
+    return "\n".join(lines)

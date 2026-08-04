@@ -51,8 +51,15 @@ class _StubExchange:
         self.orders.append(order)
         return order
 
-    def fetch_order(self, order_id, symbol):
-        return self.orders[-1]
+    def fetch_ticker(self, symbol: str):
+        price = {"ETH/USD": 3000.0, "ADA/USD": 0.5, "ADA/ETH": 0.0002}.get(symbol, 1.0)
+        return {"bid": price * 0.999, "ask": price * 1.001, "last": price}
+
+    def price_to_precision(self, symbol: str, price: float) -> str:
+        return f"{price:.2f}"
+
+    def cancel_order(self, order_id, symbol):
+        return {"id": order_id, "status": "canceled"}
 
 
 @pytest.fixture

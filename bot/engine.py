@@ -52,6 +52,8 @@ from bot.watchdog_service import WatchdogService
 from bot.discord_summary import (
     MajorMoveTracker,
     TradeActivityBuffer,
+    format_futures_positions_summary,
+    format_futures_trade_alert,
     format_hourly_summary,
     format_tick_activity_line,
 )
@@ -148,6 +150,9 @@ class TradingEngine:
                 max_route_legs=settings.live_max_route_legs,
                 reset=settings.reset_live_state,
                 equity_assets=settings.equity_assets,
+                post_only_enabled=settings.live_post_only,
+                maker_fee_rate=settings.maker_fee_rate,
+                post_only_timeout_sec=settings.live_post_only_timeout_sec,
             )
             self.broker = self.paper_broker
             self._live_mode = True
@@ -168,6 +173,9 @@ class TradingEngine:
                 max_route_legs=settings.live_max_route_legs,
                 reset=settings.reset_live_state,
                 equity_assets=settings.equity_assets,
+                post_only_enabled=settings.live_post_only,
+                maker_fee_rate=settings.maker_fee_rate,
+                post_only_timeout_sec=settings.live_post_only_timeout_sec,
             )
             self._live_mode = True
         else:
@@ -736,7 +744,8 @@ class TradingEngine:
         if time.monotonic() - self._last_summary_monotonic < interval_sec:
             return
         snap = self._activity_buffer.snapshot()
-        if snap["trade_count"] == 0 and snap["blocked_count"] == 0:
+        live_always = self.settings.live_enabled and self._mirror_mode
+        if snap["trade_count"] == 0 and snap["blocked_count"] == 0 and not live_always:
             self._last_summary_monotonic = time.monotonic()
             return
         tier = ""
@@ -753,10 +762,27 @@ class TradingEngine:
         crash = bool(self._crash_status and self._crash_status.blocks_new_risk)
         live_portfolio = None
         live_session_pnl = None
+        best_route = ""
+        best_route_net = None
+        live_skip = ""
         if self.settings.live_enabled:
             live = self._live_portfolio_metrics()
             if live is not None:
                 live_portfolio, live_session_pnl, _baseline = live
+            result = self._last_result
+            if result and getattr(result, "opportunities", None):
+                ranked = sorted(
+                    result.opportunities,
+                    key=lambda o: o.edge,
+                    reverse=True,
+                )
+                if ranked:
+                    top = ranked[0]
+                    best_route = f"{top.from_asset}->{top.to_asset}"
+                    best_route_net = top.edge
+            blocked = list(getattr(result, "blocked", []) or []) if result else []
+            if blocked:
+                live_skip = blocked[0]
         msg = format_hourly_summary(
             trade_count=snap["trade_count"],
             net_pnl=snap["net_pnl"],
@@ -770,6 +796,9 @@ class TradingEngine:
             primary_goal_progress_pct=pg_pct,
             live_portfolio=live_portfolio,
             live_session_pnl=live_session_pnl,
+            best_live_route=best_route,
+            best_live_route_net_pct=best_route_net,
+            live_skip_reason=live_skip,
         )
         self.discord.post_important(msg, pin=False, source="TradeBot")
         self._last_summary_monotonic = time.monotonic()
@@ -1018,15 +1047,16 @@ class TradingEngine:
                 f"Profit-only mode: expected net {pf.net_return_pct:+.4f} <= 0 after fees"
             )
         intent.edge = pf.net_return_pct
-        mirror_block = self._paper_mirror_live_would_block(
-            intent,
-            route,
-            pf.net_return_pct,
-            holdings=holdings,
-            usd_prices=usd_prices,
-        )
-        if mirror_block:
-            return None, mirror_block
+        if self.settings.paper_mirror_live_only:
+            mirror_block = self._paper_mirror_live_would_block(
+                intent,
+                route,
+                pf.net_return_pct,
+                holdings=holdings,
+                usd_prices=usd_prices,
+            )
+            if mirror_block:
+                return None, mirror_block
         approval = self.risk.approve_action(
             "buy" if intent.to_asset != "USD" else "sell",
             intent.edge,
@@ -1162,15 +1192,16 @@ class TradingEngine:
                 hops,
             )
         intent.edge = pf.net_return_pct
-        mirror_block = self._paper_mirror_live_would_block(
-            intent,
-            route,
-            pf.net_return_pct,
-            holdings=holdings,
-            usd_prices=usd_prices,
-        )
-        if mirror_block:
-            return intent.edge, False, mirror_block, hops
+        if self.settings.paper_mirror_live_only:
+            mirror_block = self._paper_mirror_live_would_block(
+                intent,
+                route,
+                pf.net_return_pct,
+                holdings=holdings,
+                usd_prices=usd_prices,
+            )
+            if mirror_block:
+                return intent.edge, False, mirror_block, hops
         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
         approval = self.risk.approve_action(
             "buy" if intent.to_asset != "USD" else "sell",
@@ -2037,27 +2068,38 @@ class TradingEngine:
         reason: str,
         *,
         verify_result: LiveVerifyResult | None = None,
+        net_pct: float | None = None,
     ) -> None:
         tag = verify_result.tag if verify_result else ""
+        edge = net_pct
+        if edge is None:
+            edge = paper_trade.get("edge")
         append_live_mirror_skip(
             paper_trade,
             reason,
             self.settings.live_mirror_skip_log_file,
             verify_tag=tag,
+            net_pct=edge,
         )
         logger.info("Live mirror skipped — %s", reason)
+        if not self.settings.discord_enabled:
+            return
+        from bot.discord_summary import format_live_mirror_skip_alert
+
+        alert = format_live_mirror_skip_alert(
+            paper_trade,
+            reason,
+            verify_tag=tag,
+            net_pct=edge,
+        )
         if (
             verify_result
             and verify_result.verdict == Verdict.DENY
             and is_critical_deny(verify_result.tag)
-            and self.settings.discord_enabled
         ):
-            self.discord.post_important(
-                f"**Live mirror blocked (critical)**\n"
-                f"{paper_trade.get('from_asset')}→{paper_trade.get('to_asset')}: "
-                f"{verify_result.tag}",
-                pin=False,
-            )
+            self.discord.post_important(alert, pin=False, source="TradeBot")
+        elif self._mirror_mode:
+            self.discord.post_plain(alert, source="TradeBot")
 
     def _mirror_intent_to_live(
         self,
@@ -2162,12 +2204,66 @@ class TradingEngine:
                 else self.risk.effective_min_net_profit()
             ),
         )
+        use_post_only = False
+        min_net = (
+            -1.0
+            if self._is_accumulation_intent(intent)
+            else self.risk.effective_min_net_profit()
+        )
         allow_mirror_despite_pf = confirm_bypass and not self.settings.profit_only_mode
         if not pf.allowed and not allow_mirror_despite_pf:
-            self._log_live_mirror_skip(
-                paper_trade, pf.reason, verify_result=verify_result
+            can_try_maker = (
+                self.settings.live_post_only
+                and route.hops == 1
+                and not intent.is_defensive
+                and not self._is_accumulation_intent(intent)
             )
-            return None
+            if can_try_maker:
+                pf_maker = self.preflight.validate(
+                    intent,
+                    route_symbols=route.symbols,
+                    hops=route.hops,
+                    is_defensive=False,
+                    min_net_profit=min_net,
+                    use_maker_fees=True,
+                )
+                if pf_maker.allowed:
+                    pf = pf_maker
+                    use_post_only = True
+                else:
+                    self._log_live_mirror_skip(
+                        paper_trade,
+                        pf_maker.reason,
+                        verify_result=verify_result,
+                        net_pct=pf_maker.net_return_pct,
+                    )
+                    return None
+            else:
+                self._log_live_mirror_skip(
+                    paper_trade,
+                    pf.reason,
+                    verify_result=verify_result,
+                    net_pct=pf.net_return_pct,
+                )
+                return None
+        elif (
+            not pf.allowed
+            and allow_mirror_despite_pf
+            and self.settings.live_post_only
+            and route.hops == 1
+            and not intent.is_defensive
+        ):
+            pf_maker = self.preflight.validate(
+                intent,
+                route_symbols=route.symbols,
+                hops=route.hops,
+                is_defensive=False,
+                min_net_profit=min_net,
+                use_maker_fees=True,
+            )
+            if pf_maker.allowed and pf_maker.net_return_pct > pf.net_return_pct:
+                pf = pf_maker
+                use_post_only = True
         mirror_block = self._live_mirror_offensive_block(
             intent,
             route,
@@ -2178,6 +2274,7 @@ class TradingEngine:
                 paper_trade,
                 mirror_block,
                 verify_result=verify_result,
+                net_pct=pf.net_return_pct,
             )
             return None
         mirror_size = min(constraint.size_pct, paper_size_pct)
@@ -2188,16 +2285,23 @@ class TradingEngine:
             reason=f"[mirror] {intent.reason}",
             size_pct=mirror_size,
             strategy_name=intent.strategy_name,
+            post_only=use_post_only,
         )
         if not live_trade:
             if live.halted and self.settings.discord_enabled:
                 self.discord.post_important(
                     f"**LIVE HALT — ROUTE FAILURE**\n{live.halt_reason or 'live path failed'}"
                 )
+            fail_reason = (
+                "post-only limit unfilled (no market fallback)"
+                if use_post_only
+                else "live execution failed"
+            )
             self._log_live_mirror_skip(
                 paper_trade,
-                "live execution failed",
+                fail_reason,
                 verify_result=verify_result,
+                net_pct=pf.net_return_pct,
             )
             return None
         receipt_path = self.receipts.save(live_trade)
@@ -2205,17 +2309,19 @@ class TradingEngine:
         live_trade["edge"] = pf.net_return_pct if pf.allowed else float(
             paper_trade.get("edge") or paper_trade.get("gross_return_pct") or 0
         )
+        if use_post_only:
+            live_trade["post_only"] = True
         self.auditor.note_trade(live_trade)
         self._after_live_trade()
         if self.settings.discord_enabled:
             live_portfolio = live.portfolio_value(usd_prices)
             baseline = live.risk.baseline_portfolio
             baseline_pnl = live_portfolio - baseline if baseline > 0 else 0.0
-            mirror_note = f"_Mirrored from paper ({verify_result.tag})_"
-            verify_tag = mirror_note
+            mode = "post-only maker" if use_post_only else verify_result.tag
+            mirror_note = f"_Live fill ({mode})_"
             self.discord.post_important(
                 format_trade_executed_alert(
-                    live_trade, live_portfolio, baseline_pnl, verify_tag=verify_tag
+                    live_trade, live_portfolio, baseline_pnl, verify_tag=mirror_note
                 ),
                 pin=False,
             )
@@ -2563,6 +2669,79 @@ class TradingEngine:
                     1,
                 )
             self.discord.post_important(msg, pin=pin)
+
+    def _notify_discord_futures_trades(self, trades: list[dict]) -> None:
+        if not self.settings.discord_enabled or not trades:
+            return
+        fm = self.futures_manager
+        paper = not (
+            self.settings.live_futures_enabled
+            and fm is not None
+            and fm.broker is not None
+            and not getattr(fm.broker.state, "paper", True)
+        )
+        if paper and not self.settings.discord_futures_paper_alerts:
+            return
+        for trade in trades:
+            self.discord.post_important(
+                format_futures_trade_alert(trade, paper=paper),
+                pin=False,
+                source="TradeBot",
+            )
+
+    def _format_startup_status_block(self, snapshot: TickSnapshot) -> str:
+        lines: list[str] = []
+        live = self._live_portfolio_for_command()
+        if live:
+            lines.append(
+                f"**Live Kraken spot:** ${float(live['portfolio']):,.2f} "
+                f"(session PnL ${float(live['session_pnl']):+,.2f})"
+            )
+            holdings = dict(live.get("holdings") or {})
+            usd = float(holdings.get("USD") or 0.0)
+            if usd >= 1.0:
+                lines.append(f"Spot USD cash: ${usd:,.2f}")
+        fm = self.futures_manager
+        if fm is not None and fm.active and fm.broker is not None:
+            lines.append(
+                format_futures_positions_summary(
+                    fm.broker.state.positions,
+                    balance_usd=float(fm.broker.state.balance_usd),
+                    paper=not self.settings.live_futures_enabled,
+                )
+            )
+        result = self._last_result
+        blocked = list(getattr(result, "blocked", []) or [])
+        if blocked:
+            short = blocked[0][:140] + ("…" if len(blocked[0]) > 140 else "")
+            lines.append(f"**Spot HOLD** — {short}")
+        elif snapshot.status.idle_reason:
+            lines.append(f"**Spot HOLD** — {snapshot.status.idle_reason}")
+        live_broker = self.live_broker
+        if live_broker and getattr(live_broker, "halted", False):
+            reason = getattr(live_broker, "halt_reason", "") or "live halted"
+            lines.append(f":warning: Live mirror halted: {reason[:120]}")
+        if not os.getenv("KRAKEN_FUTURES_API_KEY", "").strip():
+            usd_cash = float((live or {}).get("holdings", {}).get("USD", 0) if live else 0)
+            fund_note = (
+                f" Spot wallet has ${usd_cash:,.0f} USD but futures uses a **separate wallet** — "
+                "fund at futures.kraken.com after adding keys."
+                if usd_cash >= 50
+                else ""
+            )
+            lines.append(
+                ":key: **Futures live blocked** — add `KRAKEN_FUTURES_API_KEY` and "
+                "`KRAKEN_FUTURES_API_SECRET` to `.env` (create at futures.kraken.com, ~2 min), "
+                f"fund the futures wallet, then set `LIVE_FUTURES_ENABLED=1` and restart.{fund_note}"
+            )
+        elif self.settings.live_futures_enabled and live:
+            usd_cash = float(dict(live.get("holdings") or {}).get("USD") or 0.0)
+            if usd_cash >= 50:
+                lines.append(
+                    f":information_source: Spot USD (${usd_cash:,.0f}) does not fund perps — "
+                    "transfer to your Kraken Futures wallet separately."
+                )
+        return "\n".join(lines)
 
 
 
@@ -3346,17 +3525,18 @@ class TradingEngine:
                 edge_qualified = True
                 intent.edge = pf.net_return_pct
 
-                mirror_block = self._paper_mirror_live_would_block(
-                    intent,
-                    route,
-                    pf.net_return_pct,
-                    holdings=holdings,
-                    usd_prices=usd_prices,
-                )
-                if mirror_block:
-                    blocked.append(mirror_block)
-                    activity_blocked.append(mirror_block)
-                    continue
+                if self.settings.paper_mirror_live_only:
+                    mirror_block = self._paper_mirror_live_would_block(
+                        intent,
+                        route,
+                        pf.net_return_pct,
+                        holdings=holdings,
+                        usd_prices=usd_prices,
+                    )
+                    if mirror_block:
+                        blocked.append(mirror_block)
+                        activity_blocked.append(mirror_block)
+                        continue
 
                 approval = self.risk.approve_action(
 
@@ -3603,7 +3783,9 @@ class TradingEngine:
 
         if self.futures_manager is not None and self.futures_manager.active:
             try:
-                self.futures_manager.tick()
+                futures_trades = self.futures_manager.tick()
+                if futures_trades:
+                    self._notify_discord_futures_trades(futures_trades)
             except Exception as exc:
                 logger.warning("Futures tick failed: %s", exc)
 
@@ -3667,13 +3849,13 @@ class TradingEngine:
 
         self._instance_started_at = format_pacific()
 
+        snapshot: TickSnapshot | None = None
         try:
-
-            self._refresh_market_view()
-
+            snapshot = self._refresh_market_view()
         except Exception as exc:
-
             logger.warning("Startup market refresh failed: %s", exc)
+        if snapshot is None:
+            snapshot = self.runtime.snapshot()
 
         overrides_line = self._active_overrides_line()
 
@@ -3707,6 +3889,10 @@ class TradingEngine:
         if overrides_line:
             startup_text = f"{startup_text}\n{overrides_line}"
 
+        status_block = self._format_startup_status_block(snapshot) if snapshot else ""
+        if status_block:
+            startup_text = f"{startup_text}\n\n{status_block}"
+
         if self.settings.goal_evolution_enabled:
             goal_portfolio = self._goal_tracking_portfolio()
             if goal_portfolio > 0:
@@ -3718,6 +3904,11 @@ class TradingEngine:
         self.discord.post_startup_pin(startup_text)
 
         self._post_strategy_status()
+
+        if snapshot:
+            self.discord.post_plain(
+                f"Monitoring exchange since {self._instance_started_at}\n{self._tick_activity_line()}"
+            )
 
         self._last_heartbeat_monotonic = time.monotonic()
 

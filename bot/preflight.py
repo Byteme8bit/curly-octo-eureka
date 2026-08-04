@@ -42,9 +42,14 @@ class PreFlightValidator:
         hops: int,
         is_defensive: bool = False,
         min_net_profit: float | None = None,
+        use_maker_fees: bool = False,
     ) -> PreFlightResult:
         gross = intent.gross_return_pct if intent.gross_return_pct else intent.edge
-        fee_pct = self.fee_engine.compounded_fee_pct(route_symbols)
+        fee_pct = (
+            self.fee_engine.compounded_maker_fee_pct(route_symbols)
+            if use_maker_fees
+            else self.fee_engine.compounded_fee_pct(route_symbols)
+        )
         slippage_pct = self.slippage_buffer_pct * max(1, hops)
         net = gross - fee_pct - slippage_pct
         threshold = self.min_net_profit_pct if min_net_profit is None else min_net_profit
@@ -69,6 +74,7 @@ class PreFlightValidator:
                 reason="Scheduled accumulation — pre-flight bypass (fee drag only)",
             )
 
+        fee_label = "maker fees" if use_maker_fees else "fees"
         if net <= threshold:
             return PreFlightResult(
                 allowed=False,
@@ -78,16 +84,17 @@ class PreFlightValidator:
                 net_return_pct=net,
                 reason=(
                     f"Pre-flight reject: net {net:+.4f} "
-                    f"(gross {gross:+.4f} - fees {fee_pct:.4f} - slippage {slippage_pct:.4f}) "
+                    f"(gross {gross:+.4f} - {fee_label} {fee_pct:.4f} - slippage {slippage_pct:.4f}) "
                     f"<= min {threshold:.4f}"
                 ),
             )
 
+        ok_label = "maker post-only OK" if use_maker_fees else "Pre-flight OK"
         return PreFlightResult(
             allowed=True,
             gross_return_pct=gross,
             fee_pct=fee_pct,
             slippage_pct=slippage_pct,
             net_return_pct=net,
-            reason=f"Pre-flight OK: net {net:+.4f}",
+            reason=f"{ok_label}: net {net:+.4f}",
         )
