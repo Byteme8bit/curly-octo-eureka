@@ -355,6 +355,18 @@
       "timestamp": "2026-05-30 22:16:52 PDT"
     }
   ],
+  "MEMORY_CARD.md": [
+    {
+      "added": 8,
+      "number": 1,
+      "patch": "r001--2026-08-04_225253--084-085-revival-tuning-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "084-085 revival tuning notes",
+      "removed": 7,
+      "request_id": "085",
+      "timestamp": "2026-08-04 22:52:53 PDT"
+    }
+  ],
   "README.md": [
     {
       "added": 11,

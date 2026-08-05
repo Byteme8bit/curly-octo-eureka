@@ -3242,3 +3242,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +31 / -1
 - **Patch:** `r006--2026-08-04_214525--paper-state-recent-trades.patch`
 
+## MEMORY_CARD.md — r001
+
+- **When:** 2026-08-04 22:52:53 PDT
+- **Reason:** 084-085 revival tuning notes
+- **Request:** 085
+- **Diff:** +8 / -7
+- **Patch:** `r001--2026-08-04_225253--084-085-revival-tuning-notes.patch`
+
