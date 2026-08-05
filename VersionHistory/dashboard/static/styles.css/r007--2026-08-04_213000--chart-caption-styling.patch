@@ -1,0 +1,16 @@
+--- a/dashboard/static/styles.css
++++ b/dashboard/static/styles.css
+@@ -281,6 +281,13 @@
+   font-weight: 500;
+ }
+ 
++.chart-caption {
++  margin: 0 0 0.35rem;
++  font-size: 0.68rem;
++  color: var(--text);
++  font-family: Consolas, monospace;
++}
++
+ .chart-card canvas {
+   flex: 1;
+   min-height: 140px;

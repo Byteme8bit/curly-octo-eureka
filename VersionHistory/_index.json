@@ -1429,6 +1429,16 @@
       "removed": 1,
       "request_id": "051",
       "timestamp": "2026-06-13 21:00:22 PDT"
+    },
+    {
+      "added": 2,
+      "number": 2,
+      "patch": "r002--2026-08-04_194348--null-portfolio-fields-load-as-zero.patch",
+      "path": "bot/goal_evolution.py",
+      "reason": "null portfolio fields load as zero",
+      "removed": 2,
+      "request_id": "083",
+      "timestamp": "2026-08-04 19:43:48 PDT"
     }
   ],
   "bot/live_broker.py": [
@@ -2721,6 +2731,16 @@
       "removed": 5,
       "request_id": "051",
       "timestamp": "2026-06-13 20:52:55 PDT"
+    },
+    {
+      "added": 53,
+      "number": 2,
+      "patch": "r002--2026-08-04_214525--merge-paper-state-trades.patch",
+      "path": "dashboard/parsers/series.py",
+      "reason": "merge paper state trades",
+      "removed": 1,
+      "request_id": "083",
+      "timestamp": "2026-08-04 21:45:25 PDT"
     }
   ],
   "dashboard/parsers/tradebot.py": [
@@ -2773,6 +2793,16 @@
       "removed": 0,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:15 PDT"
+    },
+    {
+      "added": 31,
+      "number": 6,
+      "patch": "r006--2026-08-04_214525--paper-state-recent-trades.patch",
+      "path": "dashboard/parsers/tradebot.py",
+      "reason": "paper state recent trades",
+      "removed": 1,
+      "request_id": "083",
+      "timestamp": "2026-08-04 21:45:25 PDT"
     }
   ],
   "dashboard/parsers/whales.py": [
@@ -2949,6 +2979,16 @@
       "removed": 2,
       "request_id": "051",
       "timestamp": "2026-06-13 21:00:23 PDT"
+    },
+    {
+      "added": 58,
+      "number": 10,
+      "patch": "r010--2026-08-04_212959--trades-chart-grouped-bars.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "trades chart grouped bars",
+      "removed": 13,
+      "request_id": "083",
+      "timestamp": "2026-08-04 21:29:59 PDT"
     }
   ],
   "dashboard/static/index.html": [
@@ -3021,6 +3061,16 @@
       "removed": 3,
       "request_id": "051",
       "timestamp": "2026-06-13 21:00:24 PDT"
+    },
+    {
+      "added": 2,
+      "number": 8,
+      "patch": "r008--2026-08-04_212959--trades-caption-cache-buster.patch",
+      "path": "dashboard/static/index.html",
+      "reason": "trades caption cache buster",
+      "removed": 1,
+      "request_id": "083",
+      "timestamp": "2026-08-04 21:29:59 PDT"
     }
   ],
   "dashboard/static/styles.css": [
@@ -3083,6 +3133,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-13 21:00:24 PDT"
+    },
+    {
+      "added": 7,
+      "number": 7,
+      "patch": "r007--2026-08-04_213000--chart-caption-styling.patch",
+      "path": "dashboard/static/styles.css",
+      "reason": "chart caption styling",
+      "removed": 0,
+      "request_id": "083",
+      "timestamp": "2026-08-04 21:30:00 PDT"
     }
   ],
   "docs/README.md": [
@@ -3739,6 +3799,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-13 21:00:24 PDT"
+    },
+    {
+      "added": 12,
+      "number": 2,
+      "patch": "r002--2026-08-04_194349--null-portfolio-state-load-test.patch",
+      "path": "tests/test_goal_evolution.py",
+      "reason": "null portfolio state load test",
+      "removed": 0,
+      "request_id": "083",
+      "timestamp": "2026-08-04 19:43:49 PDT"
     }
   ],
   "tests/test_kraken_retry.py": [

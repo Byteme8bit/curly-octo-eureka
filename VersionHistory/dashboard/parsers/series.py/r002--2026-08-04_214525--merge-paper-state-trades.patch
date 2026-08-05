@@ -1,0 +1,80 @@
+--- a/dashboard/parsers/series.py
++++ b/dashboard/parsers/series.py
+@@ -240,6 +240,53 @@
+     return s[:10] if len(s) >= 10 else "unknown"
+ 
+ 
++def _parse_iso_day(time_str: str) -> str:
++    """Return YYYY-MM-DD from ISO or receipt-style timestamps."""
++    s = (time_str or "").strip()
++    if len(s) >= 10 and s[4] == "-" and s[7] == "-":
++        return s[:10]
++    return _parse_receipt_time(s)
++
++
++def _merge_paper_state_trades(
++    settings: DashboardSettings,
++    buckets: dict[str, dict],
++    trades: list[dict],
++) -> None:
++    """Fallback when receipt .txt files are missing — use .paper_state.json trades."""
++    path = settings.paper_state_file
++    if not path.exists():
++        return
++    try:
++        data = json.loads(path.read_text(encoding="utf-8"))
++    except (OSError, json.JSONDecodeError):
++        return
++
++    seen_times = {t.get("time") for t in trades if t.get("time")}
++    for trade in data.get("trades") or []:
++        if not isinstance(trade, dict):
++            continue
++        ts = str(trade.get("time", ""))
++        if not ts or ts in seen_times:
++            continue
++        day = _parse_iso_day(ts)
++        pnl = trade.get("gain_loss")
++        fee = float(trade.get("fee_usd") or trade.get("fee_quote") or 0.0)
++        buckets[day]["trade_count"] += 1
++        if pnl is not None:
++            buckets[day]["net_pnl"] += float(pnl)
++        buckets[day]["fees"] += fee
++        from_a = trade.get("from_asset", "?")
++        to_a = trade.get("to_asset", "?")
++        trades.append({
++            "time": ts,
++            "summary": f"{from_a}->{to_a} {trade.get('reason', '')}".strip(),
++            "gain_loss_usd": float(pnl) if pnl is not None else None,
++            "fee_usd": fee,
++        })
++        seen_times.add(ts)
++
++
+ def build_trades_series(
+     settings: DashboardSettings,
+     *,
+@@ -272,6 +319,8 @@
+             "fee_usd": fee,
+         })
+ 
++    _merge_paper_state_trades(settings, buckets, trades)
++
+     series = []
+     for day in sorted(buckets.keys()):
+         b = buckets[day]
+@@ -282,10 +331,13 @@
+             "fees": round(b["fees"], 2),
+         })
+ 
++    sources = [str(settings.receipts_dir)]
++    if settings.paper_state_file.exists():
++        sources.append(str(settings.paper_state_file))
+     return {
+         "buckets": series,
+         "recent": trades[:30],
+-        "source": str(settings.receipts_dir),
++        "source": " + ".join(sources),
+         "mode": "paper",
+     }
+ 
