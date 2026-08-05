@@ -24,9 +24,15 @@ class FuturesManager:
     def __init__(self, settings: "Settings"):
         self.settings = settings
         self.symbols: tuple[str, ...] = ()
+        futures_key = (
+            settings.futures_api_key if settings.live_futures_enabled else ""
+        )
+        futures_secret = (
+            settings.futures_api_secret if settings.live_futures_enabled else ""
+        )
         self.exchange = build_futures_exchange(
-            api_key=settings.api_key if settings.live_futures_enabled else "",
-            api_secret=settings.api_secret if settings.live_futures_enabled else "",
+            api_key=futures_key,
+            api_secret=futures_secret,
             timeout_ms=settings.kraken_request_timeout_ms,
         )
         self.broker: FuturesPaperBroker | None = None

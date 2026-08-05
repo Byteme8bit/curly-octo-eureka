@@ -118,3 +118,64 @@ def test_futures_manager_paper_tick(tmp_path: Path, monkeypatch) -> None:
     trades = mgr.tick()
     assert len(trades) == 1
     assert trades[0]["action"] == "open"
+
+
+def test_futures_api_credentials_from_env(monkeypatch) -> None:
+    from config import load_settings
+
+    monkeypatch.setenv("KRAKEN_API_KEY", "spot-key")
+    monkeypatch.setenv("KRAKEN_API_SECRET", "spot-secret")
+    monkeypatch.setenv("KRAKEN_FUTURES_API_KEY", "futures-key")
+    monkeypatch.setenv("KRAKEN_FUTURES_API_SECRET", "futures-secret")
+    with patch("bot.futures.manager.FuturesManager.__init__", return_value=None):
+        settings = load_settings()
+    assert settings.futures_api_key == "futures-key"
+    assert settings.futures_api_secret == "futures-secret"
+
+
+def test_futures_api_credentials_fallback_to_spot(monkeypatch) -> None:
+    from config import load_settings
+
+    monkeypatch.setenv("KRAKEN_API_KEY", "spot-key")
+    monkeypatch.setenv("KRAKEN_API_SECRET", "spot-secret")
+    monkeypatch.delenv("KRAKEN_FUTURES_API_KEY", raising=False)
+    monkeypatch.delenv("KRAKEN_FUTURES_API_SECRET", raising=False)
+    with patch("bot.futures.manager.FuturesManager.__init__", return_value=None):
+        settings = load_settings()
+    assert settings.futures_api_key == "spot-key"
+    assert settings.futures_api_secret == "spot-secret"
+
+
+def test_futures_manager_live_uses_futures_api_keys(tmp_path: Path, monkeypatch) -> None:
+    from bot.futures.manager import FuturesManager
+    from config import load_settings
+
+    monkeypatch.setenv("ENABLE_FUTURES", "1")
+    monkeypatch.setenv("FUTURES_WATCHLIST", "BTC/USD:USD")
+    monkeypatch.setenv("FUTURES_LIVE_STATE_FILE", str(tmp_path / "fl.json"))
+    monkeypatch.setenv("KRAKEN_API_KEY", "spot-key")
+    monkeypatch.setenv("KRAKEN_API_SECRET", "spot-secret")
+    monkeypatch.setenv("KRAKEN_FUTURES_API_KEY", "futures-key")
+    monkeypatch.setenv("KRAKEN_FUTURES_API_SECRET", "futures-secret")
+    monkeypatch.setenv("LIVE_FUTURES_ENABLED", "1")
+    monkeypatch.setenv("LIVE_ENABLED", "1")
+    monkeypatch.setenv("LIVE_TRADING_CONFIRM", "I_ACCEPT_REAL_MONEY")
+    settings = load_settings()
+
+    mock_exchange = MagicMock()
+    mock_exchange.load_markets.return_value = {
+        "BTC/USD:USD": {"active": True, "swap": True, "limits": {"leverage": {"max": 10}}},
+    }
+    mock_exchange.fetch_balance.return_value = {"total": {"USD": 500.0}}
+
+    with patch("bot.futures.manager.build_futures_exchange", return_value=mock_exchange) as mock_build:
+        mgr = FuturesManager(settings)
+        mock_build.assert_called_once_with(
+            api_key="futures-key",
+            api_secret="futures-secret",
+            timeout_ms=settings.kraken_request_timeout_ms,
+        )
+    assert isinstance(mgr.broker, object)
+    from bot.futures.live_broker import FuturesLiveBroker
+
+    assert isinstance(mgr.broker, FuturesLiveBroker)

@@ -1,9 +1,10 @@
-"""Real-money execution on Kraken via ccxt market orders."""
+"""Real-money execution on Kraken via ccxt market or post-only limit orders."""
 
 from __future__ import annotations
 
 import json
 import logging
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -35,9 +36,17 @@ class LiveBroker:
         reset: bool = False,
         equity_assets: frozenset[str] | None = None,
         sync_assets: frozenset[str] | None = None,
+        post_only_enabled: bool = True,
+        maker_fee_rate: float | None = None,
+        post_only_timeout_sec: float = 45.0,
+        post_only_poll_sec: float = 2.0,
     ):
         self.exchange = exchange
         self.fee_rate = fee_rate
+        self.maker_fee_rate = maker_fee_rate if maker_fee_rate is not None else fee_rate * 0.5
+        self.post_only_enabled = post_only_enabled
+        self.post_only_timeout_sec = post_only_timeout_sec
+        self.post_only_poll_sec = post_only_poll_sec
         self.min_usd_trade = min_usd_trade
         self.max_usd_per_trade = max_usd_per_trade
         self.max_usd_per_route = max_usd_per_route
@@ -330,6 +339,7 @@ class LiveBroker:
         size_pct: float = 1.0,
         *,
         strategy_name: str = "",
+        post_only: bool = False,
     ) -> dict | None:
         if self.halted:
             return None
@@ -374,6 +384,7 @@ class LiveBroker:
                     size_pct=leg_size,
                     apply_usd_cap=index == 0,
                     max_from_qty=max_from,
+                    post_only=post_only and index == 0 and route.hops == 1,
                 )
             except ccxt.BaseError as exc:
                 msg = (
@@ -496,9 +507,12 @@ class LiveBroker:
         skip_route_check: bool = False,
         apply_usd_cap: bool = True,
         max_from_qty: float | None = None,
+        post_only: bool = False,
     ) -> dict | None:
         if self.halted or side == Signal.HOLD:
             return None
+
+        use_post_only = post_only and self.post_only_enabled
 
         if not skip_route_check:
             single_leg = TradeRoute(
@@ -541,7 +555,8 @@ class LiveBroker:
                 trade_usd = quote_spend * quote_usd
             if trade_usd < self.min_usd_trade:
                 return None
-            base_qty = (quote_spend * (1.0 - self.fee_rate)) / price
+            leg_fee = self.maker_fee_rate if use_post_only else self.fee_rate
+            base_qty = (quote_spend * (1.0 - leg_fee)) / price
         else:
             base_bal = self.balance(base)
             if max_from_qty is not None:
@@ -566,14 +581,66 @@ class LiveBroker:
         params: dict = {}
         if is_equity_asset(base, self.equity_assets):
             params["asset_class"] = "tokenized_asset"
-        if params:
-            order = self.exchange.create_order(
-                symbol, "market", side_str, amount, params=params
-            )
-        else:
-            order = self.exchange.create_order(symbol, "market", side_str, amount)
+
+        order_type = "market"
+        limit_price = price
+        if use_post_only:
+            order_type = "limit"
+            try:
+                ticker = self.exchange.fetch_ticker(symbol)
+                bid = float(ticker.get("bid") or price)
+                ask = float(ticker.get("ask") or price)
+                limit_price = bid if side == Signal.SELL else ask
+                limit_price = float(
+                    self.exchange.price_to_precision(symbol, limit_price)
+                )
+            except ccxt.BaseError as exc:
+                logger.warning("Post-only ticker fetch failed on %s: %s", symbol, exc)
+                return None
+            params["postOnly"] = True
+
+        try:
+            if order_type == "limit":
+                order = self.exchange.create_order(
+                    symbol, order_type, side_str, amount, limit_price, params=params or None
+                )
+            elif params:
+                order = self.exchange.create_order(
+                    symbol, order_type, side_str, amount, params=params
+                )
+            else:
+                order = self.exchange.create_order(symbol, order_type, side_str, amount)
+        except ccxt.BaseError as exc:
+            logger.warning("Live order failed on %s (%s): %s", symbol, order_type, exc)
+            return None
+
         order_id = order.get("id")
-        if order_id and order.get("status") != "closed":
+        if use_post_only and order_id:
+            deadline = time.monotonic() + self.post_only_timeout_sec
+            while time.monotonic() < deadline:
+                status = order.get("status")
+                if status == "closed":
+                    break
+                try:
+                    order = self.exchange.fetch_order(order_id, symbol)
+                except ccxt.BaseError as exc:
+                    logger.warning("Post-only poll failed on %s: %s", symbol, exc)
+                    break
+                status = order.get("status")
+                if status in ("closed", "canceled", "expired"):
+                    break
+                time.sleep(self.post_only_poll_sec)
+            if order.get("status") != "closed":
+                try:
+                    self.exchange.cancel_order(order_id, symbol)
+                except ccxt.BaseError as exc:
+                    logger.warning("Post-only cancel failed on %s: %s", symbol, exc)
+                logger.info(
+                    "Post-only limit unfilled on %s — canceled (no market fallback)",
+                    symbol,
+                )
+                return None
+        elif order_id and order.get("status") != "closed":
             order = self.exchange.fetch_order(order_id, symbol)
 
         filled = float(order.get("filled") or amount)

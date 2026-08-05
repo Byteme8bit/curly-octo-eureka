@@ -185,3 +185,35 @@ class FeeEngine:
 
     def compounded_fee_pct(self, symbols: tuple[str, ...]) -> float:
         return self.compounded_taker_cost(symbols)
+
+    def maker_fee(self, symbol: str) -> float:
+        """Per-symbol maker fee; falls back to half of taker when unknown."""
+        if self.force_static:
+            return self.default_taker * 0.5
+        now = time.monotonic()
+        cached_key = f"maker:{symbol}"
+        cached = self._fee_cache.get(cached_key)
+        cache_ttl = self.cache_ttl_sec if self._schedule_loaded else self.schedule_retry_sec
+        if cached and (now - cached[1]) < cache_ttl:
+            return cached[0]
+
+        self._load_schedule(now=now)
+        market = (self.exchange.markets or {}).get(symbol) or {}
+        maker = market.get("maker")
+        if maker is not None:
+            fee = float(maker)
+        else:
+            fee = self._pair_fee.get(symbol, self.default_taker) * 0.5
+        self._fee_cache[cached_key] = (fee, now)
+        return fee
+
+    def compounded_maker_cost(self, symbols: tuple[str, ...]) -> float:
+        if not symbols:
+            return 0.0
+        retain = 1.0
+        for symbol in symbols:
+            retain *= 1.0 - self.maker_fee(symbol)
+        return 1.0 - retain
+
+    def compounded_maker_fee_pct(self, symbols: tuple[str, ...]) -> float:
+        return self.compounded_maker_cost(symbols)

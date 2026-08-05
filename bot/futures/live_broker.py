@@ -1,4 +1,8 @@
-"""Live Kraken Futures execution — gated by LIVE_FUTURES_ENABLED."""
+"""Live Kraken Futures execution — gated by LIVE_FUTURES_ENABLED.
+
+Uses ccxt.krakenfutures with KRAKEN_FUTURES_API_KEY / KRAKEN_FUTURES_API_SECRET
+(spot keys do not authenticate on futures.kraken.com).
+"""
 
 from __future__ import annotations
 
@@ -40,6 +44,13 @@ class FuturesLiveBroker(FuturesPaperBroker):
     def sync_balance(self) -> None:
         try:
             raw = self.exchange.fetch_balance()
+        except ccxt.AuthenticationError as exc:
+            logger.error(
+                "Futures auth failed — set KRAKEN_FUTURES_API_KEY / "
+                "KRAKEN_FUTURES_API_SECRET (create at futures.kraken.com): %s",
+                exc,
+            )
+            return
         except ccxt.BaseError as exc:
             logger.warning("Futures balance sync failed: %s", exc)
             return
