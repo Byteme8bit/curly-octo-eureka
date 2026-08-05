@@ -208,9 +208,9 @@ class GoalEvolutionState:
             crash_hold_since=data.get("crash_hold_since"),
             crash_hold_reason=str(data.get("crash_hold_reason", "")),
             crash_hold_triggers=[str(t) for t in triggers],
-            session_start_portfolio=float(data.get("session_start_portfolio", 0.0)),
+            session_start_portfolio=float(data.get("session_start_portfolio") or 0.0),
             session_start_at=data.get("session_start_at"),
-            last_portfolio_usd=float(data.get("last_portfolio_usd", 0.0)),
+            last_portfolio_usd=float(data.get("last_portfolio_usd") or 0.0),
             last_tier=int(data.get("last_tier", 0)),
         )
 
