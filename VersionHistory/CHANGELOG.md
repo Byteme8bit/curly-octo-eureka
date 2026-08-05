@@ -3250,3 +3250,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +8 / -7
 - **Patch:** `r001--2026-08-04_225253--084-085-revival-tuning-notes.patch`
 
+## MEMORY_CARD.md — r002
+
+- **When:** 2026-08-05 02:19:25 PDT
+- **Reason:** discord revival setup notes
+- **Request:** 086
+- **Diff:** +1 / -0
+- **Patch:** `r002--2026-08-05_021925--discord-revival-setup-notes.patch`
+

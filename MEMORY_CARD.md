@@ -23,6 +23,7 @@ Python Kraken **spot** trading bot (paper + optional live). Strategies, safety r
 | **Trades so far** | 2 defensive ETH→USD bucket trims (not momentum rotations) |
 | **Why mostly HOLD** | Was: preflight used ~0.40% live fees while strategy assumed 0.26% — fixed with `FEE_FORCE_STATIC=1` (084) |
 | **Kraken keys** | Not in `.env` yet — paper works on public prices; keys needed for live/anchor |
+| **Discord** | `DISCORD_ENABLED=1` but credentials empty — fill webhook/bot token (086) |
 | **Dashboard** | Fixed 2026-08-04 (feature 083) — trades chart uses grouped bars + caption; cache `app.js?v=048` |
 
 ### Active `.env` tuning (local, not committed)

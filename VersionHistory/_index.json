@@ -365,6 +365,16 @@
       "removed": 7,
       "request_id": "085",
       "timestamp": "2026-08-04 22:52:53 PDT"
+    },
+    {
+      "added": 1,
+      "number": 2,
+      "patch": "r002--2026-08-05_021925--discord-revival-setup-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "discord revival setup notes",
+      "removed": 0,
+      "request_id": "086",
+      "timestamp": "2026-08-05 02:19:25 PDT"
     }
   ],
   "README.md": [
