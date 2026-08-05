@@ -1,0 +1,56 @@
+--- a/MEMORY_CARD.md
++++ b/MEMORY_CARD.md
+@@ -1,6 +1,6 @@
+ # Memory card — eth-trading-bot
+ 
+-**Last updated:** 2026-08-04 PDT  
++**Last updated:** 2026-08-04 PDT (084 activity tuning)  
+ **Read this first** before answering prompts about this repo.
+ 
+ ---
+@@ -16,12 +16,12 @@
+ | Item | Value |
+ |------|--------|
+ | **Mode** | Paper-only, bot running |
+-| **Strategy** | `cross_momentum` only |
++| **Strategy** | `cross_momentum`, `stat_arb`, `triangular_arbitrage` (085) |
+ | **Branch** | `cb/goal-state-null-fix` (commit `e954391` — goal-state null fix, not pushed at last check) |
+ | **Baseline** | `paper_baseline.json` — ~$1,397.51 (ETH 0.52042, USD 415.90, ADA 24.602263) anchored 2026-08-04 |
+ | **Archive** | `archive/2026-08-04-revival/` — pre-revival state backup |
+ | **Trades so far** | 2 defensive ETH→USD bucket trims (not momentum rotations) |
+-| **Why mostly HOLD** | 0.40% taker fees (no API keys = public tier); best route ~+0.0036 edge vs +0.0040 fee hurdle; `PROFIT_ONLY_MODE=1` |
++| **Why mostly HOLD** | Was: preflight used ~0.40% live fees while strategy assumed 0.26% — fixed with `FEE_FORCE_STATIC=1` (084) |
+ | **Kraken keys** | Not in `.env` yet — paper works on public prices; keys needed for live/anchor |
+ | **Dashboard** | Fixed 2026-08-04 (feature 083) — trades chart uses grouped bars + caption; cache `app.js?v=048` |
+ 
+@@ -30,7 +30,8 @@
+ Approximate revival tuning after conservative start:
+ 
+ - `DAY_TRADER_MODE=1`, `CRYPTO_DAY_TRADE_MODE=1`
+-- `MIN_TRADE_EDGE=0.002`, `FEE_SAFETY_MULTIPLIER=1.0`, `TRADE_COOLDOWN=45`
++- `MIN_TRADE_EDGE=0.0015`, `CRYPTO_MIN_TRADE_EDGE=0.002`, `FEE_FORCE_STATIC=1`
++- `FEE_SAFETY_MULTIPLIER=1.0`, `TRADE_COOLDOWN=30`, `IDLE_REEVAL_HOURS=1`
+ - `MAX_CRYPTO_BUCKET_PCT=0.80`, `CRASH_HOLD_ENABLED=0`
+ - `LIVE_ENABLED=0`, `AUDITOR_ENABLED=0`, `ENABLE_EQUITIES=0`, `ENABLE_FUTURES=0`
+ 
+@@ -104,9 +105,8 @@
+ 
+ ## Open / next steps
+ 
++- [ ] Monitor paper after 084 tuning — momentum trades should clear preflight now
+ - [ ] Add Kraken API keys to `.env` when ready for anchor/live
+-- [ ] 1–2 week paper validation vs `paper_baseline.json`
+-- [ ] Optional: `MIN_TRADE_EDGE=0.0035` to unblock ETH→UNI (user must approve)
+ - [ ] Push `cb/goal-state-null-fix` when ready
+ - [ ] Live only after validation pass — use `apply_revival_profile.py live`
+ 
+@@ -118,7 +118,8 @@
+ |----|--------|
+ | 074 | Conservative restart |
+ | 082 | Paper baseline reset |
+-| 083 | Dashboard trades chart fix ✓ |
++| 085 | Enable stat_arb + triangular_arbitrage |
++| 084 | Paper activity / fee-align tuning |
+ | 081 | Live spot mirror unblock |
+ | 080 | Discord futures visibility |
+ 

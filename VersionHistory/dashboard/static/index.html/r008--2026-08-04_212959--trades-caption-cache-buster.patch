@@ -1,0 +1,18 @@
+--- a/dashboard/static/index.html
++++ b/dashboard/static/index.html
+@@ -59,6 +59,7 @@
+         </div>
+         <div class="chart-card">
+           <h3>Daily trades &amp; net PnL</h3>
++          <p id="chart-trades-caption" class="chart-caption"></p>
+           <canvas id="chart-trades"></canvas>
+         </div>
+       </div>
+@@ -106,6 +107,6 @@
+     </aside>
+   </div>
+ 
+-  <script src="/static/app.js?v=046"></script>
++  <script src="/static/app.js?v=048"></script>
+ </body>
+ </html>

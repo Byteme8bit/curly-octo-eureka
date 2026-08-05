@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -213,11 +214,40 @@ def _build_paper_portfolio(settings: DashboardSettings) -> dict | None:
 
 def _paper_receipts(settings: DashboardSettings, *, limit: int = 15) -> list[dict]:
     receipts: list[dict] = []
+    seen: set[str] = set()
     for path in newest_files(settings.receipts_dir, "*.txt", limit=limit):
         row = _parse_receipt(path)
         if row:
             receipts.append(row)
-    return receipts
+            ts = row.get("time", "")
+            if ts:
+                seen.add(ts)
+
+    state_path = settings.paper_state_file
+    if state_path.exists():
+        try:
+            data = json.loads(state_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            data = {}
+        for trade in reversed(data.get("trades") or []):
+            if not isinstance(trade, dict):
+                continue
+            ts = str(trade.get("time", ""))
+            if not ts or ts in seen:
+                continue
+            from_a = trade.get("from_asset", "?")
+            to_a = trade.get("to_asset", "?")
+            receipts.append({
+                "time": ts,
+                "summary": f"{from_a}->{to_a} {trade.get('reason', '')}".strip(),
+                "gain_loss_usd": trade.get("gain_loss"),
+                "fee_usd": trade.get("fee_usd") or trade.get("fee_quote"),
+            })
+            seen.add(ts)
+            if len(receipts) >= limit:
+                break
+
+    return receipts[:limit]
 
 
 def _build_paper_tradebot_view(settings: DashboardSettings) -> dict:

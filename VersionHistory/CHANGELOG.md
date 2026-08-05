@@ -3186,3 +3186,67 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +19 / -0
 - **Patch:** `r001--2026-06-24_230630--baseline-saveload-tests.patch`
 
+## bot/goal_evolution.py — r002
+
+- **When:** 2026-08-04 19:43:48 PDT
+- **Reason:** null portfolio fields load as zero
+- **Request:** 083
+- **Diff:** +2 / -2
+- **Patch:** `r002--2026-08-04_194348--null-portfolio-fields-load-as-zero.patch`
+
+## tests/test_goal_evolution.py — r002
+
+- **When:** 2026-08-04 19:43:49 PDT
+- **Reason:** null portfolio state load test
+- **Request:** 083
+- **Diff:** +12 / -0
+- **Patch:** `r002--2026-08-04_194349--null-portfolio-state-load-test.patch`
+
+## dashboard/static/app.js — r010
+
+- **When:** 2026-08-04 21:29:59 PDT
+- **Reason:** trades chart grouped bars
+- **Request:** 083
+- **Diff:** +58 / -13
+- **Patch:** `r010--2026-08-04_212959--trades-chart-grouped-bars.patch`
+
+## dashboard/static/index.html — r008
+
+- **When:** 2026-08-04 21:29:59 PDT
+- **Reason:** trades caption cache buster
+- **Request:** 083
+- **Diff:** +2 / -1
+- **Patch:** `r008--2026-08-04_212959--trades-caption-cache-buster.patch`
+
+## dashboard/static/styles.css — r007
+
+- **When:** 2026-08-04 21:30:00 PDT
+- **Reason:** chart caption styling
+- **Request:** 083
+- **Diff:** +7 / -0
+- **Patch:** `r007--2026-08-04_213000--chart-caption-styling.patch`
+
+## dashboard/parsers/series.py — r002
+
+- **When:** 2026-08-04 21:45:25 PDT
+- **Reason:** merge paper state trades
+- **Request:** 083
+- **Diff:** +53 / -1
+- **Patch:** `r002--2026-08-04_214525--merge-paper-state-trades.patch`
+
+## dashboard/parsers/tradebot.py — r006
+
+- **When:** 2026-08-04 21:45:25 PDT
+- **Reason:** paper state recent trades
+- **Request:** 083
+- **Diff:** +31 / -1
+- **Patch:** `r006--2026-08-04_214525--paper-state-recent-trades.patch`
+
+## MEMORY_CARD.md — r001
+
+- **When:** 2026-08-04 22:52:53 PDT
+- **Reason:** 084-085 revival tuning notes
+- **Request:** 085
+- **Diff:** +8 / -7
+- **Patch:** `r001--2026-08-04_225253--084-085-revival-tuning-notes.patch`
+
