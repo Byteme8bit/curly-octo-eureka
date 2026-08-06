@@ -4,8 +4,21 @@ let refreshMs = 15000;
 let timer = null;
 const charts = {};
 
+// Set by index.html from DASHBOARD_BASE_PATH (e.g. "/tradebot"); empty for local root.
+const BASE = String(window.DASHBOARD_BASE || "")
+  .replace(/__DASHBOARD_BASE__/g, "")
+  .replace(/\/+$/, "");
+
+function withBase(path) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${BASE}${p}`;
+}
+
 function detectPageMode() {
-  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  let path = window.location.pathname.replace(/\/+$/, "") || "/";
+  if (BASE && path.startsWith(BASE)) {
+    path = path.slice(BASE.length) || "/";
+  }
   if (path === "/live") return "live";
   return "paper";
 }
@@ -13,12 +26,12 @@ function detectPageMode() {
 const PAGE_MODE = detectPageMode();
 
 function apiPath(resource) {
-  return `/api/${PAGE_MODE}/${resource}`;
+  return withBase(`/api/${PAGE_MODE}/${resource}`);
 }
 
 function legacyApiPath(resource, query = "") {
   const q = query || `?mode=${PAGE_MODE}`;
-  return `/api/${resource}${q.startsWith("?") ? q : `?${q}`}`;
+  return withBase(`/api/${resource}${q.startsWith("?") ? q : `?${q}`}`);
 }
 
 const CHART_COLORS = {

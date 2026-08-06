@@ -365,6 +365,46 @@
       "removed": 7,
       "request_id": "085",
       "timestamp": "2026-08-04 22:52:53 PDT"
+    },
+    {
+      "added": 1,
+      "number": 2,
+      "patch": "r002--2026-08-05_021925--discord-revival-setup-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "discord revival setup notes",
+      "removed": 0,
+      "request_id": "086",
+      "timestamp": "2026-08-05 02:19:25 PDT"
+    },
+    {
+      "added": 19,
+      "number": 3,
+      "patch": "r003--2026-08-06_151907--088-real-fees-reset-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "088 real fees reset notes",
+      "removed": 26,
+      "request_id": "088",
+      "timestamp": "2026-08-06 15:19:07 PDT"
+    },
+    {
+      "added": 4,
+      "number": 4,
+      "patch": "r004--2026-08-06_153510--089-vps-deploy-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "089 VPS deploy notes",
+      "removed": 3,
+      "request_id": "089",
+      "timestamp": "2026-08-06 15:35:10 PDT"
+    },
+    {
+      "added": 3,
+      "number": 5,
+      "patch": "r005--2026-08-06_154504--public-tradebot-url-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "public tradebot URL notes",
+      "removed": 2,
+      "request_id": "090",
+      "timestamp": "2026-08-06 15:45:04 PDT"
     }
   ],
   "README.md": [
@@ -2561,6 +2601,26 @@
       "removed": 16,
       "request_id": "051",
       "timestamp": "2026-06-13 20:52:55 PDT"
+    },
+    {
+      "added": 24,
+      "number": 4,
+      "patch": "r004--2026-08-06_122103--add-paper-live-status-endpoints.patch",
+      "path": "dashboard/app.py",
+      "reason": "add paper live status endpoints",
+      "removed": 0,
+      "request_id": "087",
+      "timestamp": "2026-08-06 12:21:03 PDT"
+    },
+    {
+      "added": 12,
+      "number": 5,
+      "patch": "r005--2026-08-06_154502--base-path-index-injection.patch",
+      "path": "dashboard/app.py",
+      "reason": "base path index injection",
+      "removed": 5,
+      "request_id": "090",
+      "timestamp": "2026-08-06 15:45:02 PDT"
     }
   ],
   "dashboard/config.py": [
@@ -2623,6 +2683,16 @@
       "removed": 0,
       "request_id": "057",
       "timestamp": "2026-06-15 10:18:15 PDT"
+    },
+    {
+      "added": 2,
+      "number": 7,
+      "patch": "r007--2026-08-06_154502--dashboardbasepath-setting.patch",
+      "path": "dashboard/config.py",
+      "reason": "DASHBOARD_BASE_PATH setting",
+      "removed": 0,
+      "request_id": "090",
+      "timestamp": "2026-08-06 15:45:02 PDT"
     }
   ],
   "dashboard/parsers/__init__.py": [
@@ -3001,6 +3071,16 @@
       "removed": 13,
       "request_id": "083",
       "timestamp": "2026-08-04 21:29:59 PDT"
+    },
+    {
+      "added": 16,
+      "number": 11,
+      "patch": "r011--2026-08-06_154503--base-path-api-prefix.patch",
+      "path": "dashboard/static/app.js",
+      "reason": "base path API prefix",
+      "removed": 3,
+      "request_id": "090",
+      "timestamp": "2026-08-06 15:45:03 PDT"
     }
   ],
   "dashboard/static/index.html": [
@@ -3083,6 +3163,16 @@
       "removed": 1,
       "request_id": "083",
       "timestamp": "2026-08-04 21:29:59 PDT"
+    },
+    {
+      "added": 5,
+      "number": 9,
+      "patch": "r009--2026-08-06_154503--base-path-asset-links.patch",
+      "path": "dashboard/static/index.html",
+      "reason": "base path asset links",
+      "removed": 4,
+      "request_id": "090",
+      "timestamp": "2026-08-06 15:45:03 PDT"
     }
   ],
   "dashboard/static/styles.css": [
@@ -3155,6 +3245,30 @@
       "removed": 0,
       "request_id": "083",
       "timestamp": "2026-08-04 21:30:00 PDT"
+    }
+  ],
+  "deploy/README.md": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-08-06_154505--document-public-tradebot-url.patch",
+      "path": "deploy/README.md",
+      "reason": "document public tradebot URL",
+      "removed": 0,
+      "request_id": "090",
+      "timestamp": "2026-08-06 15:45:05 PDT"
+    }
+  ],
+  "deploy/systemd/tradebot-dashboard.service": [
+    {
+      "added": 0,
+      "number": 1,
+      "patch": "r001--2026-08-06_154506--base-path-env-for-systemd.patch",
+      "path": "deploy/systemd/tradebot-dashboard.service",
+      "reason": "base path env for systemd",
+      "removed": 0,
+      "request_id": "090",
+      "timestamp": "2026-08-06 15:45:06 PDT"
     }
   ],
   "docs/README.md": [

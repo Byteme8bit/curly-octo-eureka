@@ -1,6 +1,6 @@
 # Memory card — eth-trading-bot
 
-**Last updated:** 2026-08-04 PDT (084 activity tuning)  
+**Last updated:** 2026-08-06 PDT (091 more arb)  
 **Read this first** before answering prompts about this repo.
 
 ---
@@ -15,24 +15,24 @@ Python Kraken **spot** trading bot (paper + optional live). Strategies, safety r
 
 | Item | Value |
 |------|--------|
-| **Mode** | Paper-only, bot running |
-| **Strategy** | `cross_momentum`, `stat_arb`, `triangular_arbitrage` (085) |
-| **Branch** | `cb/goal-state-null-fix` (commit `e954391` — goal-state null fix, not pushed at last check) |
-| **Baseline** | `paper_baseline.json` — ~$1,397.51 (ETH 0.52042, USD 415.90, ADA 24.602263) anchored 2026-08-04 |
-| **Archive** | `archive/2026-08-04-revival/` — pre-revival state backup |
-| **Trades so far** | 2 defensive ETH→USD bucket trims (not momentum rotations) |
-| **Why mostly HOLD** | Was: preflight used ~0.40% live fees while strategy assumed 0.26% — fixed with `FEE_FORCE_STATIC=1` (084) |
-| **Kraken keys** | Not in `.env` yet — paper works on public prices; keys needed for live/anchor |
-| **Dashboard** | Fixed 2026-08-04 (feature 083) — trades chart uses grouped bars + caption; cache `app.js?v=048` |
+| **Mode** | Paper-only on VPS (`tradebot.service`) — local Windows bot stopped |
+| **Strategy** | `cross_momentum`, `stat_arb`, `triangular_arbitrage` (091 — real 0.40% fees still) |
+| **Branch** | `cb/vps-deploy` |
+| **VPS** | `mail.lynch.gdn` / `cursor@172.245.39.184` — `scripts/deploy_to_vps.ps1` |
+| **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
+| **Baseline** | `paper_baseline.json` — ~$1,397.51 (ETH 0.52042, USD 415.90, ADA 24.602263) |
+| **Archive** | `archive/2026-08-06-real-fees-reset/` — discarded inflated ~$3.1k paper book |
+| **Trades so far** | 0 after 088 reset |
+| **Fees** | Real public Kraken ~0.40% (`FEE_FORCE_STATIC=0`, `FEE_RATE=0.004` fallback/gates) |
+| **Kraken keys** | Optional for paper; needed for live/anchor |
+| **Discord** | Enabled if credentials in `.env` (086) |
+| **Dashboard** | `scripts/start_dashboard.ps1` — separate process, port 8765 |
 
 ### Active `.env` tuning (local, not committed)
 
-Approximate revival tuning after conservative start:
-
-- `DAY_TRADER_MODE=1`, `CRYPTO_DAY_TRADE_MODE=1`
-- `MIN_TRADE_EDGE=0.0015`, `CRYPTO_MIN_TRADE_EDGE=0.002`, `FEE_FORCE_STATIC=1`
-- `FEE_SAFETY_MULTIPLIER=1.0`, `TRADE_COOLDOWN=30`, `IDLE_REEVAL_HOURS=1`
-- `MAX_CRYPTO_BUCKET_PCT=0.80`, `CRASH_HOLD_ENABLED=0`
+- `FEE_RATE=0.004`, `FEE_FORCE_STATIC=0`, `MIN_TRADE_EDGE=0.004`, `CRYPTO_MIN_TRADE_EDGE=0.004`
+- `STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage`, `PROFIT_ONLY_MODE=1`
+- `STAT_ARB_ZSCORE_THRESHOLD=1.6`, `TRADE_COOLDOWN_SECONDS=20`
 - `LIVE_ENABLED=0`, `AUDITOR_ENABLED=0`, `ENABLE_EQUITIES=0`, `ENABLE_FUTURES=0`
 
 **Incident history:** `.env` was once wiped to 0 bytes — rebuild via `apply_revival_profile.py`. Crash-hold blocked trades until goals state reset + `CRASH_HOLD_ENABLED=0`.
@@ -105,10 +105,8 @@ Invoke-RestMethod http://127.0.0.1:8765/api/paper/trades/series
 
 ## Open / next steps
 
-- [ ] Monitor paper after 084 tuning — momentum trades should clear preflight now
-- [ ] Add Kraken API keys to `.env` when ready for anchor/live
-- [ ] Push `cb/goal-state-null-fix` when ready
-- [ ] Live only after validation pass — use `apply_revival_profile.py live`
+- [ ] Validate paper PnL vs baseline for 1–2 weeks under real 0.40% fees
+- [ ] Live only after validation — `apply_revival_profile.py live`
 
 ---
 
@@ -116,11 +114,10 @@ Invoke-RestMethod http://127.0.0.1:8765/api/paper/trades/series
 
 | ID | Topic |
 |----|--------|
-| 074 | Conservative restart |
-| 082 | Paper baseline reset |
-| 085 | Enable stat_arb + triangular_arbitrage |
-| 084 | Paper activity / fee-align tuning |
-| 081 | Live spot mirror unblock |
-| 080 | Discord futures visibility |
+| 088 | Real 0.40% fees + paper baseline reset ✓ |
+| 087 | Dashboard status endpoints |
+| 086 | Discord notifications revival |
+| 085 | Arbitrage enable (triangular later removed) |
+| 083 | Dashboard trades chart fix ✓ |
 
 See `feature_logs/` for full list.

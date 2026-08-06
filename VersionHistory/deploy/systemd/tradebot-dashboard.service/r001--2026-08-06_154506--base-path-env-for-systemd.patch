@@ -1,0 +1,3 @@
+--- a/deploy/systemd/tradebot-dashboard.service
++++ b/deploy/systemd/tradebot-dashboard.service
+# initial baseline - no previous state available
