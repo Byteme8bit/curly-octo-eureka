@@ -1,6 +1,6 @@
 # Memory card — eth-trading-bot
 
-**Last updated:** 2026-08-06 PDT (090 public /tradebot/)  
+**Last updated:** 2026-08-06 PDT (091 more arb)  
 **Read this first** before answering prompts about this repo.
 
 ---
@@ -16,7 +16,7 @@ Python Kraken **spot** trading bot (paper + optional live). Strategies, safety r
 | Item | Value |
 |------|--------|
 | **Mode** | Paper-only on VPS (`tradebot.service`) — local Windows bot stopped |
-| **Strategy** | `cross_momentum`, `stat_arb` (no triangular — removed for realism) |
+| **Strategy** | `cross_momentum`, `stat_arb`, `triangular_arbitrage` (091 — real 0.40% fees still) |
 | **Branch** | `cb/vps-deploy` |
 | **VPS** | `mail.lynch.gdn` / `cursor@172.245.39.184` — `scripts/deploy_to_vps.ps1` |
 | **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
@@ -31,7 +31,8 @@ Python Kraken **spot** trading bot (paper + optional live). Strategies, safety r
 ### Active `.env` tuning (local, not committed)
 
 - `FEE_RATE=0.004`, `FEE_FORCE_STATIC=0`, `MIN_TRADE_EDGE=0.004`, `CRYPTO_MIN_TRADE_EDGE=0.004`
-- `STRATEGIES=cross_momentum,stat_arb`, `PROFIT_ONLY_MODE=1`
+- `STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage`, `PROFIT_ONLY_MODE=1`
+- `STAT_ARB_ZSCORE_THRESHOLD=1.6`, `TRADE_COOLDOWN_SECONDS=20`
 - `LIVE_ENABLED=0`, `AUDITOR_ENABLED=0`, `ENABLE_EQUITIES=0`, `ENABLE_FUTURES=0`
 
 **Incident history:** `.env` was once wiped to 0 bytes — rebuild via `apply_revival_profile.py`. Crash-hold blocked trades until goals state reset + `CRASH_HOLD_ENABLED=0`.
