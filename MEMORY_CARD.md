@@ -1,6 +1,6 @@
 # Memory card — eth-trading-bot
 
-**Last updated:** 2026-08-06 PDT (088 real-fees reset)  
+**Last updated:** 2026-08-06 PDT (090 public /tradebot/)  
 **Read this first** before answering prompts about this repo.
 
 ---
@@ -15,9 +15,11 @@ Python Kraken **spot** trading bot (paper + optional live). Strategies, safety r
 
 | Item | Value |
 |------|--------|
-| **Mode** | Paper-only, bot running |
+| **Mode** | Paper-only on VPS (`tradebot.service`) — local Windows bot stopped |
 | **Strategy** | `cross_momentum`, `stat_arb` (no triangular — removed for realism) |
-| **Branch** | `cb/discord-notifications-revival` |
+| **Branch** | `cb/vps-deploy` |
+| **VPS** | `mail.lynch.gdn` / `cursor@172.245.39.184` — `scripts/deploy_to_vps.ps1` |
+| **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
 | **Baseline** | `paper_baseline.json` — ~$1,397.51 (ETH 0.52042, USD 415.90, ADA 24.602263) |
 | **Archive** | `archive/2026-08-06-real-fees-reset/` — discarded inflated ~$3.1k paper book |
 | **Trades so far** | 0 after 088 reset |

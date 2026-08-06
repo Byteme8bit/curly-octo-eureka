@@ -3274,3 +3274,67 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +19 / -26
 - **Patch:** `r003--2026-08-06_151907--088-real-fees-reset-notes.patch`
 
+## MEMORY_CARD.md — r004
+
+- **When:** 2026-08-06 15:35:10 PDT
+- **Reason:** 089 VPS deploy notes
+- **Request:** 089
+- **Diff:** +4 / -3
+- **Patch:** `r004--2026-08-06_153510--089-vps-deploy-notes.patch`
+
+## dashboard/app.py — r005
+
+- **When:** 2026-08-06 15:45:02 PDT
+- **Reason:** base path index injection
+- **Request:** 090
+- **Diff:** +12 / -5
+- **Patch:** `r005--2026-08-06_154502--base-path-index-injection.patch`
+
+## dashboard/config.py — r007
+
+- **When:** 2026-08-06 15:45:02 PDT
+- **Reason:** DASHBOARD_BASE_PATH setting
+- **Request:** 090
+- **Diff:** +2 / -0
+- **Patch:** `r007--2026-08-06_154502--dashboardbasepath-setting.patch`
+
+## dashboard/static/app.js — r011
+
+- **When:** 2026-08-06 15:45:03 PDT
+- **Reason:** base path API prefix
+- **Request:** 090
+- **Diff:** +16 / -3
+- **Patch:** `r011--2026-08-06_154503--base-path-api-prefix.patch`
+
+## dashboard/static/index.html — r009
+
+- **When:** 2026-08-06 15:45:03 PDT
+- **Reason:** base path asset links
+- **Request:** 090
+- **Diff:** +5 / -4
+- **Patch:** `r009--2026-08-06_154503--base-path-asset-links.patch`
+
+## MEMORY_CARD.md — r005
+
+- **When:** 2026-08-06 15:45:04 PDT
+- **Reason:** public tradebot URL notes
+- **Request:** 090
+- **Diff:** +3 / -2
+- **Patch:** `r005--2026-08-06_154504--public-tradebot-url-notes.patch`
+
+## deploy/README.md — r001
+
+- **When:** 2026-08-06 15:45:05 PDT
+- **Reason:** document public tradebot URL
+- **Request:** 090
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-08-06_154505--document-public-tradebot-url.patch`
+
+## deploy/systemd/tradebot-dashboard.service — r001
+
+- **When:** 2026-08-06 15:45:06 PDT
+- **Reason:** base path env for systemd
+- **Request:** 090
+- **Diff:** +0 / -0
+- **Patch:** `r001--2026-08-06_154506--base-path-env-for-systemd.patch`
+

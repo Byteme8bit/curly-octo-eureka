@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from dashboard.config import load_settings
@@ -20,11 +20,17 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 def create_app() -> FastAPI:
     settings = load_settings()
+    base = settings.base_path  # e.g. "/tradebot" or ""
     app = FastAPI(
         title="TradeBot Local Dashboard",
         description="Read-only trader cockpit for TradeBot, Watchdog, and Auditor.",
         version="0.3.0",
     )
+
+    def _index_html() -> HTMLResponse:
+        raw = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+        html = raw.replace("__DASHBOARD_BASE__", base)
+        return HTMLResponse(html)
 
     @app.get("/api/meta")
     def api_meta() -> dict:
@@ -32,6 +38,7 @@ def create_app() -> FastAPI:
             "refresh_seconds": settings.refresh_seconds,
             "host": settings.host,
             "port": settings.port,
+            "base_path": base,
             "root": str(settings.root),
             "live_enabled": settings.live_enabled,
             "mirror_mode": settings.live_mirror_paper and settings.live_enabled,
@@ -159,12 +166,12 @@ def create_app() -> FastAPI:
 
     @app.get("/")
     @app.get("/paper")
-    def paper_index() -> FileResponse:
-        return FileResponse(STATIC_DIR / "index.html")
+    def paper_index() -> HTMLResponse:
+        return _index_html()
 
     @app.get("/live")
-    def live_index() -> FileResponse:
-        return FileResponse(STATIC_DIR / "index.html")
+    def live_index() -> HTMLResponse:
+        return _index_html()
 
     if STATIC_DIR.is_dir():
         app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

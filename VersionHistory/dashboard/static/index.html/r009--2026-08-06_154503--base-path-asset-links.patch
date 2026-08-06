@@ -1,0 +1,31 @@
+--- a/dashboard/static/index.html
++++ b/dashboard/static/index.html
+@@ -4,7 +4,8 @@
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>TradeBot Command Center</title>
+-  <link rel="stylesheet" href="/static/styles.css?v=046" />
++  <script>window.DASHBOARD_BASE = "__DASHBOARD_BASE__";</script>
++  <link rel="stylesheet" href="__DASHBOARD_BASE__/static/styles.css?v=049" />
+   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+ </head>
+ <body>
+@@ -14,8 +15,8 @@
+       <p class="meta" id="meta-line">Loading…</p>
+     </div>
+     <nav class="mode-nav" aria-label="Dashboard mode">
+-      <a href="/paper" id="nav-paper" class="mode-nav-link">Paper</a>
+-      <a href="/live" id="nav-live" class="mode-nav-link">Live</a>
++      <a href="__DASHBOARD_BASE__/paper" id="nav-paper" class="mode-nav-link">Paper</a>
++      <a href="__DASHBOARD_BASE__/live" id="nav-live" class="mode-nav-link">Live</a>
+     </nav>
+     <nav class="section-nav" aria-label="Jump to section">
+       <a href="#overview">Overview</a>
+@@ -107,6 +108,6 @@
+     </aside>
+   </div>
+ 
+-  <script src="/static/app.js?v=048"></script>
++  <script src="__DASHBOARD_BASE__/static/app.js?v=049"></script>
+ </body>
+ </html>

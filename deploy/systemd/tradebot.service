@@ -1,0 +1,19 @@
+[Unit]
+Description=TradeBot paper trading (Kraken)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cursor
+Group=cursor
+WorkingDirectory=/home/cursor/eth-trading-bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/cursor/eth-trading-bot/.venv/bin/python main.py
+Restart=on-failure
+RestartSec=15
+# Soft cap — VPS has ~1 GB RAM (mail stack shares the box)
+MemoryMax=400M
+
+[Install]
+WantedBy=multi-user.target

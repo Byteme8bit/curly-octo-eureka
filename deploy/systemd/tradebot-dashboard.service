@@ -1,0 +1,21 @@
+[Unit]
+Description=TradeBot local dashboard (127.0.0.1 only)
+After=network-online.target tradebot.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cursor
+Group=cursor
+WorkingDirectory=/home/cursor/eth-trading-bot
+Environment=PYTHONUNBUFFERED=1
+Environment=DASHBOARD_HOST=127.0.0.1
+Environment=DASHBOARD_PORT=8765
+Environment=DASHBOARD_BASE_PATH=/tradebot
+ExecStart=/home/cursor/eth-trading-bot/.venv/bin/python -m dashboard
+Restart=on-failure
+RestartSec=10
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

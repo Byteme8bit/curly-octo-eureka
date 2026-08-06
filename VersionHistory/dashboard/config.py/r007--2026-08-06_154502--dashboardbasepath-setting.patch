@@ -1,0 +1,18 @@
+--- a/dashboard/config.py
++++ b/dashboard/config.py
+@@ -17,6 +17,7 @@
+     root: Path
+     host: str
+     port: int
++    base_path: str
+     refresh_seconds: int
+     paper_portfolio_file: Path
+     paper_state_file: Path
+@@ -61,6 +62,7 @@
+         root=root,
+         host=os.getenv("DASHBOARD_HOST", "127.0.0.1"),
+         port=int(os.getenv("DASHBOARD_PORT", "8765")),
++        base_path=(os.getenv("DASHBOARD_BASE_PATH", "") or "").strip().rstrip("/"),
+         refresh_seconds=int(os.getenv("DASHBOARD_REFRESH_SECONDS", "15")),
+         paper_portfolio_file=root / os.getenv("PAPER_PORTFOLIO_FILE", "paper_portfolio.json"),
+         paper_state_file=root / ".paper_state.json",
