@@ -3266,3 +3266,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +24 / -0
 - **Patch:** `r004--2026-08-06_122103--add-paper-live-status-endpoints.patch`
 
+## MEMORY_CARD.md — r003
+
+- **When:** 2026-08-06 15:19:07 PDT
+- **Reason:** 088 real fees reset notes
+- **Request:** 088
+- **Diff:** +19 / -26
+- **Patch:** `r003--2026-08-06_151907--088-real-fees-reset-notes.patch`
+

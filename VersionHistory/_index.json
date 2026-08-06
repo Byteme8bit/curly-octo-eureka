@@ -375,6 +375,16 @@
       "removed": 0,
       "request_id": "086",
       "timestamp": "2026-08-05 02:19:25 PDT"
+    },
+    {
+      "added": 19,
+      "number": 3,
+      "patch": "r003--2026-08-06_151907--088-real-fees-reset-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "088 real fees reset notes",
+      "removed": 26,
+      "request_id": "088",
+      "timestamp": "2026-08-06 15:19:07 PDT"
     }
   ],
   "README.md": [
