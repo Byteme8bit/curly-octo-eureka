@@ -2571,6 +2571,16 @@
       "removed": 16,
       "request_id": "051",
       "timestamp": "2026-06-13 20:52:55 PDT"
+    },
+    {
+      "added": 24,
+      "number": 4,
+      "patch": "r004--2026-08-06_122103--add-paper-live-status-endpoints.patch",
+      "path": "dashboard/app.py",
+      "reason": "add paper live status endpoints",
+      "removed": 0,
+      "request_id": "087",
+      "timestamp": "2026-08-06 12:21:03 PDT"
     }
   ],
   "dashboard/config.py": [

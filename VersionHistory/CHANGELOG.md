@@ -3258,3 +3258,11 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +1 / -0
 - **Patch:** `r002--2026-08-05_021925--discord-revival-setup-notes.patch`
 
+## dashboard/app.py — r004
+
+- **When:** 2026-08-06 12:21:03 PDT
+- **Reason:** add paper live status endpoints
+- **Request:** 087
+- **Diff:** +24 / -0
+- **Patch:** `r004--2026-08-06_122103--add-paper-live-status-endpoints.patch`
+

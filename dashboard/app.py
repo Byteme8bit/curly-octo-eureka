@@ -50,6 +50,30 @@ def create_app() -> FastAPI:
     def _tradebot(mode: str):
         return build_tradebot_view(settings, mode=normalize_mode(mode))
 
+    def _status(mode: str) -> dict:
+        normalized = normalize_mode(mode)
+        tb = _tradebot(normalized)
+        portfolio = tb.get("portfolio") or {}
+        return {
+            "ok": True,
+            "mode": normalized,
+            "portfolio_usd": portfolio.get("portfolio_usd"),
+            "trading_active": tb.get("trading_active"),
+            "decision": tb.get("decision"),
+        }
+
+    @app.get("/api/status")
+    def api_status(mode: str = Query("paper")) -> dict:
+        return _status(mode)
+
+    @app.get("/api/paper/status")
+    def api_paper_status() -> dict:
+        return _status("paper")
+
+    @app.get("/api/live/status")
+    def api_live_status() -> dict:
+        return _status("live")
+
     @app.get("/api/overview")
     def api_overview(mode: str = Query("paper")) -> dict:
         return _overview(mode)
