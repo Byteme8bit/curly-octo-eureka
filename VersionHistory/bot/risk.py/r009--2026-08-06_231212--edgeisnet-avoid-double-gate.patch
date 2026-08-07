@@ -1,0 +1,24 @@
+--- a/bot/risk.py
++++ b/bot/risk.py
+@@ -674,6 +674,8 @@
+ 
+         require_leader_stable: bool = False,
+ 
++        edge_is_net: bool = False,
++
+     ) -> TradeGate:
+ 
+         gate = self.can_trade_now()
+@@ -691,9 +693,9 @@
+ 
+ 
+         if not is_defensive_sell and not is_accumulation:
+-            if hops > 1:
+-                # Multi-hop edge is net-after-fees from preflight — do not re-apply
+-                # per-hop swap/trade hurdle (that double-gates profitable loops).
++            # Engine callers pass preflight net-after-fees. Re-applying the gross
++            # fee hurdle double-gates (multi-hop and single-hop alike).
++            if hops > 1 or edge_is_net:
+                 min_net = self.effective_min_net_profit()
+                 if edge < min_net:
+                     return TradeGate(

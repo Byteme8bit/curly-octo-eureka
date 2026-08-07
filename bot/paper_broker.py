@@ -214,7 +214,12 @@ class PaperBroker:
             leg_trades.append(trade)
 
         combined = self._combine_path_trade(
-            route, leg_trades, reason, size_pct, strategy_name=strategy_name
+            route,
+            leg_trades,
+            reason,
+            size_pct,
+            usd_prices=usd_prices,
+            strategy_name=strategy_name,
         )
         self.state.trades.append(combined)
         self.save()
@@ -227,11 +232,26 @@ class PaperBroker:
         reason: str,
         size_pct: float,
         *,
+        usd_prices: dict[str, float],
         strategy_name: str = "",
     ) -> dict:
         first = leg_trades[0]
         last = leg_trades[-1]
         multi = route.hops > 1
+        # Closed loops (e.g. ETH->BTC->ADA->ETH): leg cost-basis P&L double-counts
+        # notionals. Real edge is start/end qty of the same asset.
+        if (
+            multi
+            and first.get("from_asset")
+            and first.get("from_asset") == last.get("to_asset")
+        ):
+            asset = str(first["from_asset"])
+            start_qty = float(first.get("from_qty") or 0.0)
+            end_qty = float(last.get("to_qty") or 0.0)
+            asset_usd = float(usd_prices.get(asset, 0.0) or 0.0)
+            gain_loss = (end_qty - start_qty) * asset_usd
+        else:
+            gain_loss = sum(t.get("gain_loss", 0.0) for t in leg_trades)
         return {
             "time": first["time"],
             "symbol": route.symbols[-1] if multi else first["symbol"],
@@ -249,7 +269,7 @@ class PaperBroker:
             "fee_quote": sum(t.get("fee_quote", 0.0) for t in leg_trades),
             "fee_usd": sum(t.get("fee_usd", 0.0) for t in leg_trades),
             "reason": reason,
-            "gain_loss": sum(t.get("gain_loss", 0.0) for t in leg_trades),
+            "gain_loss": gain_loss,
             "path": route.path,
             "hops": route.hops,
             "legs": leg_trades,

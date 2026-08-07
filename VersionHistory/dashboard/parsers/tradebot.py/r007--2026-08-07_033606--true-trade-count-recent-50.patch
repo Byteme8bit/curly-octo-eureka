@@ -1,0 +1,48 @@
+--- a/dashboard/parsers/tradebot.py
++++ b/dashboard/parsers/tradebot.py
+@@ -212,7 +212,19 @@
+     }
+ 
+ 
+-def _paper_receipts(settings: DashboardSettings, *, limit: int = 15) -> list[dict]:
++def _paper_state_trade_count(settings: DashboardSettings) -> int:
++    state_path = settings.paper_state_file
++    if not state_path.exists():
++        return 0
++    try:
++        data = json.loads(state_path.read_text(encoding="utf-8"))
++    except (OSError, json.JSONDecodeError):
++        return 0
++    trades = data.get("trades") or []
++    return len(trades) if isinstance(trades, list) else 0
++
++
++def _paper_receipts(settings: DashboardSettings, *, limit: int = 50) -> list[dict]:
+     receipts: list[dict] = []
+     seen: set[str] = set()
+     for path in newest_files(settings.receipts_dir, "*.txt", limit=limit):
+@@ -237,9 +249,12 @@
+                 continue
+             from_a = trade.get("from_asset", "?")
+             to_a = trade.get("to_asset", "?")
++            path = trade.get("path") or f"{from_a}->{to_a}"
++            strat = trade.get("strategy_name") or ""
++            prefix = f"[{strat}] " if strat else ""
+             receipts.append({
+                 "time": ts,
+-                "summary": f"{from_a}->{to_a} {trade.get('reason', '')}".strip(),
++                "summary": f"{prefix}{path} {trade.get('reason', '')}".strip(),
+                 "gain_loss_usd": trade.get("gain_loss"),
+                 "fee_usd": trade.get("fee_usd") or trade.get("fee_quote"),
+             })
+@@ -252,8 +267,8 @@
+ 
+ def _build_paper_tradebot_view(settings: DashboardSettings) -> dict:
+     portfolio = _build_paper_portfolio(settings)
+-    receipts = _paper_receipts(settings, limit=15)
+-    trade_count = len(receipts)
++    receipts = _paper_receipts(settings, limit=50)
++    trade_count = _paper_state_trade_count(settings)
+     if portfolio is not None:
+         portfolio = {**portfolio, "trade_count": trade_count}
+ 

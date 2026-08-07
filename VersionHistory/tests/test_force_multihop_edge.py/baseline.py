@@ -77,33 +77,3 @@ def test_single_hop_swap_still_blocked_below_hurdle() -> None:
     )
     assert not gate.allowed
     assert "Swap edge" in gate.reason
-
-
-def test_single_hop_net_edge_not_double_gated() -> None:
-    """Post-preflight net edge must not be re-checked against the gross fee hurdle."""
-    risk = RiskManager(
-        _RiskState(),
-        fee_rate=0.004,
-        drawdown_hibernate_pct=0.15,
-        hibernate_hours=12,
-        trade_cooldown_seconds=0,
-        max_trades_per_hour=100,
-        min_trade_edge=0.004,
-        leader_stable_seconds=0,
-        fee_safety_multiplier=1.0,
-        idle_reeval_hours=2,
-        idle_reeval_max_attempts=3,
-        min_net_profit_pct=0.0001,
-        stat_arb_zscore_threshold=1.4,
-        save_callback=lambda: None,
-        profit_only_mode=True,
-    )
-    gate = risk.approve_action(
-        "buy",
-        edge=0.0025,  # net after 0.40% fees from a ~0.70% gross signal
-        trade_usd=50.0,
-        is_held_swap=True,
-        hops=1,
-        edge_is_net=True,
-    )
-    assert gate.allowed, gate.reason

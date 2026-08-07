@@ -1,0 +1,44 @@
+--- a/MEMORY_CARD.md
++++ b/MEMORY_CARD.md
+@@ -1,6 +1,6 @@
+ # Memory card — eth-trading-bot
+ 
+-**Last updated:** 2026-08-06 PDT (090 public /tradebot/)  
++**Last updated:** 2026-08-06 PDT (092 arb inventory + double-gate)  
+ **Read this first** before answering prompts about this repo.
+ 
+ ---
+@@ -16,23 +16,26 @@
+ | Item | Value |
+ |------|--------|
+ | **Mode** | Paper-only on VPS (`tradebot.service`) — local Windows bot stopped |
+-| **Strategy** | `cross_momentum`, `stat_arb` (no triangular — removed for realism) |
++| **Strategy** | `cross_momentum`, `stat_arb`, `triangular_arbitrage` (real 0.40% fees; activity = stat-arb) |
+ | **Branch** | `cb/vps-deploy` |
+ | **VPS** | `mail.lynch.gdn` / `cursor@172.245.39.184` — `scripts/deploy_to_vps.ps1` |
+ | **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
+-| **Baseline** | `paper_baseline.json` — ~$1,397.51 (ETH 0.52042, USD 415.90, ADA 24.602263) |
+-| **Archive** | `archive/2026-08-06-real-fees-reset/` — discarded inflated ~$3.1k paper book |
+-| **Trades so far** | 0 after 088 reset |
++| **Baseline** | Original `paper_baseline.json` ~$1,397; VPS paper rebalanced for arb inventory (092) |
++| **Archive** | `archive/2026-08-06-real-fees-reset/` + `archive/2026-08-07-arb-inventory-rebalance/` |
++| **Trades** | Stat-arb fills resumed after 092 (inventory + edge/gate fixes) |
+ | **Fees** | Real public Kraken ~0.40% (`FEE_FORCE_STATIC=0`, `FEE_RATE=0.004` fallback/gates) |
+ | **Kraken keys** | Optional for paper; needed for live/anchor |
+ | **Discord** | Enabled if credentials in `.env` (086) |
+ | **Dashboard** | `scripts/start_dashboard.ps1` — separate process, port 8765 |
+ 
+-### Active `.env` tuning (local, not committed)
++### Active `.env` tuning (VPS / local, not committed)
+ 
+-- `FEE_RATE=0.004`, `FEE_FORCE_STATIC=0`, `MIN_TRADE_EDGE=0.004`, `CRYPTO_MIN_TRADE_EDGE=0.004`
+-- `STRATEGIES=cross_momentum,stat_arb`, `PROFIT_ONLY_MODE=1`
++- `FEE_RATE=0.004`, `FEE_FORCE_STATIC=0`, `MIN_TRADE_EDGE=0.0035`, `CRYPTO_MIN_TRADE_EDGE=0.0035`
++- `STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage`, `PROFIT_ONLY_MODE=1`
++- `STAT_ARB_ZSCORE_THRESHOLD=1.4`, `DUST_USD=15`, `PAPER_ANCHOR_TO_LIVE=0`
+ - `LIVE_ENABLED=0`, `AUDITOR_ENABLED=0`, `ENABLE_EQUITIES=0`, `ENABLE_FUTURES=0`
++
++**092 note:** Triangular rarely clears real taker fees. Stat-arb needs alt inventory + relative-σ edge + `edge_is_net` (no double-gate after preflight).
+ 
+ **Incident history:** `.env` was once wiped to 0 bytes — rebuild via `apply_revival_profile.py`. Crash-hold blocked trades until goals state reset + `CRASH_HOLD_ENABLED=0`.
+ 

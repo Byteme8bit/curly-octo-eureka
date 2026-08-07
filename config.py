@@ -236,6 +236,7 @@ class Settings:
     live_mirror_paper: bool
     paper_anchor_to_live: bool
     paper_mirror_live_only: bool
+    paper_use_maker_fees: bool
     paper_reset_baseline_path: Path
     reset_paper_to_baseline: bool
     live_mirror_min_confidence: str
@@ -786,6 +787,7 @@ def load_settings() -> Settings:
         )
         == "1",
         paper_mirror_live_only=os.getenv("PAPER_MIRROR_LIVE_ONLY", "0") == "1",
+        paper_use_maker_fees=os.getenv("PAPER_USE_MAKER_FEES", "0") == "1",
         paper_reset_baseline_path=ROOT / os.getenv(
             "PAPER_RESET_BASELINE_PATH", "paper_baseline.json"
         ),

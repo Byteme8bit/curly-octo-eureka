@@ -1,0 +1,42 @@
+--- a/MEMORY_CARD.md
++++ b/MEMORY_CARD.md
+@@ -1,6 +1,6 @@
+ # Memory card — eth-trading-bot
+ 
+-**Last updated:** 2026-08-06 PDT (092 arb inventory + double-gate)  
++**Last updated:** 2026-08-06 PDT (093 restore screenshot baseline)  
+ **Read this first** before answering prompts about this repo.
+ 
+ ---
+@@ -20,9 +20,9 @@
+ | **Branch** | `cb/vps-deploy` |
+ | **VPS** | `mail.lynch.gdn` / `cursor@172.245.39.184` — `scripts/deploy_to_vps.ps1` |
+ | **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
+-| **Baseline** | Original `paper_baseline.json` ~$1,397; VPS paper rebalanced for arb inventory (092) |
+-| **Archive** | `archive/2026-08-06-real-fees-reset/` + `archive/2026-08-07-arb-inventory-rebalance/` |
+-| **Trades** | Stat-arb fills resumed after 092 (inventory + edge/gate fixes) |
++| **Baseline** | `paper_baseline.json` (Kraken screenshot): ETH 0.52042, USD 415.90, ADA 24.602263, KFEE 881.92 ≈ $1,397.51 |
++| **Archive** | Includes `archive/2026-08-07-restore-screenshot-baseline/` (undid 092 inventory drift) |
++| **Trades** | 0 after 093 restore (code fixes from 092 kept) |
+ | **Fees** | Real public Kraken ~0.40% (`FEE_FORCE_STATIC=0`, `FEE_RATE=0.004` fallback/gates) |
+ | **Kraken keys** | Optional for paper; needed for live/anchor |
+ | **Discord** | Enabled if credentials in `.env` (086) |
+@@ -35,7 +35,7 @@
+ - `STAT_ARB_ZSCORE_THRESHOLD=1.4`, `DUST_USD=15`, `PAPER_ANCHOR_TO_LIVE=0`
+ - `LIVE_ENABLED=0`, `AUDITOR_ENABLED=0`, `ENABLE_EQUITIES=0`, `ENABLE_FUTURES=0`
+ 
+-**092 note:** Triangular rarely clears real taker fees. Stat-arb needs alt inventory + relative-σ edge + `edge_is_net` (no double-gate after preflight).
++**Notes:** Keep paper on screenshot balances unless user OK’s a rebalance. 092 gate/edge code fixes remain; triangular still rare under real fees.
+ 
+ **Incident history:** `.env` was once wiped to 0 bytes — rebuild via `apply_revival_profile.py`. Crash-hold blocked trades until goals state reset + `CRASH_HOLD_ENABLED=0`.
+ 
+@@ -116,7 +116,8 @@
+ 
+ | ID | Topic |
+ |----|--------|
+-| 092 | Arb inventory rebalance + double-gate fix ✓ |
++| 093 | Restore Kraken screenshot baseline ✓ |
++| 092 | Arb inventory + double-gate fix (inventory undone by 093) |
+ | 091 | More arb activity tuning |
+ | 090 | Public `/tradebot` dashboard path |
+ | 088 | Real 0.40% fees + paper baseline reset ✓ |

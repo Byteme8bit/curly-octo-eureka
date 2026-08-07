@@ -913,6 +913,43 @@ class TradingEngine:
             or getattr(intent, "strategy_name", "") == "equity_dca"
         )
 
+    def _paper_preflight_use_maker(self, intent, hops: int) -> bool:
+        """Paper 1-hop entries may use Kraken maker fee schedule when enabled."""
+        if self._live_mode and not self._mirror_mode:
+            return False
+        if not getattr(self.settings, "paper_use_maker_fees", False):
+            return False
+        if hops != 1:
+            return False
+        if intent.is_defensive or self._is_accumulation_intent(intent):
+            return False
+        return True
+
+    def _validate_preflight(
+        self,
+        intent,
+        *,
+        route,
+        min_net_profit: float | None = None,
+    ):
+        hops = getattr(route, "hops", 1)
+        return self.preflight.validate(
+            intent,
+            route_symbols=route.symbols,
+            hops=hops,
+            is_defensive=intent.is_defensive,
+            min_net_profit=(
+                -1.0
+                if self._is_accumulation_intent(intent)
+                else (
+                    min_net_profit
+                    if min_net_profit is not None
+                    else self.risk.effective_min_net_profit()
+                )
+            ),
+            use_maker_fees=self._paper_preflight_use_maker(intent, hops),
+        )
+
     def _required_edge_for_intent(self, intent, route) -> float:
         edge = self.risk.path_edge(route.hops, is_held_swap=intent.is_held_swap)
         if not self.settings.crypto_day_trade_mode:
@@ -1020,20 +1057,10 @@ class TradingEngine:
             if not route_check.allowed:
                 return None, route_check.reason
         trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
-        pf = self.preflight.validate(
+        pf = self._validate_preflight(
             intent,
-            route_symbols=route.symbols,
-            hops=route.hops,
-            is_defensive=intent.is_defensive,
-            min_net_profit=(
-                -1.0
-                if self._is_accumulation_intent(intent)
-                else (
-                    min_net_profit
-                    if min_net_profit is not None
-                    else self.risk.effective_min_net_profit()
-                )
-            ),
+            route=route,
+            min_net_profit=min_net_profit,
         )
         if not pf.allowed:
             return None, pf.reason
@@ -1066,6 +1093,7 @@ class TradingEngine:
             is_held_swap=intent.is_held_swap,
             hops=route.hops,
             require_leader_stable=intent.require_leader_stable,
+            edge_is_net=True,
         )
         if not approval.allowed:
             return None, approval.reason
@@ -1165,16 +1193,10 @@ class TradingEngine:
             )
             if not route_check.allowed:
                 return 0.0, False, route_check.reason, hops
-        pf = self.preflight.validate(
+        pf = self._validate_preflight(
             intent,
-            route_symbols=route.symbols,
-            hops=route.hops,
-            is_defensive=intent.is_defensive,
-            min_net_profit=(
-                -1.0
-                if is_dca
-                else self.risk.effective_min_net_profit()
-            ),
+            route=route,
+            min_net_profit=(-1.0 if is_dca else None),
         )
         net_edge = pf.net_return_pct if pf.allowed else pf.net_return_pct
         if not pf.allowed:
@@ -1212,6 +1234,7 @@ class TradingEngine:
             is_held_swap=intent.is_held_swap,
             hops=route.hops,
             require_leader_stable=intent.require_leader_stable,
+            edge_is_net=True,
         )
         if not approval.allowed:
             return intent.edge, False, approval.reason, hops
@@ -2484,6 +2507,7 @@ class TradingEngine:
                 if self.settings.profit_only_mode
                 else 0.0
             ),
+            use_maker_fees=self._paper_preflight_use_maker(intent, probe_route.hops),
         )
         if not probe_pf.allowed:
             logger.info("Forced probe skipped — would not clear fees: %s", probe_pf.reason)
@@ -3484,23 +3508,7 @@ class TradingEngine:
 
                 trade_usd = self._intent_trade_usd(intent, holdings, usd_prices)
 
-                pf = self.preflight.validate(
-
-                    intent,
-
-                    route_symbols=route.symbols,
-
-                    hops=route.hops,
-
-                    is_defensive=intent.is_defensive,
-
-                    min_net_profit=(
-                        -1.0
-                        if self._is_accumulation_intent(intent)
-                        else self.risk.effective_min_net_profit()
-                    ),
-
-                )
+                pf = self._validate_preflight(intent, route=route)
 
                 if not pf.allowed:
 
@@ -3555,6 +3563,8 @@ class TradingEngine:
                     hops=route.hops,
 
                     require_leader_stable=intent.require_leader_stable,
+
+                    edge_is_net=True,
 
                 )
 

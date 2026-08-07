@@ -1,0 +1,16 @@
+--- a/MEMORY_CARD.md
++++ b/MEMORY_CARD.md
+@@ -116,10 +116,10 @@
+ 
+ | ID | Topic |
+ |----|--------|
++| 092 | Arb inventory rebalance + double-gate fix ✓ |
++| 091 | More arb activity tuning |
++| 090 | Public `/tradebot` dashboard path |
+ | 088 | Real 0.40% fees + paper baseline reset ✓ |
+-| 087 | Dashboard status endpoints |
+-| 086 | Discord notifications revival |
+-| 085 | Arbitrage enable (triangular later removed) |
+ | 083 | Dashboard trades chart fix ✓ |
+ 
+ See `feature_logs/` for full list.

@@ -432,6 +432,7 @@ class LiveBroker:
             leg_trades,
             reason,
             size_pct,
+            usd_prices=usd_prices,
             strategy_name=strategy_name,
         )
         combined["live"] = True

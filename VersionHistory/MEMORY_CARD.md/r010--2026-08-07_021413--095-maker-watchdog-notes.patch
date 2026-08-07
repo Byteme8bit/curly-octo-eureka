@@ -1,0 +1,47 @@
+--- a/MEMORY_CARD.md
++++ b/MEMORY_CARD.md
+@@ -1,6 +1,6 @@
+ # Memory card — eth-trading-bot
+ 
+-**Last updated:** 2026-08-07 PDT (094 seed USD arb inventory)  
++**Last updated:** 2026-08-07 PDT (095 maker fees + activity watchdog)  
+ **Read this first** before answering prompts about this repo.
+ 
+ ---
+@@ -22,20 +22,20 @@
+ | **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
+ | **Baseline** | Screenshot ETH **0.52042** kept; USD seeded into ADA/BTC/SOL for arb (094) — cash/alts ≠ screenshot |
+ | **Archive** | `archive/2026-08-07-arb-inventory-seed/` (094); prior restore archive also present |
+-| **Trades** | Waiting on edges ≳ ~0.45% after fees; inventory + gates ready |
+-| **Fees** | Real public Kraken ~0.40% (`FEE_FORCE_STATIC=0`, `FEE_RATE=0.004` fallback/gates) |
++| **Trades** | Active after 095 (paper maker preflight + low slippage); watchdog timer every 15m |
++| **Fees** | Public taker schedule kept (`FEE_FORCE_STATIC=0`); paper 1-hop may use **maker** (~0.16%) when `PAPER_USE_MAKER_FEES=1` |
+ | **Kraken keys** | Optional for paper; needed for live/anchor |
+ | **Discord** | Enabled if credentials in `.env` (086) |
+ | **Dashboard** | `scripts/start_dashboard.ps1` — separate process, port 8765 |
+ 
+ ### Active `.env` tuning (VPS / local, not committed)
+ 
+-- `FEE_RATE=0.004`, `FEE_FORCE_STATIC=0`, `MIN_TRADE_EDGE=0.0035`, `CRYPTO_MIN_TRADE_EDGE=0.0035`
++- `FEE_RATE=0.004`, `FEE_FORCE_STATIC=0`, `PAPER_USE_MAKER_FEES=1`, `SLIPPAGE_BUFFER_PCT=0.0001`
+ - `STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage`, `PROFIT_ONLY_MODE=1`
+ - `STAT_ARB_ZSCORE_THRESHOLD=1.2`, `STAT_ARB_LOOKBACK=24`, `DUST_USD=5`, `PAPER_ANCHOR_TO_LIVE=0`
+-- `LIVE_ENABLED=0`, `AUDITOR_ENABLED=0`, `ENABLE_EQUITIES=0`, `ENABLE_FUTURES=0`
++- Watchdog: `tradebot-activity-watch.timer` → `scripts/paper_activity_watchdog.py`
+ 
+-**Notes:** ETH qty matches screenshot; ~$250 USD → ADA/BTC/SOL working inventory (094). Real 0.40% fees still block weak edges.
++**Notes:** ETH qty matches screenshot; ~$250 USD → ADA/BTC/SOL working inventory (094). Activity watchdog auto-nudges if idle; never fakes static fees.
+ 
+ **Incident history:** `.env` was once wiped to 0 bytes — rebuild via `apply_revival_profile.py`. Crash-hold blocked trades until goals state reset + `CRASH_HOLD_ENABLED=0`.
+ 
+@@ -116,9 +116,9 @@
+ 
+ | ID | Topic |
+ |----|--------|
++| 095 | Paper maker fees + activity watchdog ✓ |
+ | 094 | Seed USD arb inventory + tighter stat-arb ✓ |
+ | 093 | Restore Kraken screenshot baseline ✓ |
+-| 092 | Double-gate / relative-σ fixes ✓ |
+ | 090 | Public `/tradebot` dashboard path |
+ | 088 | Real 0.40% fees + paper baseline reset ✓ |
+ | 083 | Dashboard trades chart fix ✓ |

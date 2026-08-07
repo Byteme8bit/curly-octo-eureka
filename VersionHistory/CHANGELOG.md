@@ -3338,3 +3338,123 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +0 / -0
 - **Patch:** `r001--2026-08-06_154506--base-path-env-for-systemd.patch`
 
+## bot/strategies/stat_arb.py — r002
+
+- **When:** 2026-08-06 23:12:12 PDT
+- **Reason:** relative sigma edge formula
+- **Request:** 092
+- **Diff:** +7 / -4
+- **Patch:** `r002--2026-08-06_231212--relative-sigma-edge-formula.patch`
+
+## bot/risk.py — r009
+
+- **When:** 2026-08-06 23:12:12 PDT
+- **Reason:** edge_is_net avoid double-gate
+- **Request:** 092
+- **Diff:** +5 / -3
+- **Patch:** `r009--2026-08-06_231212--edgeisnet-avoid-double-gate.patch`
+
+## bot/engine.py — r053
+
+- **When:** 2026-08-06 23:12:12 PDT
+- **Reason:** pass edge_is_net after preflight
+- **Request:** 092
+- **Diff:** +156 / -45
+- **Patch:** `r053--2026-08-06_231212--pass-edgeisnet-after-preflight.patch`
+
+## tests/test_force_multihop_edge.py — r001
+
+- **When:** 2026-08-06 23:12:13 PDT
+- **Reason:** test single-hop net gate
+- **Request:** 092
+- **Diff:** +30 / -0
+- **Patch:** `r001--2026-08-06_231213--test-single-hop-net-gate.patch`
+
+## MEMORY_CARD.md — r006
+
+- **When:** 2026-08-06 23:12:13 PDT
+- **Reason:** document 092 arb resume
+- **Request:** 092
+- **Diff:** +11 / -8
+- **Patch:** `r006--2026-08-06_231213--document-092-arb-resume.patch`
+
+## MEMORY_CARD.md — r007
+
+- **When:** 2026-08-06 23:12:26 PDT
+- **Reason:** add 092 to feature log table
+- **Request:** 092
+- **Diff:** +3 / -3
+- **Patch:** `r007--2026-08-06_231226--add-092-to-feature-log-table.patch`
+
+## MEMORY_CARD.md — r008
+
+- **When:** 2026-08-06 23:40:18 PDT
+- **Reason:** 093 screenshot baseline restore
+- **Request:** 093
+- **Diff:** +7 / -6
+- **Patch:** `r008--2026-08-06_234018--093-screenshot-baseline-restore.patch`
+
+## MEMORY_CARD.md — r009
+
+- **When:** 2026-08-07 00:09:58 PDT
+- **Reason:** 094 arb inventory seed notes
+- **Request:** 094
+- **Diff:** +8 / -8
+- **Patch:** `r009--2026-08-07_000958--094-arb-inventory-seed-notes.patch`
+
+## config.py — r034
+
+- **When:** 2026-08-07 02:14:13 PDT
+- **Reason:** PAPER_USE_MAKER_FEES setting
+- **Request:** 095
+- **Diff:** +2 / -0
+- **Patch:** `r034--2026-08-07_021413--paperusemakerfees-setting.patch`
+
+## bot/engine.py — r054
+
+- **When:** 2026-08-07 02:14:13 PDT
+- **Reason:** paper maker preflight helper
+- **Request:** 095
+- **Diff:** +45 / -39
+- **Patch:** `r054--2026-08-07_021413--paper-maker-preflight-helper.patch`
+
+## MEMORY_CARD.md — r010
+
+- **When:** 2026-08-07 02:14:13 PDT
+- **Reason:** 095 maker watchdog notes
+- **Request:** 095
+- **Diff:** +7 / -7
+- **Patch:** `r010--2026-08-07_021413--095-maker-watchdog-notes.patch`
+
+## dashboard/parsers/tradebot.py — r007
+
+- **When:** 2026-08-07 03:36:06 PDT
+- **Reason:** true trade count recent 50
+- **Request:** 096
+- **Diff:** +19 / -4
+- **Patch:** `r007--2026-08-07_033606--true-trade-count-recent-50.patch`
+
+## bot/paper_broker.py — r004
+
+- **When:** 2026-08-07 03:36:06 PDT
+- **Reason:** closed-loop PnL fix
+- **Request:** 096
+- **Diff:** +22 / -2
+- **Patch:** `r004--2026-08-07_033606--closed-loop-pnl-fix.patch`
+
+## bot/live_broker.py — r006
+
+- **When:** 2026-08-07 03:36:06 PDT
+- **Reason:** pass usd_prices to combine
+- **Request:** 096
+- **Diff:** +77 / -9
+- **Patch:** `r006--2026-08-07_033606--pass-usdprices-to-combine.patch`
+
+## MEMORY_CARD.md — r011
+
+- **When:** 2026-08-07 03:36:13 PDT
+- **Reason:** 096 dashboard PnL notes
+- **Request:** 096
+- **Diff:** +2 / -1
+- **Patch:** `r011--2026-08-07_033613--096-dashboard-pnl-notes.patch`
+

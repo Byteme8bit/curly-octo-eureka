@@ -1,0 +1,14 @@
+[Unit]
+Description=TradeBot paper activity watchdog (oneshot)
+After=network-online.target tradebot.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=cursor
+Group=cursor
+WorkingDirectory=/home/cursor/eth-trading-bot
+Environment=PYTHONUNBUFFERED=1
+Environment=TRADEBOT_ROOT=/home/cursor/eth-trading-bot
+Environment=PAPER_ACTIVITY_IDLE_MINUTES=45
+ExecStart=/home/cursor/eth-trading-bot/.venv/bin/python /home/cursor/eth-trading-bot/scripts/paper_activity_watchdog.py

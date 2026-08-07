@@ -405,6 +405,66 @@
       "removed": 2,
       "request_id": "090",
       "timestamp": "2026-08-06 15:45:04 PDT"
+    },
+    {
+      "added": 11,
+      "number": 6,
+      "patch": "r006--2026-08-06_231213--document-092-arb-resume.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "document 092 arb resume",
+      "removed": 8,
+      "request_id": "092",
+      "timestamp": "2026-08-06 23:12:13 PDT"
+    },
+    {
+      "added": 3,
+      "number": 7,
+      "patch": "r007--2026-08-06_231226--add-092-to-feature-log-table.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "add 092 to feature log table",
+      "removed": 3,
+      "request_id": "092",
+      "timestamp": "2026-08-06 23:12:26 PDT"
+    },
+    {
+      "added": 7,
+      "number": 8,
+      "patch": "r008--2026-08-06_234018--093-screenshot-baseline-restore.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "093 screenshot baseline restore",
+      "removed": 6,
+      "request_id": "093",
+      "timestamp": "2026-08-06 23:40:18 PDT"
+    },
+    {
+      "added": 8,
+      "number": 9,
+      "patch": "r009--2026-08-07_000958--094-arb-inventory-seed-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "094 arb inventory seed notes",
+      "removed": 8,
+      "request_id": "094",
+      "timestamp": "2026-08-07 00:09:58 PDT"
+    },
+    {
+      "added": 7,
+      "number": 10,
+      "patch": "r010--2026-08-07_021413--095-maker-watchdog-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "095 maker watchdog notes",
+      "removed": 7,
+      "request_id": "095",
+      "timestamp": "2026-08-07 02:14:13 PDT"
+    },
+    {
+      "added": 2,
+      "number": 11,
+      "patch": "r011--2026-08-07_033613--096-dashboard-pnl-notes.patch",
+      "path": "MEMORY_CARD.md",
+      "reason": "096 dashboard PnL notes",
+      "removed": 1,
+      "request_id": "096",
+      "timestamp": "2026-08-07 03:36:13 PDT"
     }
   ],
   "README.md": [
@@ -1389,6 +1449,26 @@
       "removed": 5,
       "request_id": "080",
       "timestamp": "2026-06-19 13:50:39 PDT"
+    },
+    {
+      "added": 156,
+      "number": 53,
+      "patch": "r053--2026-08-06_231212--pass-edgeisnet-after-preflight.patch",
+      "path": "bot/engine.py",
+      "reason": "pass edge_is_net after preflight",
+      "removed": 45,
+      "request_id": "092",
+      "timestamp": "2026-08-06 23:12:12 PDT"
+    },
+    {
+      "added": 45,
+      "number": 54,
+      "patch": "r054--2026-08-07_021413--paper-maker-preflight-helper.patch",
+      "path": "bot/engine.py",
+      "reason": "paper maker preflight helper",
+      "removed": 39,
+      "request_id": "095",
+      "timestamp": "2026-08-07 02:14:13 PDT"
     }
   ],
   "bot/equities.py": [
@@ -1543,6 +1623,16 @@
       "removed": 2,
       "request_id": "069",
       "timestamp": "2026-06-16 07:13:50 PDT"
+    },
+    {
+      "added": 77,
+      "number": 6,
+      "patch": "r006--2026-08-07_033606--pass-usdprices-to-combine.patch",
+      "path": "bot/live_broker.py",
+      "reason": "pass usd_prices to combine",
+      "removed": 9,
+      "request_id": "096",
+      "timestamp": "2026-08-07 03:36:06 PDT"
     }
   ],
   "bot/live_guards.py": [
@@ -1675,6 +1765,16 @@
       "removed": 0,
       "request_id": "051",
       "timestamp": "2026-06-13 20:31:04 PDT"
+    },
+    {
+      "added": 22,
+      "number": 4,
+      "patch": "r004--2026-08-07_033606--closed-loop-pnl-fix.patch",
+      "path": "bot/paper_broker.py",
+      "reason": "closed-loop PnL fix",
+      "removed": 2,
+      "request_id": "096",
+      "timestamp": "2026-08-07 03:36:06 PDT"
     }
   ],
   "bot/portfolio_constraints.py": [
@@ -1913,6 +2013,16 @@
       "removed": 88,
       "request_id": "069",
       "timestamp": "2026-06-16 07:13:50 PDT"
+    },
+    {
+      "added": 5,
+      "number": 9,
+      "patch": "r009--2026-08-06_231212--edgeisnet-avoid-double-gate.patch",
+      "path": "bot/risk.py",
+      "reason": "edge_is_net avoid double-gate",
+      "removed": 3,
+      "request_id": "092",
+      "timestamp": "2026-08-06 23:12:12 PDT"
     }
   ],
   "bot/singleton.py": [
@@ -2057,6 +2167,16 @@
       "removed": 1,
       "request_id": "036",
       "timestamp": "2026-06-03 22:26:20 PDT"
+    },
+    {
+      "added": 7,
+      "number": 2,
+      "patch": "r002--2026-08-06_231212--relative-sigma-edge-formula.patch",
+      "path": "bot/strategies/stat_arb.py",
+      "reason": "relative sigma edge formula",
+      "removed": 4,
+      "request_id": "092",
+      "timestamp": "2026-08-06 23:12:12 PDT"
     }
   ],
   "bot/strategies/triangular_arbitrage.py": [
@@ -2569,6 +2689,16 @@
       "removed": 5,
       "request_id": "082",
       "timestamp": "2026-06-24 23:06:29 PDT"
+    },
+    {
+      "added": 2,
+      "number": 34,
+      "patch": "r034--2026-08-07_021413--paperusemakerfees-setting.patch",
+      "path": "config.py",
+      "reason": "PAPER_USE_MAKER_FEES setting",
+      "removed": 0,
+      "request_id": "095",
+      "timestamp": "2026-08-07 02:14:13 PDT"
     }
   ],
   "dashboard/app.py": [
@@ -2885,6 +3015,16 @@
       "removed": 1,
       "request_id": "083",
       "timestamp": "2026-08-04 21:45:25 PDT"
+    },
+    {
+      "added": 19,
+      "number": 7,
+      "patch": "r007--2026-08-07_033606--true-trade-count-recent-50.patch",
+      "path": "dashboard/parsers/tradebot.py",
+      "reason": "true trade count recent 50",
+      "removed": 4,
+      "request_id": "096",
+      "timestamp": "2026-08-07 03:36:06 PDT"
     }
   ],
   "dashboard/parsers/whales.py": [
@@ -3901,6 +4041,18 @@
       "removed": 0,
       "request_id": "031",
       "timestamp": "2026-06-01 15:35:19 PDT"
+    }
+  ],
+  "tests/test_force_multihop_edge.py": [
+    {
+      "added": 30,
+      "number": 1,
+      "patch": "r001--2026-08-06_231213--test-single-hop-net-gate.patch",
+      "path": "tests/test_force_multihop_edge.py",
+      "reason": "test single-hop net gate",
+      "removed": 0,
+      "request_id": "092",
+      "timestamp": "2026-08-06 23:12:13 PDT"
     }
   ],
   "tests/test_futures.py": [

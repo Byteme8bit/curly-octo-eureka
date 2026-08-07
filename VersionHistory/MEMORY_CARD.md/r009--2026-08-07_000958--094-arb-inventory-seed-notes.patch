@@ -1,0 +1,48 @@
+--- a/MEMORY_CARD.md
++++ b/MEMORY_CARD.md
+@@ -1,6 +1,6 @@
+ # Memory card — eth-trading-bot
+ 
+-**Last updated:** 2026-08-06 PDT (093 restore screenshot baseline)  
++**Last updated:** 2026-08-07 PDT (094 seed USD arb inventory)  
+ **Read this first** before answering prompts about this repo.
+ 
+ ---
+@@ -20,9 +20,9 @@
+ | **Branch** | `cb/vps-deploy` |
+ | **VPS** | `mail.lynch.gdn` / `cursor@172.245.39.184` — `scripts/deploy_to_vps.ps1` |
+ | **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
+-| **Baseline** | `paper_baseline.json` (Kraken screenshot): ETH 0.52042, USD 415.90, ADA 24.602263, KFEE 881.92 ≈ $1,397.51 |
+-| **Archive** | Includes `archive/2026-08-07-restore-screenshot-baseline/` (undid 092 inventory drift) |
+-| **Trades** | 0 after 093 restore (code fixes from 092 kept) |
++| **Baseline** | Screenshot ETH **0.52042** kept; USD seeded into ADA/BTC/SOL for arb (094) — cash/alts ≠ screenshot |
++| **Archive** | `archive/2026-08-07-arb-inventory-seed/` (094); prior restore archive also present |
++| **Trades** | Waiting on edges ≳ ~0.45% after fees; inventory + gates ready |
+ | **Fees** | Real public Kraken ~0.40% (`FEE_FORCE_STATIC=0`, `FEE_RATE=0.004` fallback/gates) |
+ | **Kraken keys** | Optional for paper; needed for live/anchor |
+ | **Discord** | Enabled if credentials in `.env` (086) |
+@@ -32,10 +32,10 @@
+ 
+ - `FEE_RATE=0.004`, `FEE_FORCE_STATIC=0`, `MIN_TRADE_EDGE=0.0035`, `CRYPTO_MIN_TRADE_EDGE=0.0035`
+ - `STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage`, `PROFIT_ONLY_MODE=1`
+-- `STAT_ARB_ZSCORE_THRESHOLD=1.4`, `DUST_USD=15`, `PAPER_ANCHOR_TO_LIVE=0`
++- `STAT_ARB_ZSCORE_THRESHOLD=1.2`, `STAT_ARB_LOOKBACK=24`, `DUST_USD=5`, `PAPER_ANCHOR_TO_LIVE=0`
+ - `LIVE_ENABLED=0`, `AUDITOR_ENABLED=0`, `ENABLE_EQUITIES=0`, `ENABLE_FUTURES=0`
+ 
+-**Notes:** Keep paper on screenshot balances unless user OK’s a rebalance. 092 gate/edge code fixes remain; triangular still rare under real fees.
++**Notes:** ETH qty matches screenshot; ~$250 USD → ADA/BTC/SOL working inventory (094). Real 0.40% fees still block weak edges.
+ 
+ **Incident history:** `.env` was once wiped to 0 bytes — rebuild via `apply_revival_profile.py`. Crash-hold blocked trades until goals state reset + `CRASH_HOLD_ENABLED=0`.
+ 
+@@ -116,9 +116,9 @@
+ 
+ | ID | Topic |
+ |----|--------|
++| 094 | Seed USD arb inventory + tighter stat-arb ✓ |
+ | 093 | Restore Kraken screenshot baseline ✓ |
+-| 092 | Arb inventory + double-gate fix (inventory undone by 093) |
+-| 091 | More arb activity tuning |
++| 092 | Double-gate / relative-σ fixes ✓ |
+ | 090 | Public `/tradebot` dashboard path |
+ | 088 | Real 0.40% fees + paper baseline reset ✓ |
+ | 083 | Dashboard trades chart fix ✓ |
