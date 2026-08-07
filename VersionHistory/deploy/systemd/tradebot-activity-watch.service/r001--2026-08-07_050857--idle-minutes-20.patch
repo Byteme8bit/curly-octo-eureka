@@ -1,0 +1,9 @@
+--- a/deploy/systemd/tradebot-activity-watch.service
++++ b/deploy/systemd/tradebot-activity-watch.service
+@@ -10,5 +10,5 @@
+ WorkingDirectory=/home/cursor/eth-trading-bot
+ Environment=PYTHONUNBUFFERED=1
+ Environment=TRADEBOT_ROOT=/home/cursor/eth-trading-bot
+-Environment=PAPER_ACTIVITY_IDLE_MINUTES=45
++Environment=PAPER_ACTIVITY_IDLE_MINUTES=20
+ ExecStart=/home/cursor/eth-trading-bot/.venv/bin/python /home/cursor/eth-trading-bot/scripts/paper_activity_watchdog.py

@@ -1,0 +1,10 @@
+--- a/dashboard/static/index.html
++++ b/dashboard/static/index.html
+@@ -108,6 +108,6 @@
+     </aside>
+   </div>
+ 
+-  <script src="__DASHBOARD_BASE__/static/app.js?v=049"></script>
++  <script src="__DASHBOARD_BASE__/static/app.js?v=050"></script>
+ </body>
+ </html>

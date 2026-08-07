@@ -236,9 +236,17 @@ body[data-mode="live"] #nav-live.active {
   border-radius: 4px;
   padding: 0.25rem 0.45rem;
   font-size: 0.72rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
 }
 
 .holding-chip strong { color: var(--text); }
+
+.holding-qty {
+  color: #7dd3fc;
+  font-weight: 600;
+}
 
 .panel-section { margin-bottom: 1.25rem; }
 

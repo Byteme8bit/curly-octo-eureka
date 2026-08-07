@@ -1,0 +1,46 @@
+--- a/dashboard/static/app.js
++++ b/dashboard/static/app.js
+@@ -78,7 +78,15 @@
+   if (abs >= 1) {
+     return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+   }
+-  return v.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 });
++  // Sub-1 balances (ETH): keep 6 decimals so tiny arb fills are visible
++  return v.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 });
++}
++
++function fmtDeltaQty(n) {
++  if (n == null || Number.isNaN(n)) return "—";
++  const v = Number(n);
++  const sign = v >= 0 ? "+" : "";
++  return sign + v.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+ }
+ 
+ function fmtPct(n, asRatio) {
+@@ -200,6 +208,11 @@
+     { label: "Drawdown", value: fmtPct(s.drawdown_pct, true), cls: `mono ${s.drawdown_pct > 0.05 ? "score-bad" : ""}` },
+     { label: "Cash", value: fmtPct(s.cash_pct, true), cls: "mono" },
+     { label: "ETH qty", value: s.eth_qty != null ? fmtQty(s.eth_qty) : "—", cls: "mono" },
++    {
++      label: "ETH Δ sess",
++      value: s.eth_delta != null ? fmtDeltaQty(s.eth_delta) : "—",
++      cls: `mono ${pnlClass(s.eth_delta)}`,
++    },
+     { label: "Trades", value: String(s.trade_count ?? 0), cls: "mono" },
+     { label: "Health", value: s.health_score != null ? `${s.health_score}/100` : "—", cls: `mono ${scoreClass(s.health_score || 0)}` },
+   ];
+@@ -672,7 +685,13 @@
+       <div class="snapshot-card">
+         <h3>Holdings <span class="muted small mono">${esc(tb.portfolio?.updated_at || "")}</span></h3>
+         <div class="holding-chips">${chips}</div>
+-        <div class="muted small">Qty updates every fill · $ marks move with price</div>
++        <div class="muted small">
++          Triangles add ~0.00009 ETH each · session Δ
++          <span class="mono ${pnlClass(tb.portfolio?.eth_delta)}">${esc(fmtDeltaQty(tb.portfolio?.eth_delta))}</span>
++          ${tb.portfolio?.last_fill_delta != null
++            ? ` · last fill <span class="mono ${pnlClass(tb.portfolio.last_fill_delta)}">${esc(fmtDeltaQty(tb.portfolio.last_fill_delta))} ${esc(tb.portfolio.last_fill_asset || "")}</span>`
++            : ""}
++        </div>
+       </div>
+       <div class="snapshot-card">
+         <h3>Last trade</h3>

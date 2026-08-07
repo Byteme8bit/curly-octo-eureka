@@ -1,0 +1,51 @@
+--- a/MEMORY_CARD.md
++++ b/MEMORY_CARD.md
+@@ -1,6 +1,6 @@
+ # Memory card — eth-trading-bot
+ 
+-**Last updated:** 2026-08-07 PDT (097 holdings qty + honest PnL)  
++**Last updated:** 2026-08-07 PDT (100 resume paper maker + ADA seed)  
+ **Read this first** before answering prompts about this repo.
+ 
+ ---
+@@ -16,26 +16,27 @@
+ | Item | Value |
+ |------|--------|
+ | **Mode** | Paper-only on VPS (`tradebot.service`) — local Windows bot stopped |
+-| **Strategy** | `cross_momentum`, `stat_arb`, `triangular_arbitrage` (real 0.40% fees; activity = stat-arb) |
++| **Strategy** | `cross_momentum`, `stat_arb`, `triangular_arbitrage` (paper maker ~0.16%; public FeeEngine kept) |
+ | **Branch** | `cb/vps-deploy` |
+ | **VPS** | `mail.lynch.gdn` / `cursor@172.245.39.184` — `scripts/deploy_to_vps.ps1` |
+ | **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
+ | **Baseline** | Screenshot ETH **0.52042** kept; USD seeded into ADA/BTC/SOL for arb (094) — cash/alts ≠ screenshot |
+ | **Archive** | `archive/2026-08-07-arb-inventory-seed/` (094); prior restore archive also present |
+ | **Trades** | Active after 095 (paper maker preflight + low slippage); watchdog timer every 15m |
+-| **Fees** | Public taker schedule kept (`FEE_FORCE_STATIC=0`); paper 1-hop may use **maker** (~0.16%) when `PAPER_USE_MAKER_FEES=1` |
++| **Fees** | `FEE_FORCE_STATIC=0`; paper uses **maker** (`FEE_RATE=0.0016`, multi-hop preflight) when `PAPER_USE_MAKER_FEES=1` |
+ | **Kraken keys** | Optional for paper; needed for live/anchor |
+ | **Discord** | Enabled if credentials in `.env` (086) |
+ | **Dashboard** | `scripts/start_dashboard.ps1` — separate process, port 8765 |
+ 
+ ### Active `.env` tuning (VPS / local, not committed)
+ 
+-- `FEE_RATE=0.004`, `FEE_FORCE_STATIC=0`, `PAPER_USE_MAKER_FEES=1`, `SLIPPAGE_BUFFER_PCT=0.0001`
++- `FEE_RATE=0.0016`, `FEE_FORCE_STATIC=0`, `PAPER_USE_MAKER_FEES=1`, `SLIPPAGE_BUFFER_PCT=0.0001`
++- `PAPER_ACTIVITY_IDLE_MINUTES=20` (systemd unit + default)
+ - `STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage`, `PROFIT_ONLY_MODE=1`
+-- `STAT_ARB_ZSCORE_THRESHOLD=1.2`, `STAT_ARB_LOOKBACK=24`, `DUST_USD=5`, `PAPER_ANCHOR_TO_LIVE=0`
++- `DUST_USD=5`, `PAPER_ANCHOR_TO_LIVE=0`
+ - Watchdog: `tradebot-activity-watch.timer` → `scripts/paper_activity_watchdog.py`
+ 
+-**Notes:** ETH qty matches screenshot; ~$250 USD → ADA/BTC/SOL working inventory (094). Activity watchdog auto-nudges if idle; never fakes static fees.
++**Notes:** (100) ~$100 USD → ADA reseed; paper maker multi-hop; idle nudge at 20m. ETH may be ~0.5 after ETH→ADA fills (not screenshot-locked). Never fakes static fees.
+ 
+ **Incident history:** `.env` was once wiped to 0 bytes — rebuild via `apply_revival_profile.py`. Crash-hold blocked trades until goals state reset + `CRASH_HOLD_ENABLED=0`.
+ 
+@@ -116,6 +117,7 @@
+ 
+ | ID | Topic |
+ |----|--------|
++| 100 | Resume paper maker fee + ADA seed + multi-hop ✓ |
+ | 097 | Holdings qty display + honest session PnL ✓ |
+ | 096 | Dashboard trade count + closed-loop PnL ✓ |
+ | 095 | Paper maker fees + activity watchdog ✓ |

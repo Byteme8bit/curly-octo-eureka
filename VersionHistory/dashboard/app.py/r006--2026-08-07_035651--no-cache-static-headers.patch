@@ -1,0 +1,32 @@
+--- a/dashboard/app.py
++++ b/dashboard/app.py
+@@ -4,7 +4,7 @@
+ 
+ from pathlib import Path
+ 
+-from fastapi import FastAPI, Query
++from fastapi import FastAPI, Query, Request
+ from fastapi.responses import FileResponse, HTMLResponse
+ from fastapi.staticfiles import StaticFiles
+ 
+@@ -30,7 +30,19 @@
+     def _index_html() -> HTMLResponse:
+         raw = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+         html = raw.replace("__DASHBOARD_BASE__", base)
+-        return HTMLResponse(html)
++        return HTMLResponse(
++            html,
++            headers={"Cache-Control": "no-store, max-age=0, must-revalidate"},
++        )
++
++    @app.middleware("http")
++    async def _no_cache_dashboard(request: Request, call_next):
++        response = await call_next(request)
++        path = request.url.path or ""
++        if path.startswith("/static/") or path in {"/", "/paper", "/live"}:
++            response.headers["Cache-Control"] = "no-store, max-age=0, must-revalidate"
++            response.headers["Pragma"] = "no-cache"
++        return response
+ 
+     @app.get("/api/meta")
+     def api_meta() -> dict:

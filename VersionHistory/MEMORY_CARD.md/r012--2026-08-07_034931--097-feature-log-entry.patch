@@ -1,0 +1,18 @@
+--- a/MEMORY_CARD.md
++++ b/MEMORY_CARD.md
+@@ -1,6 +1,6 @@
+ # Memory card — eth-trading-bot
+ 
+-**Last updated:** 2026-08-07 PDT (096 dashboard count + closed-loop PnL)  
++**Last updated:** 2026-08-07 PDT (097 holdings qty + honest PnL)  
+ **Read this first** before answering prompts about this repo.
+ 
+ ---
+@@ -116,6 +116,7 @@
+ 
+ | ID | Topic |
+ |----|--------|
++| 097 | Holdings qty display + honest session PnL ✓ |
+ | 096 | Dashboard trade count + closed-loop PnL ✓ |
+ | 095 | Paper maker fees + activity watchdog ✓ |
+ | 094 | Seed USD arb inventory + tighter stat-arb ✓ |

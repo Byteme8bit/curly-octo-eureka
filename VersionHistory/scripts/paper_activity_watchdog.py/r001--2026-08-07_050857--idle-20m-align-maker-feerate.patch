@@ -1,0 +1,55 @@
+--- a/scripts/paper_activity_watchdog.py
++++ b/scripts/paper_activity_watchdog.py
+@@ -24,7 +24,7 @@
+ DIAG_PATH = ROOT / "logs" / "trade_diagnosis.json"
+ LOG_PATH = ROOT / "logs" / "paper_activity_watchdog.log"
+ 
+-IDLE_MINUTES = float(os.environ.get("PAPER_ACTIVITY_IDLE_MINUTES", "45"))
++IDLE_MINUTES = float(os.environ.get("PAPER_ACTIVITY_IDLE_MINUTES", "20"))
+ Z_FLOOR = float(os.environ.get("PAPER_ACTIVITY_Z_FLOOR", "1.0"))
+ SLIP_TARGET = float(os.environ.get("PAPER_ACTIVITY_SLIPPAGE", "0.0001"))
+ MAKER_FLOOR = float(os.environ.get("MAKER_FEE_RATE", "0.0016"))
+@@ -86,16 +86,6 @@
+     state = json.loads(STATE_PATH.read_text(encoding="utf-8")) if STATE_PATH.exists() else {}
+     diag = json.loads(DIAG_PATH.read_text(encoding="utf-8")) if DIAG_PATH.exists() else {}
+ 
+-    # Hard safety: never allow fake static understated fees
+-    if env.get("FEE_FORCE_STATIC", "0") == "1":
+-        env_text = _set_env(env_text, "FEE_FORCE_STATIC", "0")
+-        _log("ACTION: forced FEE_FORCE_STATIC=0 (keep real schedule)")
+-
+-    fee_rate = float(env.get("FEE_RATE", "0.004") or 0.004)
+-    if fee_rate < MAKER_FLOOR:
+-        env_text = _set_env(env_text, "FEE_RATE", f"{MAKER_FLOOR}")
+-        _log(f"ACTION: raised FEE_RATE to maker floor {MAKER_FLOOR}")
+-
+     trades = state.get("trades") or []
+     session = int(diag.get("paper_trades_session") or 0)
+     idle_h = _idle_hours(diag, state)
+@@ -107,6 +97,26 @@
+ 
+     changed = False
+     actions: list[str] = []
++
++    # Hard safety: never allow fake static understated fees
++    if env.get("FEE_FORCE_STATIC", "0") == "1":
++        env_text = _set_env(env_text, "FEE_FORCE_STATIC", "0")
++        actions.append("FEE_FORCE_STATIC=0")
++        changed = True
++
++    fee_rate = float(env.get("FEE_RATE", "0.004") or 0.004)
++    if fee_rate < MAKER_FLOOR:
++        env_text = _set_env(env_text, "FEE_RATE", f"{MAKER_FLOOR}")
++        actions.append(f"FEE_RATE={MAKER_FLOOR}")
++        changed = True
++    # Paper maker mode: align strategy/execution FEE_RATE with maker (never below floor)
++    elif (
++        env.get("PAPER_USE_MAKER_FEES", "0") == "1"
++        and fee_rate > MAKER_FLOOR + 1e-12
++    ):
++        env_text = _set_env(env_text, "FEE_RATE", f"{MAKER_FLOOR}")
++        actions.append(f"FEE_RATE={MAKER_FLOOR}")
++        changed = True
+ 
+     # Always keep maker + low slippage when idle monitoring is on
+     if env.get("PAPER_USE_MAKER_FEES", "0") != "1":

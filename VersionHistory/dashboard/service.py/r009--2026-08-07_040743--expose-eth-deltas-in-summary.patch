@@ -1,0 +1,12 @@
+--- a/dashboard/service.py
++++ b/dashboard/service.py
+@@ -43,6 +43,9 @@
+         "cash_pct": p.get("cash_pct"),
+         "trade_count": p.get("trade_count", 0),
+         "eth_qty": p.get("eth_qty"),
++        "eth_delta": p.get("eth_delta"),
++        "last_fill_delta": p.get("last_fill_delta"),
++        "last_fill_asset": p.get("last_fill_asset"),
+         "health_score": h.get("score"),
+         "trades_session": s.get("trades_session", 0),
+         "updated_at": p.get("updated_at"),

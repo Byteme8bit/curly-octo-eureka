@@ -1,0 +1,34 @@
+--- a/dashboard/static/app.js
++++ b/dashboard/static/app.js
+@@ -199,6 +199,7 @@
+     { label: "Session PnL", value: fmtPnl(s.baseline_pnl), cls: `mono ${pnlClass(s.baseline_pnl)}` },
+     { label: "Drawdown", value: fmtPct(s.drawdown_pct, true), cls: `mono ${s.drawdown_pct > 0.05 ? "score-bad" : ""}` },
+     { label: "Cash", value: fmtPct(s.cash_pct, true), cls: "mono" },
++    { label: "ETH qty", value: s.eth_qty != null ? fmtQty(s.eth_qty) : "—", cls: "mono" },
+     { label: "Trades", value: String(s.trade_count ?? 0), cls: "mono" },
+     { label: "Health", value: s.health_score != null ? `${s.health_score}/100` : "—", cls: `mono ${scoreClass(s.health_score || 0)}` },
+   ];
+@@ -633,8 +634,10 @@
+     .sort((a, b) => b.usd_value - a.usd_value)
+     .slice(0, 6);
+   const chips = holdings.map((h) =>
+-    `<span class="holding-chip"><strong>${esc(h.asset)}</strong> ` +
+-    `<span class="mono">${esc(fmtQty(h.qty))}</span> · ` +
++    `<span class="holding-chip">` +
++    `<strong>${esc(h.asset)}</strong> ` +
++    `<span class="mono holding-qty">${esc(fmtQty(h.qty))}</span>` +
++    `<span class="muted"> · </span>` +
+     `<span class="mono">${esc(fmtUsd(h.usd_value))}</span></span>`
+   ).join("") || `<span class="muted">No holdings</span>`;
+ 
+@@ -667,8 +670,9 @@
+   return `
+     <div class="snapshot-grid">
+       <div class="snapshot-card">
+-        <h3>Holdings</h3>
++        <h3>Holdings <span class="muted small mono">${esc(tb.portfolio?.updated_at || "")}</span></h3>
+         <div class="holding-chips">${chips}</div>
++        <div class="muted small">Qty updates every fill · $ marks move with price</div>
+       </div>
+       <div class="snapshot-card">
+         <h3>Last trade</h3>

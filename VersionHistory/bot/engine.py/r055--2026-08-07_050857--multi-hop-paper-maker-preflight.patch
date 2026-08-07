@@ -1,0 +1,17 @@
+--- a/bot/engine.py
++++ b/bot/engine.py
+@@ -914,12 +914,12 @@
+         )
+ 
+     def _paper_preflight_use_maker(self, intent, hops: int) -> bool:
+-        """Paper 1-hop entries may use Kraken maker fee schedule when enabled."""
++        """Paper entries may use Kraken maker fee schedule when enabled (any hop count)."""
+         if self._live_mode and not self._mirror_mode:
+             return False
+         if not getattr(self.settings, "paper_use_maker_fees", False):
+             return False
+-        if hops != 1:
++        if hops < 1:
+             return False
+         if intent.is_defensive or self._is_accumulation_intent(intent):
+             return False

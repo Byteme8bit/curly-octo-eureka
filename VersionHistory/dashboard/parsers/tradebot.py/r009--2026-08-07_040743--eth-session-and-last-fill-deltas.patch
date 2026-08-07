@@ -1,0 +1,47 @@
+--- a/dashboard/parsers/tradebot.py
++++ b/dashboard/parsers/tradebot.py
+@@ -229,6 +229,33 @@
+     total = snap.portfolio_usd or sum(r["usd_value"] for r in holdings_rows) or 0.0
+     cash_pct = round(cash_usd / total, 4) if total > 0 else None
+     eth_qty = next((r["qty"] for r in holdings_rows if r["asset"] == "ETH"), None)
++    eth_baseline = None
++    baseline_path = settings.root / "paper_baseline.json"
++    if baseline_path.exists():
++        try:
++            base = json.loads(baseline_path.read_text(encoding="utf-8"))
++            eth_baseline = float((base.get("balances") or {}).get("ETH") or 0.0) or None
++        except (OSError, json.JSONDecodeError, TypeError, ValueError):
++            eth_baseline = None
++    eth_delta = None
++    if eth_qty is not None and eth_baseline is not None:
++        eth_delta = eth_qty - eth_baseline
++
++    last_fill_delta = None
++    last_fill_asset = None
++    if settings.paper_state_file.exists():
++        try:
++            raw = json.loads(settings.paper_state_file.read_text(encoding="utf-8"))
++            trades = raw.get("trades") or []
++            if trades:
++                t = trades[-1]
++                hops = int(t.get("hops") or 1)
++                if hops > 1 and t.get("from_asset") and t.get("from_asset") == t.get("to_asset"):
++                    last_fill_asset = str(t.get("from_asset"))
++                    last_fill_delta = float(t.get("to_qty") or 0.0) - float(t.get("from_qty") or 0.0)
++        except (OSError, json.JSONDecodeError, TypeError, ValueError):
++            pass
++
+     return {
+         "mode": "paper",
+         "updated_at": snap.updated_at,
+@@ -238,6 +265,10 @@
+         "cash_usd": round(cash_usd, 2),
+         "cash_pct": cash_pct,
+         "eth_qty": eth_qty,
++        "eth_baseline": eth_baseline,
++        "eth_delta": eth_delta,
++        "last_fill_asset": last_fill_asset,
++        "last_fill_delta": last_fill_delta,
+         "trade_count": 0,
+         "holdings": holdings_rows,
+     }

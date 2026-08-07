@@ -1,0 +1,85 @@
+--- a/dashboard/parsers/tradebot.py
++++ b/dashboard/parsers/tradebot.py
+@@ -181,13 +181,54 @@
+         snap = portfolio_log.bootstrap_from_state(settings.paper_state_file)
+     if snap is None:
+         return None
+-    cash_usd = sum(
+-        row["usd_value"]
+-        for asset, row in snap.holdings.items()
+-        if asset == "USD"
+-    )
+-    total = snap.portfolio_usd or 0.0
++
++    # Qty source of truth: .paper_state.json (updates on every fill).
++    # Prices/values: prefer latest paper_portfolio snapshot, recompute value.
++    state_balances: dict[str, float] = {}
++    if settings.paper_state_file.exists():
++        try:
++            raw = json.loads(settings.paper_state_file.read_text(encoding="utf-8"))
++            bal = raw.get("balances") or {}
++            if isinstance(bal, dict):
++                state_balances = {str(k): float(v) for k, v in bal.items()}
++        except (OSError, json.JSONDecodeError, TypeError, ValueError):
++            state_balances = {}
++
++    price_by_asset = {
++        asset: float(row.get("usd_price") or 0.0)
++        for asset, row in (snap.holdings or {}).items()
++    }
++    if "USD" not in price_by_asset:
++        price_by_asset["USD"] = 1.0
++
++    assets = set(state_balances) | set(snap.holdings)
++    holdings_rows: list[dict] = []
++    for asset in assets:
++        qty = float(state_balances.get(asset, snap.holdings.get(asset, {}).get("qty", 0.0) or 0.0))
++        if qty <= 0:
++            continue
++        price = 1.0 if asset == "USD" else float(price_by_asset.get(asset, 0.0) or 0.0)
++        # Fall back to snapshot usd_value/qty if price missing
++        if price <= 0 and asset in snap.holdings:
++            row = snap.holdings[asset]
++            sq = float(row.get("qty") or 0.0)
++            if sq > 0:
++                price = float(row.get("usd_value") or 0.0) / sq
++        usd_value = round(qty * price, 2) if price > 0 else float(
++            (snap.holdings.get(asset) or {}).get("usd_value") or 0.0
++        )
++        holdings_rows.append({
++            "asset": asset,
++            "qty": qty,
++            "usd_price": round(price, 6),
++            "usd_value": usd_value,
++        })
++    holdings_rows.sort(key=lambda r: -float(r["usd_value"]))
++
++    cash_usd = sum(r["usd_value"] for r in holdings_rows if r["asset"] == "USD")
++    total = snap.portfolio_usd or sum(r["usd_value"] for r in holdings_rows) or 0.0
+     cash_pct = round(cash_usd / total, 4) if total > 0 else None
++    eth_qty = next((r["qty"] for r in holdings_rows if r["asset"] == "ETH"), None)
+     return {
+         "mode": "paper",
+         "updated_at": snap.updated_at,
+@@ -196,19 +237,9 @@
+         "drawdown_pct": snap.drawdown_pct,
+         "cash_usd": round(cash_usd, 2),
+         "cash_pct": cash_pct,
++        "eth_qty": eth_qty,
+         "trade_count": 0,
+-        "holdings": [
+-            {
+-                "asset": asset,
+-                "qty": row["qty"],
+-                "usd_price": row["usd_price"],
+-                "usd_value": row["usd_value"],
+-            }
+-            for asset, row in sorted(
+-                snap.holdings.items(),
+-                key=lambda x: -x[1]["usd_value"],
+-            )
+-        ],
++        "holdings": holdings_rows,
+     }
+ 
+ 

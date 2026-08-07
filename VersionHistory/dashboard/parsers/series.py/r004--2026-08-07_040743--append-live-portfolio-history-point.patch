@@ -1,0 +1,24 @@
+--- a/dashboard/parsers/series.py
++++ b/dashboard/parsers/series.py
+@@ -139,6 +139,21 @@
+             "baseline_pnl": t.get("baseline_pnl"),
+             "drawdown_pct": dd_val,
+         })
++
++    # Always append live snapshot so the chart tracks current book (logs can lag).
++    try:
++        from bot.paper_portfolio import PaperPortfolioLog
++
++        live = PaperPortfolioLog(settings.paper_portfolio_file).load()
++        if live and live.portfolio_usd:
++            points.append({
++                "time": live.updated_at or "now",
++                "portfolio_usd": live.portfolio_usd,
++                "baseline_pnl": live.baseline_pnl,
++                "drawdown_pct": live.drawdown_pct,
++            })
++    except Exception:
++        pass
+ 
+     pnl_deltas: list[dict] = []
+     for i in range(1, len(points)):

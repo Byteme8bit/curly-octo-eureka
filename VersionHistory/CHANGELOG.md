@@ -3458,3 +3458,158 @@ See `bot/version_history.py` for the writer.
 - **Diff:** +2 / -1
 - **Patch:** `r011--2026-08-07_033613--096-dashboard-pnl-notes.patch`
 
+## dashboard/parsers/series.py — r003
+
+- **When:** 2026-08-07 03:49:15 PDT
+- **Reason:** closed-loop series PnL repair
+- **Request:** 097
+- **Diff:** +108 / -24
+- **Patch:** `r003--2026-08-07_034915--closed-loop-series-pnl-repair.patch`
+
+## dashboard/static/app.js — r012
+
+- **When:** 2026-08-07 03:49:16 PDT
+- **Reason:** holdings qty and book PnL caption
+- **Request:** 097
+- **Diff:** +39 / -8
+- **Patch:** `r012--2026-08-07_034916--holdings-qty-and-book-pnl-caption.patch`
+
+## dashboard/static/index.html — r010
+
+- **When:** 2026-08-07 03:49:16 PDT
+- **Reason:** cache bump app.js v050
+- **Request:** 097
+- **Diff:** +1 / -1
+- **Patch:** `r010--2026-08-07_034916--cache-bump-appjs-v050.patch`
+
+
+> _2026-08-07 03:49:16 PDT_ — no-op snapshot requested for `MEMORY_CARD.md` (reason: '097 holdings PnL note') - no change since r011
+
+## MEMORY_CARD.md — r012
+
+- **When:** 2026-08-07 03:49:31 PDT
+- **Reason:** 097 feature log entry
+- **Request:** 097
+- **Diff:** +2 / -1
+- **Patch:** `r012--2026-08-07_034931--097-feature-log-entry.patch`
+
+## dashboard/parsers/tradebot.py — r008
+
+- **When:** 2026-08-07 03:56:50 PDT
+- **Reason:** holdings qty from paper state
+- **Request:** 098
+- **Diff:** +49 / -18
+- **Patch:** `r008--2026-08-07_035650--holdings-qty-from-paper-state.patch`
+
+## dashboard/service.py — r008
+
+- **When:** 2026-08-07 03:56:50 PDT
+- **Reason:** eth_qty in summary strip
+- **Request:** 098
+- **Diff:** +1 / -0
+- **Patch:** `r008--2026-08-07_035650--ethqty-in-summary-strip.patch`
+
+## dashboard/app.py — r006
+
+- **When:** 2026-08-07 03:56:51 PDT
+- **Reason:** no-cache static headers
+- **Request:** 098
+- **Diff:** +14 / -2
+- **Patch:** `r006--2026-08-07_035651--no-cache-static-headers.patch`
+
+## dashboard/static/app.js — r013
+
+- **When:** 2026-08-07 03:56:51 PDT
+- **Reason:** ETH qty metric holdings highlight
+- **Request:** 098
+- **Diff:** +7 / -3
+- **Patch:** `r013--2026-08-07_035651--eth-qty-metric-holdings-highlight.patch`
+
+## dashboard/static/index.html — r011
+
+- **When:** 2026-08-07 03:56:51 PDT
+- **Reason:** cache bump app.js v051
+- **Request:** 098
+- **Diff:** +1 / -1
+- **Patch:** `r011--2026-08-07_035651--cache-bump-appjs-v051.patch`
+
+## dashboard/static/styles.css — r008
+
+- **When:** 2026-08-07 03:56:51 PDT
+- **Reason:** holding-qty accent style
+- **Request:** 098
+- **Diff:** +8 / -0
+- **Patch:** `r008--2026-08-07_035651--holding-qty-accent-style.patch`
+
+## dashboard/parsers/tradebot.py — r009
+
+- **When:** 2026-08-07 04:07:43 PDT
+- **Reason:** eth session and last-fill deltas
+- **Request:** 099
+- **Diff:** +31 / -0
+- **Patch:** `r009--2026-08-07_040743--eth-session-and-last-fill-deltas.patch`
+
+## dashboard/service.py — r009
+
+- **When:** 2026-08-07 04:07:43 PDT
+- **Reason:** expose eth deltas in summary
+- **Request:** 099
+- **Diff:** +3 / -0
+- **Patch:** `r009--2026-08-07_040743--expose-eth-deltas-in-summary.patch`
+
+## dashboard/parsers/series.py — r004
+
+- **When:** 2026-08-07 04:07:43 PDT
+- **Reason:** append live portfolio history point
+- **Request:** 099
+- **Diff:** +15 / -0
+- **Patch:** `r004--2026-08-07_040743--append-live-portfolio-history-point.patch`
+
+## dashboard/static/app.js — r014
+
+- **When:** 2026-08-07 04:07:44 PDT
+- **Reason:** show ETH deltas in UI
+- **Request:** 099
+- **Diff:** +21 / -2
+- **Patch:** `r014--2026-08-07_040744--show-eth-deltas-in-ui.patch`
+
+## dashboard/static/index.html — r012
+
+- **When:** 2026-08-07 04:07:44 PDT
+- **Reason:** cache bump app.js v052
+- **Request:** 099
+- **Diff:** +1 / -1
+- **Patch:** `r012--2026-08-07_040744--cache-bump-appjs-v052.patch`
+
+## bot/engine.py — r055
+
+- **When:** 2026-08-07 05:08:57 PDT
+- **Reason:** multi-hop paper maker preflight
+- **Request:** 100
+- **Diff:** +2 / -2
+- **Patch:** `r055--2026-08-07_050857--multi-hop-paper-maker-preflight.patch`
+
+## scripts/paper_activity_watchdog.py — r001
+
+- **When:** 2026-08-07 05:08:57 PDT
+- **Reason:** idle 20m align maker FEE_RATE
+- **Request:** 100
+- **Diff:** +21 / -11
+- **Patch:** `r001--2026-08-07_050857--idle-20m-align-maker-feerate.patch`
+
+## deploy/systemd/tradebot-activity-watch.service — r001
+
+- **When:** 2026-08-07 05:08:57 PDT
+- **Reason:** idle minutes 20
+- **Request:** 100
+- **Diff:** +1 / -1
+- **Patch:** `r001--2026-08-07_050857--idle-minutes-20.patch`
+
+## MEMORY_CARD.md — r013
+
+- **When:** 2026-08-07 05:08:57 PDT
+- **Reason:** 100 resume maker notes
+- **Request:** 100
+- **Diff:** +8 / -6
+- **Patch:** `r013--2026-08-07_050857--100-resume-maker-notes.patch`
+

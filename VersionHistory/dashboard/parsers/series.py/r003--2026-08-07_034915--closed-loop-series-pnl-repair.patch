@@ -1,0 +1,178 @@
+--- a/dashboard/parsers/series.py
++++ b/dashboard/parsers/series.py
+@@ -248,6 +248,41 @@
+     return _parse_receipt_time(s)
+ 
+ 
++def _closed_loop_corrected_pnl(trade: dict) -> float | None:
++    """Recompute closed-loop edge when stored gain_loss is notional-scale (legacy bug)."""
++    hops = int(trade.get("hops") or 1)
++    from_a = trade.get("from_asset")
++    to_a = trade.get("to_asset")
++    if hops <= 1 or not from_a or from_a != to_a:
++        return None
++    start = float(trade.get("from_qty") or 0.0)
++    end = float(trade.get("to_qty") or 0.0)
++    if start <= 0:
++        return None
++    fees = float(trade.get("fee_usd") or trade.get("fee_quote") or 0.0)
++    if fees <= 0:
++        return None
++    # Approx compounded taker drag across hops → recover traded notional / unit price
++    fee_pct = max(0.001, 0.004 * hops)
++    notional = fees / fee_pct
++    px = notional / start
++    return (end - start) * px
++
++
++def _effective_trade_pnl(trade: dict) -> float:
++    stored = trade.get("gain_loss")
++    stored_f = float(stored) if stored is not None else None
++    corrected = _closed_loop_corrected_pnl(trade)
++    if corrected is None:
++        return stored_f or 0.0
++    if stored_f is None:
++        return corrected
++    # Legacy bug booked ~notional as gain; corrected edge is usually <$5 for paper sizes.
++    if abs(stored_f) > max(5.0, abs(corrected) * 5.0):
++        return corrected
++    return stored_f
++
++
+ def _merge_paper_state_trades(
+     settings: DashboardSettings,
+     buckets: dict[str, dict],
+@@ -270,21 +305,35 @@
+         if not ts or ts in seen_times:
+             continue
+         day = _parse_iso_day(ts)
+-        pnl = trade.get("gain_loss")
++        pnl = _effective_trade_pnl(trade)
+         fee = float(trade.get("fee_usd") or trade.get("fee_quote") or 0.0)
+         buckets[day]["trade_count"] += 1
+-        if pnl is not None:
+-            buckets[day]["net_pnl"] += float(pnl)
++        buckets[day]["net_pnl"] += pnl
+         buckets[day]["fees"] += fee
+         from_a = trade.get("from_asset", "?")
+         to_a = trade.get("to_asset", "?")
++        path_label = trade.get("path") or f"{from_a}->{to_a}"
++        strat = trade.get("strategy_name") or ""
++        prefix = f"[{strat}] " if strat else ""
+         trades.append({
+             "time": ts,
+-            "summary": f"{from_a}->{to_a} {trade.get('reason', '')}".strip(),
+-            "gain_loss_usd": float(pnl) if pnl is not None else None,
++            "summary": f"{prefix}{path_label} {trade.get('reason', '')}".strip(),
++            "gain_loss_usd": pnl,
+             "fee_usd": fee,
+         })
+         seen_times.add(ts)
++
++
++def _paper_book_pnl(settings: DashboardSettings) -> float | None:
++    path = settings.paper_portfolio_file
++    if not path.exists():
++        return None
++    try:
++        data = json.loads(path.read_text(encoding="utf-8"))
++    except (OSError, json.JSONDecodeError):
++        return None
++    pnl = data.get("baseline_pnl")
++    return float(pnl) if pnl is not None else None
+ 
+ 
+ def build_trades_series(
+@@ -301,25 +350,57 @@
+     buckets: dict[str, dict] = defaultdict(lambda: {"trade_count": 0, "net_pnl": 0.0, "fees": 0.0})
+     trades: list[dict] = []
+ 
+-    for path in newest_files(settings.receipts_dir, "*.txt", limit=receipt_limit):
+-        row = _parse_receipt(path)
+-        if not row:
+-            continue
+-        day = _parse_receipt_time(row.get("time", ""))
+-        pnl = row.get("gain_loss_usd")
+-        fee = row.get("fee_usd") or 0.0
+-        buckets[day]["trade_count"] += 1
+-        if pnl is not None:
++    # Prefer paper_state (has hops/qty for closed-loop PnL repair). Receipts fill gaps.
++    if settings.paper_state_file.exists():
++        try:
++            data = json.loads(settings.paper_state_file.read_text(encoding="utf-8"))
++        except (OSError, json.JSONDecodeError):
++            data = {}
++        for trade in data.get("trades") or []:
++            if not isinstance(trade, dict):
++                continue
++            ts = str(trade.get("time", ""))
++            if not ts:
++                continue
++            day = _parse_iso_day(ts)
++            pnl = _effective_trade_pnl(trade)
++            fee = float(trade.get("fee_usd") or trade.get("fee_quote") or 0.0)
++            buckets[day]["trade_count"] += 1
+             buckets[day]["net_pnl"] += pnl
+-        buckets[day]["fees"] += fee
+-        trades.append({
+-            "time": row.get("time", ""),
+-            "summary": row.get("summary", ""),
+-            "gain_loss_usd": pnl,
+-            "fee_usd": fee,
+-        })
+-
+-    _merge_paper_state_trades(settings, buckets, trades)
++            buckets[day]["fees"] += fee
++            from_a = trade.get("from_asset", "?")
++            to_a = trade.get("to_asset", "?")
++            path_label = trade.get("path") or f"{from_a}->{to_a}"
++            strat = trade.get("strategy_name") or ""
++            prefix = f"[{strat}] " if strat else ""
++            trades.append({
++                "time": ts,
++                "summary": f"{prefix}{path_label} {trade.get('reason', '')}".strip(),
++                "gain_loss_usd": pnl,
++                "fee_usd": fee,
++            })
++    else:
++        for path in newest_files(settings.receipts_dir, "*.txt", limit=receipt_limit):
++            row = _parse_receipt(path)
++            if not row:
++                continue
++            day = _parse_receipt_time(row.get("time", ""))
++            pnl = row.get("gain_loss_usd")
++            fee = row.get("fee_usd") or 0.0
++            buckets[day]["trade_count"] += 1
++            if pnl is not None:
++                buckets[day]["net_pnl"] += pnl
++            buckets[day]["fees"] += fee
++            trades.append({
++                "time": row.get("time", ""),
++                "summary": row.get("summary", ""),
++                "gain_loss_usd": pnl,
++                "fee_usd": fee,
++            })
++        _merge_paper_state_trades(settings, buckets, trades)
++
++    # Newest first for recent list
++    trades.sort(key=lambda t: str(t.get("time") or ""), reverse=True)
+ 
+     series = []
+     for day in sorted(buckets.keys()):
+@@ -331,12 +412,15 @@
+             "fees": round(b["fees"], 2),
+         })
+ 
+-    sources = [str(settings.receipts_dir)]
++    sources = []
+     if settings.paper_state_file.exists():
+         sources.append(str(settings.paper_state_file))
++    else:
++        sources.append(str(settings.receipts_dir))
+     return {
+         "buckets": series,
+         "recent": trades[:30],
++        "book_pnl": _paper_book_pnl(settings),
+         "source": " + ".join(sources),
+         "mode": "paper",
+     }

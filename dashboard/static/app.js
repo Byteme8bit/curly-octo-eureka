@@ -68,6 +68,27 @@ function fmtUsd(n) {
   return sign + "$" + Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function fmtQty(n) {
+  if (n == null || Number.isNaN(n)) return "—";
+  const v = Number(n);
+  const abs = Math.abs(v);
+  if (abs >= 100) {
+    return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+  if (abs >= 1) {
+    return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  }
+  // Sub-1 balances (ETH): keep 6 decimals so tiny arb fills are visible
+  return v.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+}
+
+function fmtDeltaQty(n) {
+  if (n == null || Number.isNaN(n)) return "—";
+  const v = Number(n);
+  const sign = v >= 0 ? "+" : "";
+  return sign + v.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+}
+
 function fmtPct(n, asRatio) {
   if (n == null || Number.isNaN(n)) return "—";
   const v = Number(n);
@@ -186,6 +207,12 @@ function renderMetricStrip(summary) {
     { label: "Session PnL", value: fmtPnl(s.baseline_pnl), cls: `mono ${pnlClass(s.baseline_pnl)}` },
     { label: "Drawdown", value: fmtPct(s.drawdown_pct, true), cls: `mono ${s.drawdown_pct > 0.05 ? "score-bad" : ""}` },
     { label: "Cash", value: fmtPct(s.cash_pct, true), cls: "mono" },
+    { label: "ETH qty", value: s.eth_qty != null ? fmtQty(s.eth_qty) : "—", cls: "mono" },
+    {
+      label: "ETH Δ sess",
+      value: s.eth_delta != null ? fmtDeltaQty(s.eth_delta) : "—",
+      cls: `mono ${pnlClass(s.eth_delta)}`,
+    },
     { label: "Trades", value: String(s.trade_count ?? 0), cls: "mono" },
     { label: "Health", value: s.health_score != null ? `${s.health_score}/100` : "—", cls: `mono ${scoreClass(s.health_score || 0)}` },
   ];
@@ -286,7 +313,7 @@ function updateAllocationChart(holdings) {
   });
 }
 
-function updateTradesChart(buckets) {
+function updateTradesChart(buckets, opts = {}) {
   const ctx = document.getElementById("chart-trades");
   const caption = document.getElementById("chart-trades-caption");
   if (!ctx) return;
@@ -300,17 +327,29 @@ function updateTradesChart(buckets) {
   const netPnls = slice.map((b) => Number(b.net_pnl) || 0);
   const maxTrades = Math.max(5, ...tradeCounts, 1);
   const sessionTrades = tradeCounts.reduce((sum, n) => sum + n, 0);
-  const sessionPnl = netPnls.reduce((sum, n) => sum + n, 0);
+  const tradePnl = netPnls.reduce((sum, n) => sum + n, 0);
+  const bookPnl = opts.bookPnl != null && !Number.isNaN(Number(opts.bookPnl))
+    ? Number(opts.bookPnl)
+    : null;
 
   if (caption) {
     if (!slice.length) {
       caption.textContent = "No trades in window";
     } else {
-      const pnlStr =
-        sessionPnl >= 0 ? `+$${sessionPnl.toFixed(2)}` : `-$${Math.abs(sessionPnl).toFixed(2)}`;
+      const tradePnlStr =
+        tradePnl >= 0 ? `+$${tradePnl.toFixed(2)}` : `-$${Math.abs(tradePnl).toFixed(2)}`;
       const range =
         labels.length === 1 ? labels[0] : `${labels[0]}–${labels[labels.length - 1]}`;
-      caption.textContent = `${range}: ${sessionTrades} trade${sessionTrades === 1 ? "" : "s"}, net ${pnlStr}`;
+      if (bookPnl != null) {
+        const bookStr =
+          bookPnl >= 0 ? `+$${bookPnl.toFixed(2)}` : `-$${Math.abs(bookPnl).toFixed(2)}`;
+        caption.textContent =
+          `${range}: ${sessionTrades} trade${sessionTrades === 1 ? "" : "s"}, ` +
+          `book ${bookStr} (trade edges ${tradePnlStr})`;
+      } else {
+        caption.textContent =
+          `${range}: ${sessionTrades} trade${sessionTrades === 1 ? "" : "s"}, net ${tradePnlStr}`;
+      }
     }
   }
 
@@ -608,7 +647,11 @@ function renderOverviewSnapshot(data) {
     .sort((a, b) => b.usd_value - a.usd_value)
     .slice(0, 6);
   const chips = holdings.map((h) =>
-    `<span class="holding-chip"><strong>${esc(h.asset)}</strong> <span class="mono">${esc(fmtUsd(h.usd_value))}</span></span>`
+    `<span class="holding-chip">` +
+    `<strong>${esc(h.asset)}</strong> ` +
+    `<span class="mono holding-qty">${esc(fmtQty(h.qty))}</span>` +
+    `<span class="muted"> · </span>` +
+    `<span class="mono">${esc(fmtUsd(h.usd_value))}</span></span>`
   ).join("") || `<span class="muted">No holdings</span>`;
 
   const lastTrade = (tb.recent_trades || [])[0];
@@ -640,8 +683,15 @@ function renderOverviewSnapshot(data) {
   return `
     <div class="snapshot-grid">
       <div class="snapshot-card">
-        <h3>Holdings</h3>
+        <h3>Holdings <span class="muted small mono">${esc(tb.portfolio?.updated_at || "")}</span></h3>
         <div class="holding-chips">${chips}</div>
+        <div class="muted small">
+          Triangles add ~0.00009 ETH each · session Δ
+          <span class="mono ${pnlClass(tb.portfolio?.eth_delta)}">${esc(fmtDeltaQty(tb.portfolio?.eth_delta))}</span>
+          ${tb.portfolio?.last_fill_delta != null
+            ? ` · last fill <span class="mono ${pnlClass(tb.portfolio.last_fill_delta)}">${esc(fmtDeltaQty(tb.portfolio.last_fill_delta))} ${esc(tb.portfolio.last_fill_asset || "")}</span>`
+            : ""}
+        </div>
       </div>
       <div class="snapshot-card">
         <h3>Last trade</h3>
@@ -680,7 +730,9 @@ function renderOverviewSnapshot(data) {
 
 function renderTradebotDetail(tb) {
   const holdings = (tb.portfolio?.holdings || []).map((h) => [
-    esc(h.asset), `<span class="mono">${esc(h.qty)}</span>`, `<span class="mono">${esc(fmtUsd(h.usd_value))}</span>`,
+    esc(h.asset),
+    `<span class="mono">${esc(fmtQty(h.qty))}</span>`,
+    `<span class="mono">${esc(fmtUsd(h.usd_value))}</span>`,
   ]);
   const trades = (tb.recent_trades || []).slice(0, 8).map((t) => [
     esc(t.time), esc(t.summary), `<span class="mono ${pnlClass(t.gain_loss_usd)}">${esc(t.gain_loss)}</span>`,
@@ -729,7 +781,9 @@ async function refresh() {
     updatePortfolioChart(chartData.hist.points);
     updatePnlBarChart(chartData.hist.pnl_deltas);
     updateAllocationChart(data.tradebot?.portfolio?.holdings);
-    updateTradesChart(chartData.trades.buckets);
+    updateTradesChart(chartData.trades.buckets, {
+      bookPnl: chartData.trades.book_pnl ?? data.summary?.baseline_pnl,
+    });
 
     $("#forecasts-panel").innerHTML = renderForecasts(data.forecasts);
     $("#whales-panel").innerHTML = renderWhales(data.whales || {});
