@@ -1,6 +1,6 @@
 # Memory card — eth-trading-bot
 
-**Last updated:** 2026-08-07 PDT (100 resume paper maker + ADA seed)  
+**Last updated:** 2026-08-14 PDT (104 historical 7d replay engine)  
 **Read this first** before answering prompts about this repo.
 
 ---
@@ -15,28 +15,28 @@ Python Kraken **spot** trading bot (paper + optional live). Strategies, safety r
 
 | Item | Value |
 |------|--------|
-| **Mode** | Paper-only on VPS (`tradebot.service`) — local Windows bot stopped |
+| **Mode** | Historical **7d replay** on VPS (live `tradebot.service` stopped during replay) |
 | **Strategy** | `cross_momentum`, `stat_arb`, `triangular_arbitrage` (paper maker ~0.16%; public FeeEngine kept) |
 | **Branch** | `cb/vps-deploy` |
-| **VPS** | `mail.lynch.gdn` / `cursor@172.245.39.184` — `scripts/deploy_to_vps.ps1` |
+| **VPS** | `mail.lynch.gdn` / `172.245.39.184` — `cursor@` (app) or `root@` (key-only, SSHFS full `/`) via `~\.ssh\cursor_vps` |
 | **Dashboard URL** | https://lynch.gdn/tradebot/ (nginx + basic auth; backend `127.0.0.1:8765`) |
-| **Baseline** | Screenshot ETH **0.52042** kept; USD seeded into ADA/BTC/SOL for arb (094) — cash/alts ≠ screenshot |
+| **Baseline** | Kraken screenshot 2026-08-14: ETH **0.49501**, USD **415.90**, ADA **24.620422**, KFEE **881.92** (~$1,349) |
 | **Archive** | `archive/2026-08-07-arb-inventory-seed/` (094); prior restore archive also present |
 | **Trades** | Active after 095 (paper maker preflight + low slippage); watchdog timer every 15m |
-| **Fees** | `FEE_FORCE_STATIC=0`; paper uses **maker** (`FEE_RATE=0.0016`, multi-hop preflight) when `PAPER_USE_MAKER_FEES=1` |
+| **Fees** | Always realistic: `FEE_FORCE_STATIC=0`; paper maker preflight (`PAPER_USE_MAKER_FEES=1`, ~0.16%) — **never understate** |
+| **Replay** | `scripts/reset_for_replay.py` then `scripts/run_historical_replay.py --days 7 --timeframe 15m --duration-minutes 90` (Kraken public OHLC ≈720-bar cap → **15m** for full week) |
 | **Kraken keys** | Optional for paper; needed for live/anchor |
-| **Discord** | Enabled if credentials in `.env` (086) |
+| **Discord** | Config present; **quiet** (`DISCORD_QUIET_MODE=1`) until re-enabled |
 | **Dashboard** | `scripts/start_dashboard.ps1` — separate process, port 8765 |
 
 ### Active `.env` tuning (VPS / local, not committed)
 
-- `FEE_RATE=0.0016`, `FEE_FORCE_STATIC=0`, `PAPER_USE_MAKER_FEES=1`, `SLIPPAGE_BUFFER_PCT=0.0001`
-- `PAPER_ACTIVITY_IDLE_MINUTES=20` (systemd unit + default)
+- `DISCORD_QUIET_MODE=1`, `WATCHDOG_QUIET_MODE=1` (tokens kept; set `=0` to resume alerts)
+- Replay: `CANDLE_TIMEFRAME=15m`, maker fees, `MIN_ETH_RESERVE=0.40`
+- `FEE_RATE=0.0016`, `FEE_FORCE_STATIC=0`, `PAPER_USE_MAKER_FEES=1`
 - `STRATEGIES=cross_momentum,stat_arb,triangular_arbitrage`, `PROFIT_ONLY_MODE=1`
-- `DUST_USD=5`, `PAPER_ANCHOR_TO_LIVE=0`
-- Watchdog: `tradebot-activity-watch.timer` → `scripts/paper_activity_watchdog.py`
 
-**Notes:** (100) ~$100 USD → ADA reseed; paper maker multi-hop; idle nudge at 20m. ETH may be ~0.5 after ETH→ADA fills (not screenshot-locked). Never fakes static fees.
+**Notes:** (104) 7-day historical replay via `scripts/run_historical_replay.py` (15m OHLCV; realistic fees only). Live tradebot stopped during replay.
 
 **Incident history:** `.env` was once wiped to 0 bytes — rebuild via `apply_revival_profile.py`. Crash-hold blocked trades until goals state reset + `CRASH_HOLD_ENABLED=0`.
 
@@ -117,6 +117,9 @@ Invoke-RestMethod http://127.0.0.1:8765/api/paper/trades/series
 
 | ID | Topic |
 |----|--------|
+| 104 | Historical 7-day replay engine (15m OHLCV, realistic fees) ✓ |
+| 103 | Full reset cleanup + paper stress activity window ✓ |
+| 102 | Rehaul mute Discord + screenshot reset + accel B + dashboard auth ✓ |
 | 100 | Resume paper maker fee + ADA seed + multi-hop ✓ |
 | 097 | Holdings qty display + honest session PnL ✓ |
 | 096 | Dashboard trade count + closed-loop PnL ✓ |

@@ -95,6 +95,8 @@ class TradingEngine:
 
         self.runtime = BotRuntime()
 
+        self.replay_mode = False
+
         self.data = KrakenData(settings)
 
         self.markets = MarketRegistry(
@@ -817,6 +819,8 @@ class TradingEngine:
                 self.discord.post_important(alert, pin=False, source="TradeBot")
 
     def _maybe_whale_watch(self) -> None:
+        if getattr(self, "replay_mode", False):
+            return
         if not self.settings.whale_watch_enabled:
             return
         for event in self.whale_watcher.maybe_poll():

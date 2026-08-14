@@ -113,6 +113,16 @@ class PaperBroker:
         self.state_file = state_file
         self.initial_balances = dict(initial_balances)
         self.state = self._load_or_create(reset)
+        self._clock = None  # optional ReplayClock
+
+    def set_clock(self, clock) -> None:
+        """Inject replay clock for trade timestamps (historical mode)."""
+        self._clock = clock
+
+    def _stamp(self) -> str:
+        if self._clock is not None:
+            return self._clock.now().isoformat()
+        return datetime.now(timezone.utc).isoformat()
 
     def _load_or_create(self, reset: bool) -> PaperState:
         if reset and self.state_file.exists():
@@ -292,7 +302,7 @@ class PaperBroker:
         if size_pct <= 0 or price <= 0:
             return None
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = self._stamp()
         base = pair.base
         quote = pair.quote
 
